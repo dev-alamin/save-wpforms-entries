@@ -1,0 +1,29 @@
+/* Make admin page body match our custom design */
+body.toplevel_page_swpfe-entries #screen-meta,
+body.toplevel_page_swpfe-entries #wpfooter,
+body.toplevel_page_swpfe-entries .notice {
+	display: none !important;
+}
+
+
+body.toplevel_page_swpfe-entries {
+	background: #C7D9DD !important;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+.swpfe-admin-page {
+	background: #C7D9DD;
+    background-repeat: no-repeat;
+    background-size: cover;
+	min-height: 100vh;
+	padding: 2rem;
+	font-family: 'Inter', system-ui, sans-serif;
+	color: #1f2937; /* text-gray-800 */
+}
+
+/* Optional: Remove WP’s default max width */
+.swpfe-admin-page .wrap {
+	max-width: 100% !important;
+	padding: 0;
+}
