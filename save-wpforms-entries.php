@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Save WPFORMS Entries
- * Plugin URI:  https://almn.me/save-wpforms-entires
- * Description: Save into database, mark as read, .
+ * Plugin URI:  https://almn.me/save-wpforms-entries
+ * Description: Easily store all your WPForms submissions directly in your WordPress database.
  * Version:     1.0.0
  * Author:      Md. Al Amin
  * Author URI:  https://almn.me

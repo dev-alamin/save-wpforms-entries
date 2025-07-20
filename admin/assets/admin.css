@@ -7,13 +7,13 @@ body.toplevel_page_swpfe-entries .notice {
 
 
 body.toplevel_page_swpfe-entries {
-	background: #C7D9DD !important;
+	background: #DDD !important;
     background-repeat: no-repeat;
     background-size: cover;
 }
 
 .swpfe-admin-page {
-	background: #C7D9DD;
+	background: #DDD;
     background-repeat: no-repeat;
     background-size: cover;
 	min-height: 100vh;

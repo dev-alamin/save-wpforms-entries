@@ -3,6 +3,8 @@
 namespace SWPFE;
 
 use WP_REST_Server;
+use WP_REST_Request;
+use WP_REST_Response;
 
 class Rest_API
 {
@@ -24,13 +26,38 @@ class Rest_API
                 ],
             ],
             [
-                'route' => '/data',
+                'route' => '/create',
                 'data'  => [
-                    'methods'             => WP_REST_Server::READABLE,
-                    'callback'            => [$this, 'get_forms'],
-                    'permission_callback' => [$this, 'can_view_forms'],   // ✅ custom permission
+                    'methods'             => WP_REST_Server::CREATABLE,
+                    'callback'            => [$this, 'create_entries'],
+                    'permission_callback' => '__return_true', // or your custom callback
+
+                    'args' => [
+                        'form_id' => [
+                            'required' => true,
+                            'validate_callback' => function($param) {
+                                return is_string($param) || is_numeric($param);
+                            },
+                            'sanitize_callback' => 'sanitize_text_field',
+                        ],
+                        'entry' => [
+                            'required' => true,
+                            'validate_callback' => function($param) {
+                                return is_array($param);
+                            },
+                        ],
+                        'status' => [
+                            'required' => false,
+                            'validate_callback' => function($param) {
+                                return in_array($param, ['unread', 'read'], true);
+                            },
+                            'sanitize_callback' => 'sanitize_text_field',
+                            'default' => 'unread',
+                        ],
+                    ],
                 ],
             ],
+
             [
                 'route' => '/single',
                 'data'  => [
@@ -95,5 +122,57 @@ class Rest_API
 
         return rest_ensure_response($data);
     }
+
+    public function create_entries(WP_REST_Request $request) {
+        global $wpdb;
+
+        $table = $wpdb->prefix . 'swpfe_entries';
+
+        // Get parameters from request JSON body
+        $params = $request->get_json_params();
+
+        $form_id = isset($params['form_id']) ? sanitize_text_field($params['form_id']) : null;
+        $entry = isset($params['entry']) ? $params['entry'] : null; // associative array expected
+
+        if (!$form_id || !is_array($entry)) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Invalid or missing form_id or entry data.'
+            ], 400);
+        }
+
+        // Prepare data to insert
+        $data = [
+            'form_id'    => $form_id,
+            'entry'      => maybe_serialize($entry), // serialize array to store as text
+            'status'     => isset($params['status']) ? sanitize_text_field($params['status']) : 'unread',
+        ];
+
+        // Insert into database
+        $inserted = $wpdb->insert(
+            $table,
+            $data,
+            [
+                '%s',  // form_id as string
+                '%s',  // serialized entry
+                '%s',  // status
+            ]
+        );
+
+        if ($inserted === false) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Database insert failed.'
+            ], 500);
+        }
+
+        // Return success with inserted ID
+        return new WP_REST_Response([
+            'success' => true,
+            'message' => 'Entry created successfully.',
+            'entry_id' => $wpdb->insert_id,
+        ], 201);
+    }
+
 
 }
