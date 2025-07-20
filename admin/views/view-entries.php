@@ -1,12 +1,4 @@
-<?php
-$bg_classes = [
-    'bg-[#FAF7F3]',
-    'bg-[#FFFFFF]',
-];
 
-$bg_classes = ['swpfe-row-bg-1', 'swpfe-row-bg-2', 'swpfe-row-bg-3', 'swpfe-row-bg-4'];
-
-?>
 <div x-data="entriesApp()" x-init="fetchEntries()" class="wrap swpfe-admin-page min-h-screen px-8 py-10 text-[15px] font-inter">
     <div class="mb-8 bg-slate-700 text-wite px-4 py-2 rounded-lg">
         <h1 class="!text-4xl !font-extrabold !text-indigo-100 !tracking-tight mb-2 flex items-center gap-3">
