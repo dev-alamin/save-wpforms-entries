@@ -34,21 +34,18 @@ define( 'SWPFE_URL', plugin_dir_url( __FILE__ ) );
 require_once SWPFE_PATH . 'admin/class-db-handler.php';
 require_once SWPFE_PATH . 'admin/class-admin.php';
 require_once SWPFE_PATH . 'includes/class-entry-handler.php';
-require_once SWPFE_PATH . 'api/class-rest-api.php';
+require_once SWPFE_PATH . 'includes/api/class-rest-api.php';
 
 // Load textdomain
 add_action( 'plugins_loaded', function() {
 	load_plugin_textdomain( 'save-wpf-entries', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+    
+    new SWPFE\Rest_API();
+
+    if ( is_admin() ) {
+        new SWPFE\Admin();
+    }
 });
 
 // Activation Hook - Create DB table
 register_activation_hook( __FILE__, [ 'SWPFE\DB_Handler', 'create_table' ] );
-
-// Init
-add_action( 'init', function() {
-	if ( is_admin() ) {
-		new SWPFE\Admin();
-	}
-});
-
-new SWPFE\Rest_API();
