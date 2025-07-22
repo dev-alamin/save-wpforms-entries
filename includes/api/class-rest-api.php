@@ -345,14 +345,15 @@ class Rest_API
                 'id'         => $row->id,
                 'form_title' => get_the_title($row->form_id),
                 'entry'      => $entry_normalized,
-                'read'       => $row->status,
+                'status'       => $row->status,
                 'date'       => $row->created_at,
                 'note'       => $row->note,
-                'favorite'   => (bool) $row->is_favorite,
+                'is_favorite'   => (bool) $row->is_favorite,
                 'exported'   => (bool) $row->exported_to_csv,
                 'synced'     => (bool) $row->synced_to_gsheet,
                 'printed_at' => $row->printed_at,
                 'resent_at'  => $row->resent_at,
+                'form_id' => $row->form_id,
             ];
 
             if ($form_id) {
@@ -557,7 +558,7 @@ class Rest_API
         if ( empty( $data ) ) {
             return new WP_REST_Response( [
                 'success' => false,
-                'message' => 'No valid fields provided for update.'
+                'message' => __( 'No valid fields provided for update.', 'save-wpf-entries' )
             ], 400 );
         }
 
@@ -573,15 +574,15 @@ class Rest_API
         if ( $updated === false ) {
             return new WP_REST_Response( [
                 'success' => false,
-                'message' => 'Database update failed.'
+                'message' => __( 'Database update failed.', 'save-wpf-entries' )
             ], 500 );
         }
 
         return new WP_REST_Response( [
-            'success' => true,
-            'message' => 'Entry updated successfully.',
+            'success'        => true,
+            'message'        => __( 'Entry updated successfully.', 'save-wpf-entries' ),
             'updated_fields' => array_keys( $data ),
-            'entry_id' => $id,
+            'entry_id'       => $id,
         ], 200 );
     }
 }

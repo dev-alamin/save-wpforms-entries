@@ -57,24 +57,23 @@
                     <!-- Actions -->
                     <div class="mt-8 flex flex-wrap gap-4 justify-end">
                         <button
-                            @click="markAs('read')"
-                            class="px-5 py-2.5 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition"
-                            :disabled="selectedEntry.status === 'read'">
-                            ✅ Mark as Read
+                            @click="toggleModalReadStatus()"
+                            class="px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition">
+                            <template x-if="selectedEntry.status === 'unread'">
+                                ✅ <span>Mark as Read</span>
+                            </template>
+                            <template x-if="selectedEntry.status === 'read'">
+                                🕓 <span>Mark as Unread</span>
+                            </template>
                         </button>
 
-                        <button
-                            @click="markAs('unread')"
-                            class="px-5 py-2.5 bg-yellow-500 text-white rounded-lg font-semibold hover:bg-yellow-600 transition"
-                            :disabled="selectedEntry.status === 'unread'">
-                            🕓 Mark as Unread
-                        </button>
 
                         <button
                             @click="deleteEntry()"
-                            class="px-5 py-2.5 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition">
+                            class="px-5 py-2.5 bg-red-600 text-white rounded-lg !font-bold hover:bg-red-700 transition">
                             🗑️ Delete
                         </button>
+
                     </div>
                 </div>
             </div>

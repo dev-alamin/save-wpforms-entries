@@ -22,16 +22,48 @@ function formTable(entries) {
       return this.all.slice(start, start + this.pageSize);
     },
 
+    sortAsc: true,
+    sortAscStatus: true,
+
+    sortByDate() {
+      this.all.sort((a, b) => {
+        return this.sortAsc
+          ? new Date(a.date) - new Date(b.date)
+          : new Date(b.date) - new Date(a.date);
+      });
+      this.sortAsc = !this.sortAsc;
+    },
+    sortByStatus() {
+      this.paginatedEntries.sort((a, b) => {
+        if (a.status === b.status) return 0;
+
+        if (this.sortAscStatus) {
+          return a.status === "unread" ? -1 : 1;
+        } else {
+          return a.status === "read" ? -1 : 1;
+        }
+      });
+
+      this.sortAscStatus = !this.sortAscStatus;
+    },
     // Computed: total pages
     get totalPages() {
       return Math.ceil(this.all.length / this.pageSize) || 1;
     },
 
     showEntry(i) {
-      // i is index relative to paginatedEntries, so adjust to real index in all
       const realIndex = (this.currentPage - 1) * this.pageSize + i;
-      this.selectedEntry = this.all[realIndex];
+      const entry = this.all[realIndex];
+
+      this.selectedEntry = entry;
       this.entryModalOpen = true;
+
+      if (entry.status === "unread") {
+        entry.status = "read"; // Instant UI update
+
+        // Also update backend
+        this.updateEntry(realIndex, { status: "read" });
+      }
     },
     markAs(status) {
       if (!this.entryModalOpen) return;
@@ -85,14 +117,14 @@ function formTable(entries) {
     },
   };
 }
-
 function entriesApp() {
   return {
     grouped: {},
+    paginatedEntries: [],
     currentPage: 1,
     perPage: 20,
-    selectedFormId: null, // Set this dynamically per form
-    totalPages: 1, // Set this based on response if you add total count
+    selectedFormId: null,
+    totalPages: 1,
 
     async fetchEntries(
       formId = this.selectedFormId,
@@ -106,13 +138,25 @@ function entriesApp() {
           per_page: perPage,
         });
 
-        const res = await fetch(`http://localhost/devspark/wordpress-backend/wp-json/wpforms/entries/v1/entries?${query}`);
+        const res = await fetch(
+          `http://localhost/devspark/wordpress-backend/wp-json/wpforms/entries/v1/entries?${query}`
+        );
         const data = await res.json();
 
-        // If you return total count later, calculate total pages
-        // this.totalPages = Math.ceil(data.total / perPage);
-
         this.grouped = data;
+
+        // Normalize values to ensure Alpine reacts properly and backend gets correct types
+        this.paginatedEntries =
+          Object.values(data)[0]?.map((entry) => ({
+            ...entry,
+            is_favorite: Number(entry.is_favorite),
+            synced_to_gsheet: Number(entry.synced_to_gsheet),
+            exported_to_csv: Number(entry.exported_to_csv),
+            printed_at: entry.printed_at ?? null,
+            resent_at: entry.resent_at ?? null,
+            status: entry.status ?? "unread",
+          })) || [];
+
         this.selectedFormId = formId;
         this.currentPage = page;
       } catch (error) {
@@ -133,11 +177,159 @@ function entriesApp() {
         this.fetchEntries();
       }
     },
+
     goToPage(page) {
       if (page !== this.currentPage) {
         this.currentPage = page;
         this.fetchEntries();
       }
+    },
+
+    async updateEntry(index, changes = {}) {
+      const entry = this.paginatedEntries[index];
+
+      const payload = {
+        id: entry.id,
+        form_id: entry.form_id,
+        entry: entry.entry,
+        status: entry.status,
+        is_favorite: Number(entry.is_favorite),
+        note: entry.note,
+        exported_to_csv: Number(entry.exported_to_csv),
+        synced_to_gsheet: Number(entry.synced_to_gsheet),
+        printed_at: entry.printed_at,
+        resent_at: entry.resent_at,
+        ...changes,
+      };
+
+      try {
+        const res = await fetch(
+          "http://localhost/devspark/wordpress-backend/wp-json/wpforms/entries/v1/update",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          }
+        );
+
+        const data = await res.json();
+        console.log("Entry updated:", data);
+      } catch (error) {
+        console.error("Failed to update entry:", error);
+      }
+    },
+    async deleteEntry() {
+      const entry = this.selectedEntry;
+      const confirmDelete = confirm(
+        "Are you sure you want to delete this entry?"
+      );
+      if (!confirmDelete) return;
+
+      try {
+        const res = await fetch(
+          `http://localhost/devspark/wordpress-backend/wp-json/wpforms/entries/v1/delete?id=${entry.id}`,
+          {
+            method: "DELETE",
+          }
+        );
+
+        if (res.ok) {
+          // Remove from all[]
+          this.all = this.all.filter((e) => e.id !== entry.id);
+          // Refresh current page
+          this.fetchEntries(
+            this.selectedFormId,
+            this.currentPage,
+            this.perPage
+          );
+          // Close modal
+          this.entryModalOpen = false;
+        } else {
+          console.error("Failed to delete entry:", await res.text());
+          alert("Delete failed.");
+        }
+      } catch (error) {
+        console.error("Delete error:", error);
+        alert("Error deleting entry.");
+      }
+    },
+
+    toggleRead(index) {
+      const entry = this.paginatedEntries[index];
+      entry.status = entry.status === "unread" ? "read" : "unread";
+      this.updateEntry(index, { status: entry.status });
+    },
+
+    toggleFavorite(index) {
+      const entry = this.paginatedEntries[index];
+      entry.is_favorite = entry.is_favorite === 1 ? 0 : 1;
+      this.updateEntry(index, { is_favorite: entry.is_favorite });
+    },
+    toggleModalReadStatus() {
+      const entry = this.selectedEntry;
+      const newStatus = entry.status === "unread" ? "read" : "unread";
+      entry.status = newStatus;
+
+      // Find index in `all` array
+      const index = this.all.findIndex((e) => e.id === entry.id);
+      if (index !== -1) {
+        this.all[index].status = newStatus;
+        this.updateEntry(index, { status: newStatus });
+      }
+    },
+    syncToGoogleSheet(index) {
+      const entry = this.paginatedEntries[index];
+      entry.synced_to_gsheet = 1;
+      this.updateEntry(index, { synced_to_gsheet: 1 });
+    },
+
+    printEntry(index) {
+      const entry = this.paginatedEntries[index];
+      entry.printed_at = new Date()
+        .toISOString()
+        .slice(0, 19)
+        .replace("T", " ");
+      this.updateEntry(index, { printed_at: entry.printed_at });
+
+      const printWindow = window.open("", "", "width=1000,height=600");
+      printWindow.document.write(
+        "<pre>" + JSON.stringify(entry, null, 2) + "</pre>"
+      );
+      printWindow.print();
+    },
+
+    timeAgo(dateString) {
+      const date = new Date(dateString);
+      const now = new Date();
+      const seconds = Math.floor((now - date) / 1000);
+
+      if (seconds < 60) return "just now";
+      if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+      if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+
+      const yesterday = new Date();
+      yesterday.setDate(now.getDate() - 1);
+
+      if (
+        date.getDate() === yesterday.getDate() &&
+        date.getMonth() === yesterday.getMonth() &&
+        date.getFullYear() === yesterday.getFullYear()
+      ) {
+        return "Yesterday";
+      }
+
+      const optionsSameYear = { day: "numeric", month: "long" };
+      const optionsLastYear = {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      };
+      const isThisYear = now.getFullYear() === date.getFullYear();
+
+      return date.toLocaleDateString(
+        "en-US",
+        isThisYear ? optionsSameYear : optionsLastYear
+      );
     },
   };
 }
