@@ -1,4 +1,3 @@
-
 <div x-data="entriesApp()" x-init="fetchEntries()" class="wrap swpfe-admin-page min-h-screen px-8 py-10 text-[15px] font-inter">
     <div class="mb-8 bg-slate-700 text-wite px-4 py-2 rounded-lg">
         <h1 class="!text-4xl !font-extrabold !text-indigo-100 !tracking-tight mb-2 flex items-center gap-3">
@@ -46,8 +45,6 @@
                     </svg>
                 </div>
             </div>
-
-
             <!-- Entries Table -->
             <div x-show="open" x-transition>
                 <div class="bg-white shadow-md rounded-xl overflow-hidden border border-gray-200">
@@ -91,58 +88,66 @@
                     </template>
 
                     <!-- Pagination Controls -->
-                    <div class="mt-4 flex justify-center items-center space-x-1 text-gray-700 text-sm select-none font-medium mb-4">
+                    <div class="mt-4 flex justify-center items-center gap-1 text-gray-700 text-sm font-medium select-none mb-4">
+                        <!-- Previous Button -->
                         <button
                             @click="prevPage"
                             :disabled="currentPage === 1"
-                            class="w-9 h-9 flex items-center justify-center rounded-md border border-gray-300 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
-                            aria-label="Previous page">
+                            class="w-9 h-9 flex items-center justify-center rounded-md border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                            aria-label="Previous Page">
                             &lt;
                         </button>
 
+                        <!-- Page Numbers -->
                         <template x-for="page in totalPages" :key="page">
                             <button
                                 @click="goToPage(page)"
-                                :class="currentPage === page
-          ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-          : 'bg-white hover:bg-gray-200 text-gray-700'"
-                                class="w-9 h-9 rounded-md border border-gray-300 transition"
                                 x-text="page"
-                                aria-label="'Page ' + page"></button>
+                                :class="[
+                'w-9 h-9 rounded-md border transition',
+                currentPage === page
+                    ? 'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+            ]"
+                                :aria-current="currentPage === page ? 'page' : null"
+                                :aria-label="`Go to page ${page}`">
+                            </button>
                         </template>
 
+                        <!-- Next Button -->
                         <button
                             @click="nextPage"
                             :disabled="currentPage === totalPages"
-                            class="w-9 h-9 flex items-center justify-center rounded-md border border-gray-300 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
-                            aria-label="Next page">
+                            class="w-9 h-9 flex items-center justify-center rounded-md border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                            aria-label="Next Page">
                             &gt;
                         </button>
                     </div>
+
                 </div>
             </div>
             <!-- Modal Overlay -->
-            <?php include __DIR__ . '/modal.php'; // Popup Modal ?>
+            <?php include __DIR__ . '/modal.php'; // Popup Modal 
+            ?>
         </div>
     </template>
 
     <div
         x-show="Object.keys(grouped).length === 0"
-        class="flex flex-col items-center justify-center mt-20 space-y-6 text-gray-600"
-    >
-    <!-- Lottie JSON animation (optional, needs lottie-player script) -->
-    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
-    <lottie-player
-        src="https://assets5.lottiefiles.com/packages/lf20_qp1q7mct.json"
-        background="transparent"
-        speed="1"
-        style="width: 320px; height: 320px"
-        loop
-        autoplay>
-    </lottie-player>
+        class="flex flex-col items-center justify-center mt-20 space-y-6 text-gray-600">
+        <!-- Lottie JSON animation (optional, needs lottie-player script) -->
+        <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+        <lottie-player
+            src="https://assets5.lottiefiles.com/packages/lf20_qp1q7mct.json"
+            background="transparent"
+            speed="1"
+            style="width: 320px; height: 320px"
+            loop
+            autoplay>
+        </lottie-player>
 
         <h2 class="!text-2xl sm:text-3xl !font-extrabold text-gray-800">No Entries Found</h2>
-        
+
         <p class="!text-base !sm:text-lg text-gray-500 max-w-md text-center">
             Looks like this form hasn't received any submissions yet.<br class="hidden sm:block">
             Sit back and relax — we’ll show the entries here as soon as they arrive! 📨

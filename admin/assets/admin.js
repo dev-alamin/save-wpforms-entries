@@ -89,16 +89,54 @@ function formTable(entries) {
 function entriesApp() {
   return {
     grouped: {},
+    currentPage: 1,
+    perPage: 20,
+    selectedFormId: null, // Set this dynamically per form
+    totalPages: 1, // Set this based on response if you add total count
 
-    async fetchEntries() {
+    async fetchEntries(
+      formId = this.selectedFormId,
+      page = this.currentPage,
+      perPage = this.perPage
+    ) {
       try {
-        const res = await fetch(
-          "http://localhost/devspark/wordpress-backend/wp-json/wpforms/entries/v1/entries"
-        );
+        const query = new URLSearchParams({
+          form_id: formId,
+          page,
+          per_page: perPage,
+        });
+
+        const res = await fetch(`http://localhost/devspark/wordpress-backend/wp-json/wpforms/entries/v1/entries?${query}`);
         const data = await res.json();
+
+        // If you return total count later, calculate total pages
+        // this.totalPages = Math.ceil(data.total / perPage);
+
         this.grouped = data;
+        this.selectedFormId = formId;
+        this.currentPage = page;
       } catch (error) {
         console.error("Failed to fetch entries:", error);
+      }
+    },
+
+    nextPage() {
+      if (this.currentPage < this.totalPages) {
+        this.currentPage++;
+        this.fetchEntries();
+      }
+    },
+
+    prevPage() {
+      if (this.currentPage > 1) {
+        this.currentPage--;
+        this.fetchEntries();
+      }
+    },
+    goToPage(page) {
+      if (page !== this.currentPage) {
+        this.currentPage = page;
+        this.fetchEntries();
       }
     },
   };
