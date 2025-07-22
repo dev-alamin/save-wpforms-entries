@@ -196,8 +196,8 @@ class Rest_API
                         'form_id' => [
                             'required' => true,
                             'sanitize_callback' => 'absint',
-                            'validate_callback' => function( $param ) {
-                                return is_numeric( $param ) && $param > 0;
+                            'validate_callback' => function ($param) {
+                                return is_numeric($param) && $param > 0;
                             },
                         ],
                         'entry' => [
@@ -266,6 +266,31 @@ class Rest_API
                     ],
                 ],
             ],
+            [
+                'route' => '/delete',
+                'data'  => [
+                    'methods'             => WP_REST_Server::DELETABLE,
+                    'callback'            => [$this, 'delete_entry'],
+                    'permission_callback' => '__return_true',
+                    'args'                => [
+                        'id' => [
+                            'required'          => true,
+                            'sanitize_callback' => 'absint',
+                            'validate_callback' => function ($param) {
+                                return is_numeric($param) && $param > 0;
+                            },
+                        ],
+                        'form_id' => [
+                            'required'          => true, // optional, based on use
+                            'sanitize_callback' => 'absint',
+                            'validate_callback' => function ($param) {
+                                return is_numeric($param) && $param > 0;
+                            },
+                        ],
+                    ],
+                ],
+            ],
+
         ];
 
         foreach ($data as $item) {
@@ -493,96 +518,118 @@ class Rest_API
      * @param WP_REST_Request $request The REST request object.
      * @return WP_REST_Response
      */
-    public function update_entries( WP_REST_Request $request ) {
+    public function update_entries(WP_REST_Request $request)
+    {
         global $wpdb;
         $table = $wpdb->prefix . 'swpfe_entries';
 
         $params = $request->get_json_params();
 
         // Require entry ID
-        $id = isset( $params['id'] ) ? absint( $params['id'] ) : 0;
-        $form_id = isset( $params['form_id'] ) ? absint( $params['form_id'] ) : 0;
+        $id = isset($params['id']) ? absint($params['id']) : 0;
+        $form_id = isset($params['form_id']) ? absint($params['form_id']) : 0;
 
-        if ( ! $id || ! $form_id ) {
-            return new WP_REST_Response( [
+        if (! $id || ! $form_id) {
+            return new WP_REST_Response([
                 'success' => false,
                 'message' => 'Missing or invalid entry ID or form ID.'
-            ], 400 );
+            ], 400);
         }
 
         // Build update data only from present fields
         $data = [];
         $format = [];
 
-        if ( isset( $params['entry'] ) && is_array( $params['entry'] ) ) {
-            $data['entry'] = maybe_serialize( $params['entry'] );
+        if (isset($params['entry']) && is_array($params['entry'])) {
+            $data['entry'] = maybe_serialize($params['entry']);
             $format[] = '%s';
         }
 
-        if ( isset( $params['status'] ) ) {
-            $data['status'] = sanitize_text_field( $params['status'] );
+        if (isset($params['status'])) {
+            $data['status'] = sanitize_text_field($params['status']);
             $format[] = '%s';
         }
 
-        if ( isset( $params['is_favorite'] ) ) {
-            $data['is_favorite'] = absint( $params['is_favorite'] );
+        if (isset($params['is_favorite'])) {
+            $data['is_favorite'] = absint($params['is_favorite']);
             $format[] = '%d';
         }
 
-        if ( isset( $params['note'] ) ) {
-            $data['note'] = sanitize_textarea_field( $params['note'] );
+        if (isset($params['note'])) {
+            $data['note'] = sanitize_textarea_field($params['note']);
             $format[] = '%s';
         }
 
-        if ( isset( $params['exported_to_csv'] ) ) {
-            $data['exported_to_csv'] = absint( $params['exported_to_csv'] );
+        if (isset($params['exported_to_csv'])) {
+            $data['exported_to_csv'] = absint($params['exported_to_csv']);
             $format[] = '%d';
         }
 
-        if ( isset( $params['synced_to_gsheet'] ) ) {
-            $data['synced_to_gsheet'] = absint( $params['synced_to_gsheet'] );
+        if (isset($params['synced_to_gsheet'])) {
+            $data['synced_to_gsheet'] = absint($params['synced_to_gsheet']);
             $format[] = '%d';
         }
 
-        if ( isset( $params['printed_at'] ) ) {
-            $data['printed_at'] = date( 'Y-m-d H:i:s', strtotime( $params['printed_at'] ) );
+        if (isset($params['printed_at'])) {
+            $data['printed_at'] = date('Y-m-d H:i:s', strtotime($params['printed_at']));
             $format[] = '%s';
         }
 
-        if ( isset( $params['resent_at'] ) ) {
-            $data['resent_at'] = date( 'Y-m-d H:i:s', strtotime( $params['resent_at'] ) );
+        if (isset($params['resent_at'])) {
+            $data['resent_at'] = date('Y-m-d H:i:s', strtotime($params['resent_at']));
             $format[] = '%s';
         }
 
         // If no fields provided to update
-        if ( empty( $data ) ) {
-            return new WP_REST_Response( [
+        if (empty($data)) {
+            return new WP_REST_Response([
                 'success' => false,
-                'message' => __( 'No valid fields provided for update.', 'save-wpf-entries' )
-            ], 400 );
+                'message' => __('No valid fields provided for update.', 'save-wpf-entries')
+            ], 400);
         }
 
         // Perform DB update
         $updated = $wpdb->update(
             $table,
             $data,
-            [ 'id' => $id ],
+            ['id' => $id],
             $format,
-            [ '%d' ]
+            ['%d']
         );
 
-        if ( $updated === false ) {
-            return new WP_REST_Response( [
+        if ($updated === false) {
+            return new WP_REST_Response([
                 'success' => false,
-                'message' => __( 'Database update failed.', 'save-wpf-entries' )
-            ], 500 );
+                'message' => __('Database update failed.', 'save-wpf-entries')
+            ], 500);
         }
 
-        return new WP_REST_Response( [
+        return new WP_REST_Response([
             'success'        => true,
-            'message'        => __( 'Entry updated successfully.', 'save-wpf-entries' ),
-            'updated_fields' => array_keys( $data ),
+            'message'        => __('Entry updated successfully.', 'save-wpf-entries'),
+            'updated_fields' => array_keys($data),
             'entry_id'       => $id,
-        ], 200 );
+        ], 200);
+    }
+
+    public function delete_entry( WP_REST_Request $request ) {
+        global $wpdb;
+
+        $id = $request->get_param( 'id' );
+        $form_id = $request->get_param( 'form_id' );
+
+        $table = $wpdb->prefix . 'swpfe_entries';
+
+        $deleted = $wpdb->delete(
+            $table,
+            [ 'id' => $id, 'form_id' => $form_id ],
+            [ '%d', '%d' ]
+        );
+
+        if ( $deleted ) {
+            return new WP_REST_Response( [ 'deleted' => true ], 200 );
+        }
+
+        return new WP_REST_Response( [ 'deleted' => false, 'message' => 'Entry not found or already deleted.' ], 404 );
     }
 }

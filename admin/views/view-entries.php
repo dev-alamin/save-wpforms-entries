@@ -60,7 +60,14 @@
                         </div>
 
                         <div class="text-center cursor-pointer select-none flex items-center justify-center gap-1">
-                            <span>Status</span>
+                            <div
+  class="text-center cursor-pointer select-none flex items-center justify-center gap-1"
+  @click="sortByStatus"
+>
+  <span>Status</span>
+  <span x-text="sortAscStatus ? '⬆️' : '⬇️'"></span>
+</div>
+
                         </div>
                         <div class="text-right">Actions</div>
                     </div>
