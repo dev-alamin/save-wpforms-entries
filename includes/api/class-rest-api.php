@@ -77,7 +77,9 @@ class Rest_API
                         'status' => [
                             'description'       => __('Filter by read/unread status.', 'save-wpf-entries'),
                             'type'              => 'string',
-                            'enum'              => ['read', 'unread'],
+                            'validate_callback' => function($value) {
+                                return in_array($value, ['read', 'unread', '', null], true);
+                            },
                             'required'          => false,
                         ],
                         'date_from' => [

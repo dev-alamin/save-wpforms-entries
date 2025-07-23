@@ -6,7 +6,7 @@ function formTable(form) {
         totalEntries: form.entry_count,
         entries: [],
         currentPage: 1,
-        pageSize: 2,
+        pageSize: 50,
         totalPages: 1,
         sortAsc: true,
         sortAscStatus: true,
@@ -28,7 +28,7 @@ function formTable(form) {
                 const query = new URLSearchParams({
                     form_id: this.formId,
                     page: this.currentPage,
-                    per_page: this.pageSize
+                    per_page: this.pageSize,
                 });
 
                 const res = await fetch(`http://localhost/devspark/wordpress-backend/wp-json/wpforms/entries/v1/entries?${query}`);
@@ -332,24 +332,133 @@ function formTable(form) {
 function entriesApp() {
     return {
         forms: [],
+        entries: [],
+        totalEntries: 0,
+        formId: null, // currently selected form
+        currentPage: 1,
+        pageSize: 10,
+        filterStatus: 'all',
+        searchQuery: '',
+        onlyFavorites: false,
         setError: false,
 
         async fetchForms() {
             try {
                 const res = await fetch('http://localhost/devspark/wordpress-backend/wp-json/wpforms/entries/v1/forms');
-                
-                if (!res.ok) {
-                    // HTTP error status (404, 500, etc)
-                    throw new Error(`HTTP error! status: ${res.status}`);
-                }
-                
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
                 const data = await res.json();
-                this.forms = data; // Expected: [{ id, title, count }]
+                this.forms = data;
             } catch (error) {
                 this.setError = true;
                 console.error("Failed to fetch forms:", error);
             }
+        },
+
+        async fetchEntries() {
+            if (!this.formId) return;
+
+            const query = new URLSearchParams({
+                form_id: this.formId,
+                per_page: this.pageSize,
+                page: this.currentPage,
+                ...(this.filterStatus !== 'all' ? { status: this.filterStatus } : {}),
+                ...(this.searchQuery ? { search: this.searchQuery } : {})
+            });
+
+            try {
+                const res = await fetch(`http://localhost/devspark/wordpress-backend/wp-json/wpforms/entries/v1/entries?${query}`);
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                const data = await res.json();
+
+                this.entries = JSON.parse(JSON.stringify(data.entries || []));
+                this.totalEntries = data.total || 0;
+            } catch (error) {
+                console.error("Failed to fetch entries:", error);
+            }
+        },
+
+        // Optional: use this if you want to debounce search input
+        handleSearchInput: _.debounce(function () {
+            this.currentPage = 1;
+            this.fetchEntries();
+        }, 500),
+
+        handleFilterChange() {
+            this.currentPage = 1;
+            this.fetchEntries();
+        },
+
+        changePage(page) {
+            this.currentPage = page;
+            this.fetchEntries();
         }
     };
 }
 
+function formEntriesApp(formId, entryCount) {
+    return {
+        entries: [],
+        total: entryCount || 0,
+        searchQuery: '',
+        filterStatus: 'all',
+        onlyFavorites: false,
+        currentPage: 1,
+        perPage: 10,
+        loading: false,
+
+        async fetchEntries() {
+            this.loading = true;
+
+            let queryParams = new URLSearchParams({
+                form_id: formId,
+                page: this.currentPage,
+                per_page: this.perPage,
+            });
+
+            if (this.searchQuery.trim() !== '') {
+                queryParams.append('search', this.searchQuery.trim());
+            }
+
+            if (this.filterStatus !== 'all') {
+                queryParams.append('status', this.filterStatus);
+            }
+
+            // You can handle favorite filtering client-side if not supported by API
+
+            try {
+                const res = await fetch(`http://localhost/devspark/wordpress-backend/wp-json/wpforms/entries/v1/entries?${queryParams}`);
+                const data = await res.json();
+
+                this.entries = this.onlyFavorites
+                    ? data.entries.filter(e => e.is_favorite)
+                    : data.entries;
+
+                this.total = data.total;
+            } catch (err) {
+                console.error("Fetch failed:", err);
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        handleSearchInput() {
+            this.currentPage = 1;
+            this.fetchEntries();
+        },
+
+        handleStatusChange() {
+            this.currentPage = 1;
+            this.fetchEntries();
+        },
+
+        handleFavoriteToggle() {
+            this.currentPage = 1;
+            this.fetchEntries();
+        },
+
+        goToPage(pageNum) {
+            this.currentPage = pageNum;
+            this.fetchEntries();
+        }
+    }
+}

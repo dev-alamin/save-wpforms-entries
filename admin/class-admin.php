@@ -32,5 +32,6 @@ class Admin {
         wp_enqueue_script( 'swpfe-tailwind-css', 'https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4', [], time(), false );
 		wp_enqueue_script( 'swpfe-alpine', 'https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js', [], null, true );
         wp_enqueue_script( 'swpfe-admin-js', SWPFE_URL . 'admin/assets/admin.js', [], time() );
+        wp_enqueue_script( 'swpfe-landash', 'https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js', [], time(), false );
 	}
 }
