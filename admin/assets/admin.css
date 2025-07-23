@@ -26,3 +26,7 @@ body.toplevel_page_swpfe-entries {
 	max-width: 100% !important;
 	padding: 0;
 }
+
+[x-cloak] {
+    display: none !important;
+}

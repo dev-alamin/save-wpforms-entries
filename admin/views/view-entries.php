@@ -29,7 +29,13 @@
                         <h2 class="text-2xl font-semibold text-gray-800" x-text="form.form_title"></h2>
                         <p class="text-sm text-gray-600 font-medium">
                             🆔 <strong><?php esc_html_e('Form ID:', 'save-wpf-entries'); ?></strong> <span x-text="form.form_id"></span> &nbsp; | &nbsp;
-                            📌 <strong><?php esc_html_e('Total Entries:', 'save-wpf-entries'); ?></strong> <span x-text="form.entry_count"></span>
+                            📌 <strong><?php esc_html_e('Total Entries:', 'save-wpf-entries'); ?></strong>
+                            <span
+                                x-text="formatNumber(form.entry_count)"
+                                :title="formatFullNumber(form.entry_count)"
+                                class="cursor-help">
+                            </span>
+
                         </p>
                     </div>
                 </div>

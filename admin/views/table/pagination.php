@@ -1,5 +1,5 @@
 <div class="mt-4 flex justify-center items-center gap-1 text-gray-700 text-sm font-medium select-none mb-4">
-    <!-- Previous Button -->
+    <!-- Previous -->
     <button
         @click="prevPage"
         :disabled="currentPage === 1"
@@ -8,23 +8,26 @@
         &lt;
     </button>
 
-    <!-- Page Numbers -->
-    <template x-for="page in totalPages" :key="page">
-        <button
-            @click="goToPage(page)"
-            x-text="page"
-            :class="[
-'w-9 h-9 rounded-md border transition',
-currentPage === page
-? 'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700'
-: 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
-]"
-            :aria-current="currentPage === page ? 'page' : null"
-            :aria-label="`Go to page ${page}`">
-        </button>
+    <!-- Smart Page Buttons -->
+    <template x-for="(page, index) in visiblePages" :key="`page-${index}`">
+        <template x-if="page !== '...'">
+            <button
+                @click="goToPage(page)"
+                x-text="page"
+                class="w-15 h-9 rounded-md border transition"
+                :class="currentPage === page
+                    ? 'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'"
+                :aria-current="currentPage === page ? 'page' : null"
+                :aria-label="`Go to page ${page}`">
+            </button>
+        </template>
+        <template x-if="page === '...'">
+            <span class="w-9 h-9 flex items-center justify-center text-gray-400">…</span>
+        </template>
     </template>
 
-    <!-- Next Button -->
+    <!-- Next -->
     <button
         @click="nextPage"
         :disabled="currentPage === totalPages"

@@ -6,7 +6,7 @@ function formTable(form) {
         totalEntries: form.entry_count,
         entries: [],
         currentPage: 1,
-        pageSize: 50,
+        pageSize: 20,
         totalPages: 1,
         sortAsc: true,
         sortAscStatus: true,
@@ -214,18 +214,18 @@ function formTable(form) {
             entry.status = entry.status === "unread" ? "read" : "unread";
             this.updateEntry(index, { status: entry.status });
         },
-        toggleModalReadStatus() {
-            const entry = this.selectedEntry;
-            const newStatus = entry.status === "unread" ? "read" : "unread";
-            entry.status = newStatus;
+toggleModalReadStatus() {
+    const entry = this.selectedEntry;
+    const newStatus = entry.status === "unread" ? "read" : "unread";
+    entry.status = newStatus;
 
-            // Find index in `all` array
-            const index = this.all.findIndex((e) => e.id === entry.id);
-            if (index !== -1) {
-                this.all[index].status = newStatus;
-                this.updateEntry(index, { status: newStatus });
-            }
-        },
+    const index = this.entries.findIndex((e) => e.id === entry.id);
+    if (index !== -1) {
+        this.entries[index].status = newStatus;
+        this.updateEntry(index, { status: newStatus });
+    }
+}
+,
         syncToGoogleSheet(index) {
             const entry = this.entries[index];
             entry.synced_to_gsheet = 1;
@@ -325,7 +325,54 @@ function formTable(form) {
                 "en-US",
                 isThisYear ? optionsSameYear : optionsLastYear
             );
+        },
+        get visiblePages() {
+            const pages = [];
+            const delta = 2;
+            const range = [];
+            const total = this.totalPages;
+            const current = this.currentPage;
+
+            const left = current - delta;
+            const right = current + delta;
+
+            for (let i = 1; i <= total; i++) {
+                if (
+                    i === 1 ||
+                    i === total ||
+                    (i >= left && i <= right)
+                ) {
+                    range.push(i);
+                }
+            }
+
+            let lastPage = 0;
+            for (let page of range) {
+                if (lastPage && page - lastPage > 1) {
+                    pages.push('...');
+                }
+                pages.push(page);
+                lastPage = page;
+            }
+
+            return pages;
+        }, formatNumber(n) {
+            const num = Number(n);
+
+            if (num >= 1_000_000) {
+                return (num / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+            } else if (num >= 1_000) {
+                return (num / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
+            }
+
+            return num.toString();
+        },
+        formatFullNumber(n) {
+            return Number(n).toLocaleString('en-US'); // e.g. 1,234,567
         }
+
+
+
     };
 }
 
