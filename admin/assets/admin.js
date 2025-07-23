@@ -350,7 +350,6 @@ function entriesApp() {
             printWindow.focus();
             printWindow.print();
         },
-
         timeAgo(dateString) {
             const date = new Date(dateString);
             const now = new Date();

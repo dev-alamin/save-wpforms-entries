@@ -28,9 +28,8 @@
                     <!-- Text Content -->
                     <div>
                         <h2 class="text-2xl font-semibold text-gray-800"
-                            x-text="'<?php echo esc_js(__('Form Title', 'save-wpf-entries')); ?>'">
+                            x-text="all[0]?.form_title || '<?php echo esc_js(__('Form Title', 'save-wpf-entries')); ?>'">
                         </h2>
-
                         <p class="text-sm text-gray-600 font-medium">
                             🆔 <strong><?php esc_html_e('Form ID:', 'save-wpf-entries'); ?></strong>
                             <span x-text="formId"></span> &nbsp; | &nbsp;
@@ -60,8 +59,31 @@
 
             </div>
             <!-- Entries Table -->
+            
             <div x-show="open" x-transition>
+
+                
                 <div class="bg-white shadow-md rounded-xl overflow-hidden border border-gray-200">
+                    <!-- Filter Controls -->
+                    <div class="flex flex-wrap gap-4 items-center py-4 px-4">
+                        <input
+                            type="text"
+                            class="border px-3 py-2 rounded w-full sm:w-1/2"
+                            placeholder="🔍 Search..."
+                            x-model="searchQuery"
+                        >
+    
+                        <select x-model="filterStatus" class="border px-3 py-2 rounded">
+                            <option value="all">All Status</option>
+                            <option value="read">✅ Read</option>
+                            <option value="unread">🕓 Unread</option>
+                        </select>
+    
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" x-model="onlyFavorites" class="form-checkbox">
+                            <span>⭐ Only Favorites</span>
+                        </label>
+                    </div>
 
                     <!-- Header Row -->
                     <div
@@ -156,6 +178,7 @@
                                 </button>
 
                                 <!-- Print -->
+                                 
                                 <button class="py-4 cursor-pointer mr-4" @click="printEntry(i)" title="Print Entry">
                                     <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1f1f1f">
                                         <path d="M640-640v-120H320v120h-80v-200h480v200h-80Zm-480 80h640-640Zm560 100q17 0 28.5-11.5T760-500q0-17-11.5-28.5T720-540q-17 0-28.5 11.5T680-500q0 17 11.5 28.5T720-460Zm-80 260v-160H320v160h320Zm80 80H240v-160H80v-240q0-51 35-85.5t85-34.5h560q51 0 85.5 34.5T880-520v240H720v160Zm80-240v-160q0-17-11.5-28.5T760-560H200q-17 0-28.5 11.5T160-520v160h80v-80h480v80h80Z" />

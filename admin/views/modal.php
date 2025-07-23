@@ -60,10 +60,6 @@
 
                     <!-- Actions -->
                     <div class="mt-8 flex flex-wrap gap-4 justify-end">
-                        <button class="py-2.5 px-5 cursor-pointer bg-violet-600 text-white rounded-lg font-semibold hover:bg-violet-700 transition" @click="printEntry(i)" title="Print Entry">
-                            <?php esc_html_e('Print Entry', 'save-wpf-entries'); ?>
-                        </button>
-
                         <button
                             @click="toggleModalReadStatus()"
                             class="px-5 py-2.5 cursor-pointer bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition">

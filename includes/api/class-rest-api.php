@@ -8,6 +8,8 @@ use WP_REST_Server;
 
 /**
  * REST API handler for WPForms entries.
+ * @since 1.0.0
+ * @package wp-save-entries
  */
 class Rest_API
 {
@@ -46,7 +48,7 @@ class Rest_API
                     'permission_callback' => '__return_true', // Use custom permission check later
                     'args'                => [
                         'per_page' => [
-                            'description'       => 'Number of entries per page.',
+                            'description'       => __( 'Number of entries per page.', 'save-wpf-entries' ),
                             'type'              => 'integer',
                             'default'           => 50,
                             'sanitize_callback' => 'absint',
@@ -55,32 +57,49 @@ class Rest_API
                             },
                         ],
                         'page' => [
-                            'description'       => 'Page number.',
+                            'description'       => __('Page number.', 'save-wpf-entries'),
                             'type'              => 'integer',
                             'default'           => 1,
                             'sanitize_callback' => 'absint',
                         ],
                         'form_id' => [
-                            'description'       => 'Limit entries to a specific form ID.',
+                            'description'       => __('Limit entries to a specific form ID.', 'save-wpf-entries'),
                             'type'              => 'integer',
                             'required'          => false,
                             'sanitize_callback' => 'absint',
                         ],
                         'search' => [
-                            'description'       => 'Search within entry values.',
+                            'description'       => __('Search within entry values.', 'save-wpf-entries'),
                             'type'              => 'string',
                             'required'          => false,
                             'sanitize_callback' => 'sanitize_text_field',
                         ],
                         'status' => [
-                            'description'       => 'Filter by read/unread status.',
+                            'description'       => __('Filter by read/unread status.', 'save-wpf-entries'),
                             'type'              => 'string',
                             'enum'              => ['read', 'unread'],
                             'required'          => false,
                         ],
+                        'date_from' => [
+                            'description'       => __('Filter by submission start date (YYYY-MM-DD)', 'save-wpf-entries'),
+                            'type'              => 'string',
+                            'required'          => false,
+                            'sanitize_callback' => 'sanitize_text_field',
+                            'validate_callback' => function( $param ) {
+                                return preg_match( '/^\d{4}-\d{2}-\d{2}$/', $param );
+                            },
+                        ],
+                        'date_to' => [
+                            'description'       => __('Filter by submission end date (YYYY-MM-DD)', 'save-wpf-entries'),
+                            'type'              => 'string',
+                            'required'          => false,
+                            'sanitize_callback' => 'sanitize_text_field',
+                            'validate_callback' => function( $param ) {
+                                return preg_match( '/^\d{4}-\d{2}-\d{2}$/', $param );
+                            },
+                        ],
                     ],
                 ],
-
             ],
             [
                 'route' => '/create',
@@ -91,6 +110,7 @@ class Rest_API
                     'permission_callback' => '__return_true',
                     'args' => [
                         'form_id' => [
+                            'description' => __('Form ID for the entry.', 'save-wpf-entries'),
                             'required' => true,
                             'validate_callback' => function ($param) {
                                 return is_string($param) || is_numeric($param);
@@ -98,12 +118,14 @@ class Rest_API
                             'sanitize_callback' => 'sanitize_text_field',
                         ],
                         'entry' => [
+                            'description' => __('Entry data as an associative array.', 'save-wpf-entries'),
                             'required' => true,
                             'validate_callback' => function ($param) {
                                 return is_array($param);
                             },
                         ],
                         'status' => [
+                            'description' => __('Read/unread status for the entry.', 'save-wpf-entries'),
                             'required' => false,
                             'validate_callback' => function ($param) {
                                 return in_array($param, ['unread', 'read'], true);
@@ -112,6 +134,7 @@ class Rest_API
                             'default' => 'unread',
                         ],
                         'is_favorite' => [
+                            'description' => __('Mark entry as favorite (0 or 1).', 'save-wpf-entries'),
                             'required' => false,
                             'validate_callback' => function ($param) {
                                 return is_numeric($param) && in_array($param, [0, 1], true);
@@ -120,6 +143,7 @@ class Rest_API
                             'default' => '0'
                         ],
                         'note' => [
+                            'description' => __('Internal note for the entry (max 500 words).', 'save-wpf-entries'),
                             'required' => false,
                             'validate_callback' => function ($param) {
                                 return is_string($param) && str_word_count($param) <= 500;
@@ -127,6 +151,7 @@ class Rest_API
                             'sanitize_callback' => 'sanitize_text_field',
                         ],
                         'exported_to_csv' => [
+                            'description' => __('Exported to CSV flag (0 or 1).', 'save-wpf-entries'),
                             'required' => false,
                             'validate_callback' => function ($param) {
                                 return is_numeric($param) && in_array($param, [0, 1], true);
@@ -135,6 +160,7 @@ class Rest_API
                             'default' => 0
                         ],
                         'synced_to_gsheet' => [
+                            'description' => __('Synced to Google Sheet flag (0 or 1).', 'save-wpf-entries'),
                             'required' => false,
                             'validate_callback' => function ($param) {
                                 return is_numeric($param) && in_array($param, [0, 1], true);
@@ -143,6 +169,7 @@ class Rest_API
                             'default' => 0
                         ],
                         'printed_at' => [
+                            'description' => __('Printed at datetime (Y-m-d H:i:s).', 'save-wpf-entries'),
                             'required' => false,
                             'validate_callback' => function ($param) {
                                 return strtotime($param) !== false;
@@ -152,6 +179,7 @@ class Rest_API
                             },
                         ],
                         'resent_at' => [
+                            'description' => __('Resent at datetime (Y-m-d H:i:s).', 'save-wpf-entries'),
                             'required' => false,
                             'validate_callback' => function ($param) {
                                 return strtotime($param) !== false;
@@ -187,6 +215,7 @@ class Rest_API
                     'permission_callback' => '__return_true',
                     'args' => [
                         'id' => [
+                            'description' => __('Entry ID to update.', 'save-wpf-entries'),
                             'required' => true,
                             'sanitize_callback' => 'absint',
                             'validate_callback' => function ($param) {
@@ -194,6 +223,7 @@ class Rest_API
                             },
                         ],
                         'form_id' => [
+                            'description' => __('Form ID for the entry.', 'save-wpf-entries'),
                             'required' => true,
                             'sanitize_callback' => 'absint',
                             'validate_callback' => function ($param) {
@@ -201,12 +231,14 @@ class Rest_API
                             },
                         ],
                         'entry' => [
+                            'description' => __('Entry data as an associative array.', 'save-wpf-entries'),
                             'required' => false,
                             'validate_callback' => function ($param) {
                                 return is_array($param);
                             },
                         ],
                         'status' => [
+                            'description' => __('Read/unread status for the entry.', 'save-wpf-entries'),
                             'required' => false,
                             'validate_callback' => function ($param) {
                                 return in_array($param, ['unread', 'read'], true);
@@ -215,6 +247,7 @@ class Rest_API
                             'default' => 'unread',
                         ],
                         'note' => [
+                            'description' => __('Internal note for the entry (max 500 words).', 'save-wpf-entries'),
                             'required' => false,
                             'validate_callback' => function ($param) {
                                 return is_string($param) && str_word_count($param) <= 500;
@@ -222,6 +255,7 @@ class Rest_API
                             'sanitize_callback' => 'sanitize_text_field',
                         ],
                         'is_favorite' => [
+                            'description' => __('Mark entry as favorite (0 or 1).', 'save-wpf-entries'),
                             'required' => false,
                             'validate_callback' => function ($param) {
                                 return is_numeric($param) && in_array($param, [0, 1], true);
@@ -230,6 +264,7 @@ class Rest_API
                             'default' => 0
                         ],
                         'exported_to_csv' => [
+                            'description' => __('Exported to CSV flag (0 or 1).', 'save-wpf-entries'),
                             'required' => false,
                             'validate_callback' => function ($param) {
                                 return is_numeric($param) && in_array($param, [0, 1], true);
@@ -238,6 +273,7 @@ class Rest_API
                             'default' => 0
                         ],
                         'synced_to_gsheet' => [
+                            'description' => __('Synced to Google Sheet flag (0 or 1).', 'save-wpf-entries'),
                             'required' => false,
                             'validate_callback' => function ($param) {
                                 return is_numeric($param) && in_array($param, [0, 1], true);
@@ -246,6 +282,7 @@ class Rest_API
                             'default' => 0
                         ],
                         'printed_at' => [
+                            'description' => __('Printed at datetime (Y-m-d H:i:s).', 'save-wpf-entries'),
                             'required' => false,
                             'validate_callback' => function ($param) {
                                 return strtotime($param) !== false;
@@ -255,6 +292,7 @@ class Rest_API
                             },
                         ],
                         'resent_at' => [
+                            'description' => __('Resent at datetime (Y-m-d H:i:s).', 'save-wpf-entries'),
                             'required' => false,
                             'validate_callback' => function ($param) {
                                 return strtotime($param) !== false;
@@ -316,6 +354,8 @@ class Rest_API
         $search   = sanitize_text_field($request->get_param('search'));
         $per_page = absint($request->get_param('per_page')) ?: 50;
         $page     = absint($request->get_param('page')) ?: 1;
+        $date_from = $request->get_param( 'date_from' );
+        $date_to = $request->get_param( 'date_to');
         $offset   = ($page - 1) * $per_page;
 
         $where  = 'WHERE 1=1';
@@ -334,6 +374,16 @@ class Rest_API
         if ($search) {
             $where    .= ' AND entry LIKE %s';
             $params[] = '%' . $wpdb->esc_like($search) . '%';
+        }
+        
+        if ( $date_from ) {
+            $where .= ' AND created_at >= %s';
+            $params[] = $date_from . ' 00:00:00';
+        }
+
+        if ( $date_to ) {
+            $where .= ' AND created_at <= %s';
+            $params[] = $date_to . ' 23:59:59';
         }
 
         $params[] = $per_page;
