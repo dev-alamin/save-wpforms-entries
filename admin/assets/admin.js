@@ -1,8 +1,16 @@
-function formTable(entries) {
+function formTable(form) {
     return {
         open: false,
-        all: entries,
-        keys: Object.keys(entries[0]?.entry || {}),
+        formId: form.form_id,
+        formTitle: form.form_title,
+        totalEntries: form.entry_count,
+        entries: [],
+        currentPage: 1,
+        pageSize: 2,
+        totalPages: 1,
+        sortAsc: true,
+        sortAscStatus: true,
+
         entryModalOpen: false,
         selectedEntry: {},
         bgClasses: [
@@ -12,29 +20,77 @@ function formTable(entries) {
             "swpfe-row-bg-4",
         ],
 
-        // Pagination state
-        currentPage: 1,
-        pageSize: 5,
-
-        // Computed: paginated entries
         get paginatedEntries() {
-            const start = (this.currentPage - 1) * this.pageSize;
-            return this.all.slice(start, start + this.pageSize);
+            return this.entries;
+        },
+        async fetchEntries() {
+            try {
+                const query = new URLSearchParams({
+                    form_id: this.formId,
+                    page: this.currentPage,
+                    per_page: this.pageSize
+                });
+
+                const res = await fetch(`http://localhost/devspark/wordpress-backend/wp-json/wpforms/entries/v1/entries?${query}`);
+                const data = await res.json();
+
+                // Flat array now, no more need for lookup
+                const rawEntries = Array.isArray(data.entries) ? data.entries : [];
+
+                this.entries = rawEntries.map(entry => ({
+                    ...entry,
+                    is_favorite: Number(entry.is_favorite),
+                    synced_to_gsheet: Number(entry.synced_to_gsheet),
+                    exported_to_csv: Number(entry.exported_to_csv),
+                    printed_at: entry.printed_at ?? null,
+                    resent_at: entry.resent_at ?? null,
+                    status: entry.status ?? 'unread',
+                }));
+
+                this.totalEntries = Number(data.total) || rawEntries.length;
+                this.totalPages = Math.ceil(this.totalEntries / this.pageSize);
+            } catch (error) {
+                console.error("Failed to fetch entries:", error);
+            }
+        },
+        toggleOpen() {
+            this.open = !this.open;
+            if (this.open && this.entries.length === 0) {
+                this.fetchEntries();
+            }
         },
 
-        sortAsc: true,
-        sortAscStatus: true,
+        goToPage(page) {
+            if (page < 1 || page > this.totalPages) return;
+            this.currentPage = page;
+            this.fetchEntries();
+        },
+
+        nextPage() {
+            if (this.currentPage < this.totalPages) {
+                this.currentPage++;
+                this.fetchEntries();
+            }
+        },
+
+        prevPage() {
+            if (this.currentPage > 1) {
+                this.currentPage--;
+                this.fetchEntries();
+            }
+        },
 
         sortByDate() {
-            this.all.sort((a, b) => {
+            this.entries.sort((a, b) => {
                 return this.sortAsc
                     ? new Date(a.date) - new Date(b.date)
                     : new Date(b.date) - new Date(a.date);
             });
             this.sortAsc = !this.sortAsc;
         },
+
         sortByStatus() {
-            this.all.sort((a, b) => {
+            this.entries.sort((a, b) => {
                 if (a.status === b.status) return 0;
 
                 if (this.sortAscStatus) {
@@ -46,39 +102,24 @@ function formTable(entries) {
 
             this.sortAscStatus = !this.sortAscStatus;
         },
-        // Computed: total pages
-        get totalPages() {
-            return Math.ceil(this.all.length / this.pageSize) || 1;
-        },
 
         showEntry(i) {
-            const realIndex = (this.currentPage - 1) * this.pageSize + i;
-            const entry = this.all[realIndex];
-
+            const entry = this.entries[i];
             this.selectedEntry = entry;
             this.entryModalOpen = true;
 
             if (entry.status === "unread") {
-                entry.status = "read"; // Instant UI update
-
-                // Also update backend
-                this.updateEntry(realIndex, { status: "read" });
+                entry.status = "read";
+                this.updateEntry(i, { status: "read" });
             }
         },
+
         markAs(status) {
             if (!this.entryModalOpen) return;
             this.selectedEntry.status = status;
             this.entryModalOpen = false;
         },
-        deleteEntry() {
-            if (!this.entryModalOpen) return;
-            this.all = this.all.filter((e) => e !== this.selectedEntry);
-            this.entryModalOpen = false;
-            // Reset page if current page is out of bounds after deletion
-            if (this.currentPage > this.totalPages) {
-                this.currentPage = this.totalPages;
-            }
-        },
+
         copied: false,
 
         copyEntryToClipboard() {
@@ -86,33 +127,44 @@ function formTable(entries) {
                 .map(([key, value]) => `${key}: ${value || "-"}`)
                 .join("\n");
 
-            navigator.clipboard
-                .writeText(lines)
-                .then(() => {
-                    this.copied = true;
-                    setTimeout(() => {
-                        this.copied = false;
-                    }, 2000);
-                })
-                .catch((err) => {
-                    console.error("Copy failed:", err);
-                });
+            navigator.clipboard.writeText(lines).then(() => {
+                this.copied = true;
+                setTimeout(() => {
+                    this.copied = false;
+                }, 2000);
+            }).catch((err) => {
+                console.error("Copy failed:", err);
+            });
         },
 
-        // Pagination controls
-        goToPage(page) {
-            if (page >= 1 && page <= this.totalPages) {
-                this.currentPage = page;
-            }
-        },
-        nextPage() {
-            if (this.currentPage < this.totalPages) {
-                this.currentPage++;
-            }
-        },
-        prevPage() {
-            if (this.currentPage > 1) {
-                this.currentPage--;
+        async updateEntry(index, changes = {}) {
+            const entry = this.entries[index];
+
+            const payload = {
+                id: entry.id,
+                form_id: entry.form_id,
+                entry: entry.entry,
+                status: entry.status,
+                is_favorite: Number(entry.is_favorite),
+                note: entry.note,
+                exported_to_csv: Number(entry.exported_to_csv),
+                synced_to_gsheet: Number(entry.synced_to_gsheet),
+                printed_at: entry.printed_at,
+                resent_at: entry.resent_at,
+                ...changes,
+            };
+
+            try {
+                const res = await fetch("http://localhost/devspark/wordpress-backend/wp-json/wpforms/entries/v1/update", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                });
+
+                const data = await res.json();
+                console.log("Entry updated:", data);
+            } catch (error) {
+                console.error("Failed to update entry:", error);
             }
         },
 
@@ -134,13 +186,7 @@ function formTable(entries) {
                 const data = await response.json();
 
                 if (data.deleted) {
-                    // Remove from local array to update UI
-                    const index = this.paginatedEntries.findIndex(e => e.id === this.selectedEntry.id);
-                    if (index !== -1) {
-                        this.paginatedEntries.splice(index, 1);
-                    }
-
-                    // Close modal
+                    this.entries = this.entries.filter(e => e.id !== this.selectedEntry.id);
                     this.entryModalOpen = false;
                     this.selectedEntry = null;
 
@@ -150,128 +196,23 @@ function formTable(entries) {
 
                     console.log('Entry deleted successfully');
                 } else {
-                    console.error('Failed to delete entry:', data.message || data);
                     alert('Failed to delete entry: ' + (data.message || 'Unknown error'));
                 }
             } catch (error) {
-                console.error('Delete request failed:', error);
                 alert('Delete request failed. Check console for details.');
-            }
-        },
-    };
-}
-
-function entriesApp() {
-    return {
-        grouped: {},
-        paginatedEntries: [],
-        currentPage: 1,
-        perPage: 20,
-        selectedFormId: null,
-        totalPages: 1,
-
-        async fetchEntries(
-            formId = this.selectedFormId,
-            page = this.currentPage,
-            perPage = this.perPage
-        ) {
-            try {
-                const query = new URLSearchParams({
-                    form_id: formId,
-                    page,
-                    per_page: perPage,
-                });
-
-                const res = await fetch(
-                    `http://localhost/devspark/wordpress-backend/wp-json/wpforms/entries/v1/entries?${query}`
-                );
-                const data = await res.json();
-
-                this.grouped = data;
-
-                // Normalize values to ensure Alpine reacts properly and backend gets correct types
-                this.paginatedEntries =
-                    Object.values(data)[0]?.map((entry) => ({
-                        ...entry,
-                        is_favorite: Number(entry.is_favorite),
-                        synced_to_gsheet: Number(entry.synced_to_gsheet),
-                        exported_to_csv: Number(entry.exported_to_csv),
-                        printed_at: entry.printed_at ?? null,
-                        resent_at: entry.resent_at ?? null,
-                        status: entry.status ?? "unread",
-                    })) || [];
-
-                this.selectedFormId = formId;
-                this.currentPage = page;
-            } catch (error) {
-                console.error("Failed to fetch entries:", error);
+                console.error('Delete request failed:', error);
             }
         },
 
-        nextPage() {
-            if (this.currentPage < this.totalPages) {
-                this.currentPage++;
-                this.fetchEntries();
-            }
-        },
-
-        prevPage() {
-            if (this.currentPage > 1) {
-                this.currentPage--;
-                this.fetchEntries();
-            }
-        },
-
-        goToPage(page) {
-            if (page !== this.currentPage) {
-                this.currentPage = page;
-                this.fetchEntries();
-            }
-        },
-
-        async updateEntry(index, changes = {}) {
-            const entry = this.paginatedEntries[index];
-
-            const payload = {
-                id: entry.id,
-                form_id: entry.form_id,
-                entry: entry.entry,
-                status: entry.status,
-                is_favorite: Number(entry.is_favorite),
-                note: entry.note,
-                exported_to_csv: Number(entry.exported_to_csv),
-                synced_to_gsheet: Number(entry.synced_to_gsheet),
-                printed_at: entry.printed_at,
-                resent_at: entry.resent_at,
-                ...changes,
-            };
-
-            try {
-                const res = await fetch(
-                    "http://localhost/devspark/wordpress-backend/wp-json/wpforms/entries/v1/update",
-                    {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(payload),
-                    }
-                );
-
-                const data = await res.json();
-                console.log("Entry updated:", data);
-            } catch (error) {
-                console.error("Failed to update entry:", error);
-            }
+        toggleFavorite(index) {
+            const entry = this.entries[index];
+            entry.is_favorite = entry.is_favorite === 1 ? 0 : 1;
+            this.updateEntry(index, { is_favorite: entry.is_favorite });
         },
         toggleRead(index) {
             const entry = this.paginatedEntries[index];
             entry.status = entry.status === "unread" ? "read" : "unread";
             this.updateEntry(index, { status: entry.status });
-        },
-
-        toggleFavorite(index) {
-            const entry = this.paginatedEntries[index];
-            entry.is_favorite = entry.is_favorite === 1 ? 0 : 1;
-            this.updateEntry(index, { is_favorite: entry.is_favorite });
         },
         toggleModalReadStatus() {
             const entry = this.selectedEntry;
@@ -286,70 +227,72 @@ function entriesApp() {
             }
         },
         syncToGoogleSheet(index) {
-            const entry = this.paginatedEntries[index];
+            const entry = this.entries[index];
             entry.synced_to_gsheet = 1;
             this.updateEntry(index, { synced_to_gsheet: 1 });
         },
+
         printEntry(index) {
-            const entry = this.paginatedEntries[index];
-            const formTitle = entry.form_title || "Form Entry"; // ← Optional fallback
+            const entry = this.entries[index];
+            const formTitle = entry.form_title || "Form Entry";
+
             entry.printed_at = new Date().toISOString().slice(0, 19).replace("T", " ");
             this.updateEntry(index, { printed_at: entry.printed_at });
 
             const entryData = entry.entry || {};
             const formattedFields = Object.entries(entryData).map(([key, value]) => {
                 return `
-            <div style="margin-bottom: 16px;">
-                <div style="font-weight: 600; font-size: 15px; color: #2d3748;">${key}</div>
-                <div style="margin-top: 4px; font-size: 14px; color: #1a202c;">${value}</div>
-                <hr style="border-top: 1px dashed #ddd; margin-top: 10px;" />
-            </div>
-        `;
+                <div style="margin-bottom: 16px;">
+                    <div style="font-weight: 600; font-size: 15px; color: #2d3748;">${key}</div>
+                    <div style="margin-top: 4px; font-size: 14px; color: #1a202c;">${value}</div>
+                    <hr style="border-top: 1px dashed #ddd; margin-top: 10px;" />
+                </div>
+            `;
             }).join("");
 
             const printWindow = window.open("", "", "width=1000,height=700");
             printWindow.document.write(`
-        <html>
-        <head>
-            <title>${formTitle} - Entry Details</title>
-            <style>
-                body {
-                    font-family: 'Segoe UI', Tahoma, sans-serif;
-                    padding: 30px;
-                    background: #f3f4f6;
-                }
-                .entry-box {
-                    max-width: 800px;
-                    margin: auto;
-                    background: white;
-                    padding: 40px;
-                    border-radius: 10px;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-                }
-                .entry-header {
-                    font-size: 24px;
-                    font-weight: bold;
-                    text-align: center;
-                    color: #1a202c;
-                    margin-bottom: 30px;
-                    border-bottom: 2px solid #e2e8f0;
-                    padding-bottom: 10px;
-                }
-            </style>
-        </head>
-        <body>
-            <div class="entry-box">
-                <div class="entry-header">${formTitle}</div>
-                ${formattedFields}
-            </div>
-        </body>
-        </html>
-    `);
-
+                <html>
+                <head>
+                    <title>${formTitle} - Entry Details</title>
+                    <style>
+                        body {
+                            font-family: 'Segoe UI', Tahoma, sans-serif;
+                            padding: 30px;
+                            background: #f3f4f6;
+                        }
+                        .entry-box {
+                            max-width: 800px;
+                            margin: auto;
+                            background: white;
+                            padding: 40px;
+                            border-radius: 10px;
+                            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                        }
+                        .entry-header {
+                            font-size: 24px;
+                            font-weight: bold;
+                            text-align: center;
+                            color: #1a202c;
+                            margin-bottom: 30px;
+                            border-bottom: 2px solid #e2e8f0;
+                            padding-bottom: 10px;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="entry-box">
+                        <div class="entry-header">${formTitle}</div>
+                        ${formattedFields}
+                    </div>
+                </body>
+                </html>
+            `);
             printWindow.document.close();
             printWindow.focus();
             printWindow.print();
         },
+
         timeAgo(dateString) {
             const date = new Date(dateString);
             const now = new Date();
@@ -382,6 +325,31 @@ function entriesApp() {
                 "en-US",
                 isThisYear ? optionsSameYear : optionsLastYear
             );
-        },
+        }
     };
 }
+
+function entriesApp() {
+    return {
+        forms: [],
+        setError: false,
+
+        async fetchForms() {
+            try {
+                const res = await fetch('http://localhost/devspark/wordpress-backend/wp-json/wpforms/entries/v1/forms');
+                
+                if (!res.ok) {
+                    // HTTP error status (404, 500, etc)
+                    throw new Error(`HTTP error! status: ${res.status}`);
+                }
+                
+                const data = await res.json();
+                this.forms = data; // Expected: [{ id, title, count }]
+            } catch (error) {
+                this.setError = true;
+                console.error("Failed to fetch forms:", error);
+            }
+        }
+    };
+}
+

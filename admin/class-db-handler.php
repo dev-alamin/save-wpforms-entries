@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Class DB_Handler
  *
@@ -8,9 +9,11 @@
  *
  * @package SWPFE
  */
+
 namespace SWPFE;
 
-class DB_Handler {
+class DB_Handler
+{
 
     /**
      * Get the name of the custom entries table with the WordPress table prefix.
@@ -18,7 +21,8 @@ class DB_Handler {
      * @global \wpdb $wpdb WordPress database abstraction object.
      * @return string The full table name for storing WPForms entries.
      */
-    public static function table_name() {
+    public static function table_name()
+    {
         global $wpdb;
         return $wpdb->prefix . 'swpfe_entries';
     }
@@ -31,7 +35,8 @@ class DB_Handler {
      * @global \wpdb $wpdb WordPress database abstraction object.
      * @return void
      */
-    public static function create_table() {
+    public static function create_table()
+    {
         global $wpdb;
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
@@ -41,22 +46,27 @@ class DB_Handler {
         $charset_collate = $wpdb->get_charset_collate();
 
         $sql = "CREATE TABLE $table (
-            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            form_id BIGINT UNSIGNED NOT NULL,
-            entry LONGTEXT NOT NULL,
-            status VARCHAR(20) DEFAULT 'unread',            -- read/unread
-            is_favorite TINYINT(1) DEFAULT 0,               -- marked favorite
-            note TEXT DEFAULT NULL,                         -- internal comment
-            exported_to_csv TINYINT(1) DEFAULT 0,           -- 0 = no, 1 = exported
-            synced_to_gsheet TINYINT(1) DEFAULT 0,          -- synced flag
-            printed_at DATETIME DEFAULT NULL,               -- print log
-            resent_at DATETIME DEFAULT NULL,                -- last resend time
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (id),
-            KEY form_id (form_id)
-        ) $charset_collate;";
+                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                form_id BIGINT UNSIGNED NOT NULL,
+                entry JSON NOT NULL,                          -- Use JSON column type for structured form entry data
+                status ENUM('unread','read') DEFAULT 'unread', -- More strict status enum
+                is_favorite BOOLEAN DEFAULT FALSE,
+                note TEXT DEFAULT NULL,
+                exported_to_csv BOOLEAN DEFAULT FALSE,
+                synced_to_gsheet BOOLEAN DEFAULT FALSE,
+                printed_at DATETIME DEFAULT NULL,
+                resent_at DATETIME DEFAULT NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-        dbDelta( $sql );
+                PRIMARY KEY (id),
+                KEY idx_form_id (form_id),
+                KEY idx_status (status),
+                KEY idx_created_at (created_at)
+            ) $charset_collate;
+            ";
+
+        dbDelta($sql);
 
         new \SWPFE\Capabilities();
     }

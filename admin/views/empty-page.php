@@ -1,6 +1,7 @@
 <div
-    x-show="Object.keys(grouped).length === 0"
+    x-show="setError && Object.keys(forms).length === 0"
     class="flex flex-col items-center justify-center mt-20 space-y-6 text-gray-600">
+    <!-- <pre x-text="JSON.stringify(forms, null, 2)"></pre> -->
     <!-- Lottie JSON animation (optional, needs lottie-player script) -->
     <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
     <lottie-player

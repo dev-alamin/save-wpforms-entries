@@ -348,22 +348,22 @@ class Rest_API
     {
         global $wpdb;
 
-        $table    = $wpdb->prefix . 'swpfe_entries';
-        $form_id  = absint($request->get_param('form_id'));
-        $status   = $request->get_param('status');
-        $search   = sanitize_text_field($request->get_param('search'));
-        $per_page = absint($request->get_param('per_page')) ?: 50;
-        $page     = absint($request->get_param('page')) ?: 1;
-        $date_from = $request->get_param( 'date_from' );
-        $date_to = $request->get_param( 'date_to');
-        $offset   = ($page - 1) * $per_page;
+        $table     = $wpdb->prefix . 'swpfe_entries';
+        $form_id   = absint($request->get_param('form_id'));
+        $status    = $request->get_param('status');
+        $search    = sanitize_text_field($request->get_param('search'));
+        $per_page  = absint($request->get_param('per_page')) ?: 50;
+        $page      = absint($request->get_param('page')) ?: 1;
+        $date_from = $request->get_param('date_from');
+        $date_to   = $request->get_param('date_to');
+        $offset    = ($page - 1) * $per_page;
 
         $where  = 'WHERE 1=1';
         $params = [];
 
         if ($form_id) {
-            $where     .= ' AND form_id = %d';
-            $params[]  = $form_id;
+            $where    .= ' AND form_id = %d';
+            $params[] = $form_id;
         }
 
         if ($status === 'read' || $status === 'unread') {
@@ -375,17 +375,21 @@ class Rest_API
             $where    .= ' AND entry LIKE %s';
             $params[] = '%' . $wpdb->esc_like($search) . '%';
         }
-        
-        if ( $date_from ) {
-            $where .= ' AND created_at >= %s';
+
+        if ($date_from) {
+            $where    .= ' AND created_at >= %s';
             $params[] = $date_from . ' 00:00:00';
         }
 
-        if ( $date_to ) {
-            $where .= ' AND created_at <= %s';
+        if ($date_to) {
+            $where    .= ' AND created_at <= %s';
             $params[] = $date_to . ' 23:59:59';
         }
 
+        // Clone params to use in COUNT query
+        $count_params = $params;
+
+        // Add LIMIT + OFFSET
         $params[] = $per_page;
         $params[] = $offset;
 
@@ -397,48 +401,38 @@ class Rest_API
         $results = $wpdb->get_results($sql);
         $data    = [];
 
+        // Total count (no LIMIT)
+        $count_sql = $wpdb->prepare("SELECT COUNT(*) FROM $table $where", ...$count_params);
+        $total_count = (int) $wpdb->get_var($count_sql);
+
         foreach ($results as $row) {
             $entry_raw = maybe_unserialize($row->entry);
             $entry_normalized = [];
 
             foreach ($entry_raw as $key => $value) {
-                // Change case: choose one below based on your needs
-
-                // Title Case:
-                $new_key = ucwords(strtolower($key));
-
-                // OR All lowercase:
-                // $new_key = strtolower( $key );
-
-                // OR Remove extra spaces & fix brackets:
-                // $new_key = preg_replace('/\s+/', ' ', trim($key));
-
-                $entry_normalized[$new_key] = $value;
+                $entry_normalized[ucwords(strtolower($key))] = $value;
             }
 
-            $item = [
-                'id'         => $row->id,
-                'form_title' => get_the_title($row->form_id),
-                'entry'      => $entry_normalized,
-                'status'       => $row->status,
-                'date'       => $row->created_at,
-                'note'       => $row->note,
+            $data[] = [
+                'id'            => $row->id,
+                'form_title'    => get_the_title($row->form_id),
+                'entry'         => $entry_normalized,
+                'status'        => $row->status,
+                'date'          => $row->created_at,
+                'note'          => $row->note,
                 'is_favorite'   => (bool) $row->is_favorite,
-                'exported'   => (bool) $row->exported_to_csv,
-                'synced'     => (bool) $row->synced_to_gsheet,
-                'printed_at' => $row->printed_at,
-                'resent_at'  => $row->resent_at,
-                'form_id' => $row->form_id,
+                'exported'      => (bool) $row->exported_to_csv,
+                'synced'        => (bool) $row->synced_to_gsheet,
+                'printed_at'    => $row->printed_at,
+                'resent_at'     => $row->resent_at,
+                'form_id'       => $row->form_id,
             ];
-
-            if ($form_id) {
-                $data[] = $item;
-            } else {
-                $data[$row->form_id][] = $item;
-            }
         }
 
-        return rest_ensure_response($data);
+        return rest_ensure_response([
+            'entries' => $data,           // ✅ Flat array now
+            'total'   => $total_count     // ✅ Real total count
+        ]);
     }
 
     public function get_forms()
