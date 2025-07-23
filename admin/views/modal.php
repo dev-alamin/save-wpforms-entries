@@ -27,7 +27,7 @@
 
                     <!-- Entry Details Header with Copy Button -->
                     <div class="flex items-center justify-between mb-6">
-                        <h2 class="text-2xl font-extrabold text-indigo-700">Entry Details</h2>
+                        <h2 class="text-2xl font-extrabold text-indigo-700"> <?php esc_html_e('Entry Details', 'save-wpf-entries'); ?></h2>
 
                         <button
                             @click="copyEntryToClipboard"
@@ -48,30 +48,37 @@
                     <div class="space-y-3">
                         <template x-for="(value, key) in selectedEntry.entry" :key="key">
                             <div class="text-base sm:text-lg text-gray-800 border-b border-dashed border-gray-300 pb-2">
-                                <strong class="font-semibold text-gray-700" x-text="key + ':'"></strong>
-                                <span class="ml-1" x-text="value || '-'"></span>
+                                <strong
+                                    class="font-semibold text-gray-700"
+                                    x-text="key.charAt(0).toUpperCase() + key.slice(1) + ':'">
+                                </strong>
+                                <span class="ml-1" x-text="value || '<?php echo esc_js(__('-', 'save-wpf-entries')); ?>'"></span>
                             </div>
                         </template>
                     </div>
 
+
                     <!-- Actions -->
                     <div class="mt-8 flex flex-wrap gap-4 justify-end">
+                        <button class="py-2.5 px-5 cursor-pointer bg-violet-600 text-white rounded-lg font-semibold hover:bg-violet-700 transition" @click="printEntry(i)" title="Print Entry">
+                            <?php esc_html_e('Print Entry', 'save-wpf-entries'); ?>
+                        </button>
+
                         <button
                             @click="toggleModalReadStatus()"
-                            class="px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition">
+                            class="px-5 py-2.5 cursor-pointer bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition">
                             <template x-if="selectedEntry.status === 'unread'">
-                                ✅ <span>Mark as Read</span>
+                                ✅ <span><?php esc_html_e('Mark as Read', 'save-wpf-entries'); ?></span>
                             </template>
                             <template x-if="selectedEntry.status === 'read'">
-                                🕓 <span>Mark as Unread</span>
+                                🕓 <span><?php esc_html_e('Mark as unread', 'save-wpf-entries'); ?></span>
                             </template>
                         </button>
 
-
                         <button
                             @click="deleteEntry()"
-                            class="px-5 py-2.5 bg-red-600 text-white rounded-lg !font-bold hover:bg-red-700 transition">
-                            🗑️ Delete
+                            class="px-5 py-2.5 cursor-pointer bg-red-600 text-white rounded-lg !font-bold hover:bg-red-700 transition">
+                            🗑️ <?php esc_html_e('Delete', 'save-wpf-entries'); ?>
                         </button>
 
                     </div>

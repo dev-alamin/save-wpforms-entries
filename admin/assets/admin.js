@@ -144,9 +144,9 @@ function formTable(entries) {
                     this.entryModalOpen = false;
                     this.selectedEntry = null;
 
-                                if (this.currentPage > this.totalPages) {
-                this.currentPage = this.totalPages;
-            }
+                    if (this.currentPage > this.totalPages) {
+                        this.currentPage = this.totalPages;
+                    }
 
                     console.log('Entry deleted successfully');
                 } else {
@@ -160,6 +160,7 @@ function formTable(entries) {
         },
     };
 }
+
 function entriesApp() {
     return {
         grouped: {},
@@ -289,19 +290,64 @@ function entriesApp() {
             entry.synced_to_gsheet = 1;
             this.updateEntry(index, { synced_to_gsheet: 1 });
         },
-
         printEntry(index) {
             const entry = this.paginatedEntries[index];
-            entry.printed_at = new Date()
-                .toISOString()
-                .slice(0, 19)
-                .replace("T", " ");
+            const formTitle = entry.form_title || "Form Entry"; // ← Optional fallback
+            entry.printed_at = new Date().toISOString().slice(0, 19).replace("T", " ");
             this.updateEntry(index, { printed_at: entry.printed_at });
 
-            const printWindow = window.open("", "", "width=1000,height=600");
-            printWindow.document.write(
-                "<pre>" + JSON.stringify(entry, null, 2) + "</pre>"
-            );
+            const entryData = entry.entry || {};
+            const formattedFields = Object.entries(entryData).map(([key, value]) => {
+                return `
+            <div style="margin-bottom: 16px;">
+                <div style="font-weight: 600; font-size: 15px; color: #2d3748;">${key}</div>
+                <div style="margin-top: 4px; font-size: 14px; color: #1a202c;">${value}</div>
+                <hr style="border-top: 1px dashed #ddd; margin-top: 10px;" />
+            </div>
+        `;
+            }).join("");
+
+            const printWindow = window.open("", "", "width=1000,height=700");
+            printWindow.document.write(`
+        <html>
+        <head>
+            <title>${formTitle} - Entry Details</title>
+            <style>
+                body {
+                    font-family: 'Segoe UI', Tahoma, sans-serif;
+                    padding: 30px;
+                    background: #f3f4f6;
+                }
+                .entry-box {
+                    max-width: 800px;
+                    margin: auto;
+                    background: white;
+                    padding: 40px;
+                    border-radius: 10px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                }
+                .entry-header {
+                    font-size: 24px;
+                    font-weight: bold;
+                    text-align: center;
+                    color: #1a202c;
+                    margin-bottom: 30px;
+                    border-bottom: 2px solid #e2e8f0;
+                    padding-bottom: 10px;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="entry-box">
+                <div class="entry-header">${formTitle}</div>
+                ${formattedFields}
+            </div>
+        </body>
+        </html>
+    `);
+
+            printWindow.document.close();
+            printWindow.focus();
             printWindow.print();
         },
 
