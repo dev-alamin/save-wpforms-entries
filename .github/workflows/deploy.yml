@@ -1,0 +1,36 @@
+name: Deploy to DigitalOcean
+
+on:
+  push:
+    branches:
+      - main  # change if your production branch is different
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.DO_SSH_KEY }}
+
+      - name: Sync files to DigitalOcean server
+        run: |
+          rsync -avz --delete \
+            --exclude '.git/' \
+            --exclude 'node_modules/' \
+            ./ ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }}:/var/www/shaliktheme/wp-content/plugins/save-wpforms-entries
+        env:
+          RSYNC_RSH: ssh
+
+      - name: Optional remote commands
+        run: |
+          ssh ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} << 'EOF'
+            cd /var/www/shaliktheme/wp-content/plugins/save-wpforms-entries
+            # wp cache flush
+            # sudo systemctl restart php-fpm
+          EOF

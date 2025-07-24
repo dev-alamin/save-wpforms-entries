@@ -31,7 +31,11 @@ function formTable(form) {
                     per_page: this.pageSize,
                 });
 
-                const res = await fetch(`http://localhost/devspark/wordpress-backend/wp-json/wpforms/entries/v1/entries?${query}`);
+                const res = await fetch(`http://localhost/devspark/wordpress-backend/wp-json/wpforms/entries/v1/entries?${query}`, {
+                    headers: {
+                        'X-WP-Nonce': swpfeSettings.nonce,
+                    },
+                });
                 const data = await res.json();
 
                 // Flat array now, no more need for lookup
@@ -78,7 +82,7 @@ function formTable(form) {
                 this.currentPage--;
                 this.fetchEntries();
             }
-        },sortByDate() {
+        }, sortByDate() {
             this.entries = [...this.entries].sort((a, b) => {
                 return this.sortAsc
                     ? new Date(a.date) - new Date(b.date)
@@ -99,7 +103,6 @@ function formTable(form) {
 
             this.sortAscStatus = !this.sortAscStatus;
         },
-
         showEntry(i) {
             const entry = this.entries[i];
             this.selectedEntry = entry;
@@ -154,7 +157,10 @@ function formTable(form) {
             try {
                 const res = await fetch("http://localhost/devspark/wordpress-backend/wp-json/wpforms/entries/v1/update", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: { 
+                        "Content-Type": "application/json", 
+                        'X-WP-Nonce': swpfeSettings.nonce
+                    },
                     body: JSON.stringify(payload),
                 });
 
@@ -173,6 +179,7 @@ function formTable(form) {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',
+                        'X-WP-Nonce': swpfeSettings.nonce
                     },
                     body: JSON.stringify({
                         id: this.selectedEntry.id,
@@ -211,18 +218,18 @@ function formTable(form) {
             entry.status = entry.status === "unread" ? "read" : "unread";
             this.updateEntry(index, { status: entry.status });
         },
-toggleModalReadStatus() {
-    const entry = this.selectedEntry;
-    const newStatus = entry.status === "unread" ? "read" : "unread";
-    entry.status = newStatus;
+        toggleModalReadStatus() {
+            const entry = this.selectedEntry;
+            const newStatus = entry.status === "unread" ? "read" : "unread";
+            entry.status = newStatus;
 
-    const index = this.entries.findIndex((e) => e.id === entry.id);
-    if (index !== -1) {
-        this.entries[index].status = newStatus;
-        this.updateEntry(index, { status: newStatus });
-    }
-}
-,
+            const index = this.entries.findIndex((e) => e.id === entry.id);
+            if (index !== -1) {
+                this.entries[index].status = newStatus;
+                this.updateEntry(index, { status: newStatus });
+            }
+        }
+        ,
         syncToGoogleSheet(index) {
             const entry = this.entries[index];
             entry.synced_to_gsheet = 1;
@@ -289,10 +296,13 @@ toggleModalReadStatus() {
             printWindow.focus();
             printWindow.print();
         },
-
         timeAgo(dateString) {
-            const date = new Date(dateString);
+            // Convert "YYYY-MM-DD HH:mm:ss" → "YYYY-MM-DDTHH:mm:ssZ" (UTC)
+            const utcDateString = dateString.replace(' ', 'T') + 'Z';
+
+            const date = new Date(utcDateString);
             const now = new Date();
+
             const seconds = Math.floor((now - date) / 1000);
 
             if (seconds < 60) return "just now";
@@ -388,7 +398,11 @@ function entriesApp() {
 
         async fetchForms() {
             try {
-                const res = await fetch('http://localhost/devspark/wordpress-backend/wp-json/wpforms/entries/v1/forms');
+                const res = await fetch('http://localhost/devspark/wordpress-backend/wp-json/wpforms/entries/v1/forms', {
+                    headers: {
+                        'X-WP-Nonce': swpfeSettings.nonce,
+                    },
+                });
                 if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
                 const data = await res.json();
                 this.forms = data;
@@ -410,7 +424,11 @@ function entriesApp() {
             });
 
             try {
-                const res = await fetch(`http://localhost/devspark/wordpress-backend/wp-json/wpforms/entries/v1/entries?${query}`);
+                const res = await fetch(`http://localhost/devspark/wordpress-backend/wp-json/wpforms/entries/v1/entries?${query}`, {
+                    headers: {
+                        'X-WP-Nonce': swpfeSettings.nonce,
+                    },
+                });
                 if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
                 const data = await res.json();
 
@@ -470,7 +488,11 @@ function formEntriesApp(formId, entryCount) {
             // You can handle favorite filtering client-side if not supported by API
 
             try {
-                const res = await fetch(`http://localhost/devspark/wordpress-backend/wp-json/wpforms/entries/v1/entries?${queryParams}`);
+                const res = await fetch(`http://localhost/devspark/wordpress-backend/wp-json/wpforms/entries/v1/entries?${queryParams}`, {
+                    headers: {
+                        'X-WP-Nonce': swpfeSettings.nonce,
+                    },
+                });
                 const data = await res.json();
 
                 this.entries = this.onlyFavorites
@@ -506,3 +528,5 @@ function formEntriesApp(formId, entryCount) {
         }
     }
 }
+
+console.log(swpfeSettings.nonce);

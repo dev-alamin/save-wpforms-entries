@@ -45,7 +45,9 @@ class Rest_API
                 'data' => [
                     'methods'             => WP_REST_Server::READABLE,
                     'callback'            => [$this, 'get_entries'],
-                    'permission_callback' => '__return_true', // Use custom permission check later
+                    'permission_callback' => function(){
+                        return current_user_can( 'manage_options' )  && is_user_logged_in();
+                    },
                     'args'                => [
                         'per_page' => [
                             'description'       => __( 'Number of entries per page.', 'save-wpf-entries' ),
@@ -109,7 +111,9 @@ class Rest_API
                     'methods'             => WP_REST_Server::CREATABLE,
                     'callback'            => [$this, 'create_entries'],
                     // 'permission_callback' => current_user_can('can_create_wpf_entries'),
-                    'permission_callback' => '__return_true',
+                    'permission_callback' => function(){
+                        return current_user_can( 'manage_options' )  && is_user_logged_in();
+                    },
                     'args' => [
                         'form_id' => [
                             'description' => __('Form ID for the entry.', 'save-wpf-entries'),
@@ -198,7 +202,9 @@ class Rest_API
                 'data'  => [
                     'methods'             => WP_REST_Server::READABLE,
                     'callback'            => [$this, 'get_forms'],
-                    'permission_callback' => current_user_can('can_view_wpf_entries'),
+                    'permission_callback' => function(){
+                        return current_user_can( 'manage_options' )  && is_user_logged_in();
+                    },
                 ],
             ],
             [
@@ -206,7 +212,9 @@ class Rest_API
                 'data' => [
                     'methods'  => WP_REST_Server::READABLE,
                     'callback' => [$this, 'get_forms'],
-                    'permission_callback' => '__return_true',
+                    'permission_callback' => function(){
+                        return current_user_can( 'manage_options' )  && is_user_logged_in();
+                    },
                 ],
             ],
             [
@@ -214,7 +222,9 @@ class Rest_API
                 'data' => [
                     'methods'  => WP_REST_Server::EDITABLE,
                     'callback' => [$this, 'update_entries'],
-                    'permission_callback' => '__return_true',
+                    'permission_callback' => function(){
+                        return current_user_can( 'manage_options' )  && is_user_logged_in();
+                    },
                     'args' => [
                         'id' => [
                             'description' => __('Entry ID to update.', 'save-wpf-entries'),
@@ -311,7 +321,9 @@ class Rest_API
                 'data'  => [
                     'methods'             => WP_REST_Server::DELETABLE,
                     'callback'            => [$this, 'delete_entry'],
-                    'permission_callback' => '__return_true',
+                    'permission_callback' => function(){
+                        return current_user_can( 'manage_options' )  && is_user_logged_in();
+                    },
                     'args'                => [
                         'id' => [
                             'required'          => true,
@@ -330,12 +342,61 @@ class Rest_API
                     ],
                 ],
             ],
-
+            [
+                'route' => '/oauth/callback',
+                'data' => [
+                    'method' => WP_REST_Server::READABLE,
+                    'callback' => [ $this, 'oauth_callback' ],
+                    'permission_callback' => '__return_true',
+                    'args' => [
+                        'code' => [
+                            'required' => true,
+                            'type' => 'string',
+                        ],
+                    ],
+                ],
+            ],
         ];
 
         foreach ($data as $item) {
             register_rest_route($this->namespace, $item['route'], $item['data']);
         }
+    }
+
+    public function oauth_callback( WP_REST_Request $request ) {
+        $code = $request->get_param('code');
+
+        if (!$code) {
+            return new WP_REST_Response(['error' => 'Missing code'], 400);
+        }
+
+        $client_id     = get_option('swpfe_google_client_id');
+        $client_secret = get_option('swpfe_google_client_secret');
+        $redirect_uri  = 'https://shaliktheme.com/wp-json/wpforms/entries/v1/oauth/callback';
+
+        $response = wp_remote_post('https://oauth2.googleapis.com/token', [
+            'body' => [
+                'code'          => $code,
+                'client_id'     => $client_id,
+                'client_secret' => $client_secret,
+                'redirect_uri'  => $redirect_uri,
+                'grant_type'    => 'authorization_code',
+            ],
+        ]);
+
+        $body = json_decode(wp_remote_retrieve_body($response), true);
+
+        if (!empty($body['access_token'])) {
+            update_option('swpfe_google_access_token', $body['access_token']);
+            update_option('swpfe_google_refresh_token', $body['refresh_token']);
+            update_option('swpfe_google_token_expires', time() + $body['expires_in']);
+
+            // Optional: redirect back to admin
+            wp_redirect(admin_url('admin.php?page=swpfe-settings&connected=true'));
+            exit;
+        }
+
+        return new WP_REST_Response(['error' => $body], 400);
     }
 
     /**

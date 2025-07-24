@@ -5,7 +5,8 @@ body.toplevel_page_swpfe-entries .notice {
 	display: none !important;
 }
 
-body.toplevel_page_swpfe-entries {
+body.toplevel_page_swpfe-entries,
+body.wpforms-entries_page_swpfe-settings  {
 	background: #DDD !important;
     background-repeat: no-repeat;
     background-size: cover;
