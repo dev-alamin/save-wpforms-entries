@@ -14,7 +14,6 @@ namespace SWPFE;
 
 class DB_Handler
 {
-
     /**
      * Get the name of the custom entries table with the WordPress table prefix.
      *

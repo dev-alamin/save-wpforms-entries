@@ -4,11 +4,11 @@
         @click="prevPage"
         :disabled="currentPage === 1"
         class="w-9 h-9 flex items-center justify-center rounded-md border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
-        aria-label="Previous Page">
+        aria-label="<?php esc_attr_e('Previous Page', 'advanced-entries-manager-for-wpforms'); ?>">
         &lt;
     </button>
 
-    <!-- Smart Page Buttons -->
+    <!-- Page Numbers -->
     <template x-for="(page, index) in visiblePages" :key="`page-${index}`">
         <template x-if="page !== '...'">
             <button
@@ -19,7 +19,7 @@
                     ? 'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700'
                     : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'"
                 :aria-current="currentPage === page ? 'page' : null"
-                :aria-label="`Go to page ${page}`">
+                :aria-label="`<?php esc_attr_e('Go to page', 'advanced-entries-manager-for-wpforms'); ?> ${page}`">
             </button>
         </template>
         <template x-if="page === '...'">
@@ -32,7 +32,7 @@
         @click="nextPage"
         :disabled="currentPage === totalPages"
         class="w-9 h-9 flex items-center justify-center rounded-md border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
-        aria-label="Next Page">
+        aria-label="<?php esc_attr_e('Next Page', 'advanced-entries-manager-for-wpforms'); ?>">
         &gt;
     </button>
 </div>

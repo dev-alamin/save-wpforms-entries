@@ -5,7 +5,7 @@
  * Handles the addition of custom capabilities to the 'administrator' role
  * for managing WPForms entries within the plugin.
  *
- * @package save-wpforms-entries
+ * @package advanced-entries-manager
  * @since 1.0.0
  */
 namespace SWPFE;

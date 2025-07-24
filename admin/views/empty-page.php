@@ -12,7 +12,7 @@
     </lottie-player>
 
     <h2 class="!text-2xl sm:text-3xl !font-extrabold text-gray-800">
-        <?php esc_html_e( 'No Entries Found', 'save-wpforms-entries' ); ?>
+        <?php esc_html_e( 'No Entries Found', 'advanced-entries-manager-for-wpforms' ); ?>
     </h2>
 
     <p class="!text-base !sm:text-lg text-gray-500 max-w-md text-center">
@@ -20,7 +20,7 @@
             __( "Looks like this form hasn't received any submissions yet.
             <br class='hidden sm:block'>Sit back and relax — 
             we’ll show the entries here as soon as they arrive! 📨", 
-            'save-wpforms-entries' )
+            'advanced-entries-manager-for-wpforms' )
         ) ); ?>
     </p>
 </div>

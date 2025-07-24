@@ -1,71 +1,156 @@
 <?php
+
 namespace SWPFE;
-
+/**
+ * Class Admin
+ *
+ * Handles all admin-related functionalities including
+ * menu registration, settings registration, asset enqueuing,
+ * and admin UI rendering for WPForms Entries plugin.
+ */
 class Admin {
-	public function __construct() {
-		add_action( 'admin_menu', [ $this, 'add_menu' ] );
-		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
-        add_action( 'admin_init', [ $this, 'register_settings' ] );
-        add_action('admin_head', [ $this, 'hide_update_notices' ]);
-	}
 
-    public function register_settings() {
-        register_setting('swpfe_google_settings', 'swpfe_google_client_id');
-        register_setting('swpfe_google_settings', 'swpfe_google_client_secret');
+    /**
+     * Constructor.
+     *
+     * Hooks into WordPress admin actions to initialize the admin menu,
+     * enqueue assets, register settings, and hide update notices on plugin pages.
+     */
+    public function __construct() {
+        add_action('admin_menu', [$this, 'add_menu']);
+        add_action('admin_enqueue_scripts', [$this, 'enqueue_assets']);
+        add_action('admin_head', [$this, 'hide_update_notices']);
+        add_action( 'admin_init', [ $this, 'register_settings' ] );
     }
 
-	public function add_menu() {
-		add_menu_page(
-			__( 'WPForms Entries', 'save-wpf-entries' ),
-			__( 'WPForms Entries', 'save-wpf-entries' ),
-			'manage_options',
-			'swpfe-entries',
-			[ $this, 'render_page' ],
-			'dashicons-feedback',
-			25
-		);
+    public function register_settings(){
+        // OAuth credentials
+        register_setting('swpfe_google_settings', 'swpfe_google_sheet_tab', [
+            'type'              => 'string',
+            'sanitize_callback' => 'sanitize_text_field',
+        ]);
+
+        // New custom options
+        register_setting('swpfe_google_settings', 'swpfe_entries_per_page', [
+            'type'              => 'integer',
+            'sanitize_callback' => 'absint',
+            'default'           => 25,
+        ]);
+
+        register_setting('swpfe_google_settings', 'swpfe_google_sheet_id', [
+            'type'              => 'string',
+            'sanitize_callback' => 'sanitize_text_field',
+        ]);
+
+        register_setting('swpfe_google_settings', 'swpfe_google_sheet_auto_sync', [
+            'type'              => 'boolean',
+            'sanitize_callback' => function($val) {
+                return $val === '1' || $val === 1;
+            },
+            'default' => true,
+        ]);
+    }
+
+    /**
+     * Add admin menu pages.
+     *
+     * Adds a top-level menu for WPForms Entries and a submenu for
+     * plugin settings. Both are accessible only to users with
+     * 'manage_options' capability.
+     *
+     * @return void
+     */
+    public function add_menu() {
+        add_menu_page(
+            __('WPForms Entries', 'advanced-entries-manager-for-wpforms'),
+            __('WPForms Entries', 'advanced-entries-manager-for-wpforms'),
+            'manage_options',
+            'swpfe-entries',
+            [$this, 'render_page'],
+            'dashicons-feedback',
+            25
+        );
+
         add_submenu_page(
             'swpfe-entries',
-            'WPForms Entry Sync Settings',
-            'Settings',
+            __('WPForms Entry Sync Settings', 'advanced-entries-manager-for-wpforms'),
+            __('Settings', 'advanced-entries-manager-for-wpforms'),
             'manage_options',
             'swpfe-settings',
-            [ $this, 'render_settings_page' ],
+            [$this, 'render_settings_page'],
             65
         );
-	}
+    }
 
-    function render_settings_page() {
+    /**
+     * Render main entries page.
+     *
+     * Includes the main admin page view file.
+     *
+     * @return void
+     */
+    public function render_page() {
+        include SWPFE_PATH . 'admin/views/view-entries.php';
+    }
+
+    /**
+     * Render settings page.
+     *
+     * Includes the settings page view file.
+     *
+     * @return void
+     */
+    public function render_settings_page() {
         include SWPFE_PATH . 'admin/views/settings-page.php';
     }
 
-	public function render_page() {
-		include SWPFE_PATH . 'admin/views/view-entries.php';
-	}
-
-	public function enqueue_assets( $hook ) {
-        if ( $hook !== 'toplevel_page_swpfe-entries' && $hook !== 'wpforms-entries_page_swpfe-settings' ) {
+    /**
+     * Enqueue admin CSS and JavaScript assets.
+     *
+     * Only enqueues assets on the plugin's own admin pages to avoid
+     * unnecessary loading elsewhere.
+     * Uses `wp_localize_script` to pass REST API URL and nonce
+     * for secure AJAX requests.
+     *
+     * Uses cache-busting based on current timestamp (consider
+     * replacing with plugin version constant in production).
+     *
+     * @param string $hook Current admin page hook suffix.
+     * @return void
+     */
+    public function enqueue_assets($hook) {
+        // Only enqueue on our plugin pages
+        if ($hook !== 'toplevel_page_swpfe-entries' && $hook !== 'wpforms-entries_page_swpfe-settings') {
             return;
         }
 
-		wp_enqueue_style( 'swpfe-admin-css', SWPFE_URL . 'admin/assets/admin.css', [], time() );
-        wp_enqueue_script( 'swpfe-tailwind-css', 'https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4', [], time(), false );
-		wp_enqueue_script( 'swpfe-alpine', 'https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js', [], null, true );
-        wp_enqueue_script( 'swpfe-admin-js', SWPFE_URL . 'admin/assets/admin.js', [], time() );
-        wp_enqueue_script( 'swpfe-landash', 'https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js', [], time(), false );
+        $version = defined('SWPFE_VERSION') ? SWPFE_VERSION : time();
 
-        wp_enqueue_script( 'lottie-web', SWPFE_URL . 'admin/assets/lottie-player.js', [], '5.12.0', false );
+        wp_enqueue_style('swpfe-admin-css', SWPFE_URL . 'admin/assets/admin.css', [], $version);
+        wp_enqueue_script('swpfe-tailwind-css', SWPFE_URL . 'admin/assets/tailwind.min.js', [], $version, false);
+        wp_enqueue_script('swpfe-admin-js', SWPFE_URL . 'admin/assets/admin.js', [], $version, true);
+        wp_enqueue_script('swpfe-alpine', SWPFE_URL . 'admin/assets/alpine.min.js', [], null, true);
+        wp_enqueue_script('swpfe-lodash', SWPFE_URL . 'admin/assets/lodash.min.js', [], $version, false);
+        wp_enqueue_script('lottie-web', SWPFE_URL . 'admin/assets/lottie-player.js', [], '5.12.0', false);
 
         wp_localize_script('swpfe-admin-js', 'swpfeSettings', [
             'restUrl' => esc_url_raw(rest_url()),
             'nonce'   => wp_create_nonce('wp_rest'),
         ]);
-	}
+    }
 
+    /**
+     * Hide update notices on plugin admin pages.
+     *
+     * Prevents update nags, warnings, and other notices from
+     * displaying on the plugin's admin screens to keep UI clean.
+     *
+     * @return void
+     */
     public function hide_update_notices() {
         $screen = get_current_screen();
 
-        if (strpos($screen->id, 'swpfe') !== false) {
+        if ($screen && strpos($screen->id, 'swpfe') !== false) {
             echo '<style>
                 .update-nag, 
                 .updated, 

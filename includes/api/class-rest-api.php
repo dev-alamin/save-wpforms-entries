@@ -63,7 +63,7 @@ class Rest_API
                     },
                     'args' => [
                         'per_page' => [
-                            'description'       => __('Number of entries per page.', 'save-wpf-entries'),
+                            'description'       => __('Number of entries per page.', 'advanced-entries-manager-for-wpforms'),
                             'type'              => 'integer',
                             'default'           => 50,
                             'sanitize_callback' => 'absint',
@@ -72,25 +72,25 @@ class Rest_API
                             },
                         ],
                         'page' => [
-                            'description'       => __('Page number.', 'save-wpf-entries'),
+                            'description'       => __('Page number.', 'advanced-entries-manager-for-wpforms'),
                             'type'              => 'integer',
                             'default'           => 1,
                             'sanitize_callback' => 'absint',
                         ],
                         'form_id' => [
-                            'description'       => __('Limit entries to a specific form ID.', 'save-wpf-entries'),
+                            'description'       => __('Limit entries to a specific form ID.', 'advanced-entries-manager-for-wpforms'),
                             'type'              => 'integer',
                             'required'          => false,
                             'sanitize_callback' => 'absint',
                         ],
                         'search' => [
-                            'description'       => __('Search within entry values.', 'save-wpf-entries'),
+                            'description'       => __('Search within entry values.', 'advanced-entries-manager-for-wpforms'),
                             'type'              => 'string',
                             'required'          => false,
                             'sanitize_callback' => 'sanitize_text_field',
                         ],
                         'status' => [
-                            'description'       => __('Filter by read/unread status.', 'save-wpf-entries'),
+                            'description'       => __('Filter by read/unread status.', 'advanced-entries-manager-for-wpforms'),
                             'type'              => 'string',
                             'validate_callback' => function ($value) {
                                 return in_array($value, ['read', 'unread', '', null], true);
@@ -98,7 +98,7 @@ class Rest_API
                             'required'          => false,
                         ],
                         'date_from' => [
-                            'description'       => __('Filter by submission start date (YYYY-MM-DD)', 'save-wpf-entries'),
+                            'description'       => __('Filter by submission start date (YYYY-MM-DD)', 'advanced-entries-manager-for-wpforms'),
                             'type'              => 'string',
                             'required'          => false,
                             'sanitize_callback' => 'sanitize_text_field',
@@ -107,7 +107,7 @@ class Rest_API
                             },
                         ],
                         'date_to' => [
-                            'description'       => __('Filter by submission end date (YYYY-MM-DD)', 'save-wpf-entries'),
+                            'description'       => __('Filter by submission end date (YYYY-MM-DD)', 'advanced-entries-manager-for-wpforms'),
                             'type'              => 'string',
                             'required'          => false,
                             'sanitize_callback' => 'sanitize_text_field',
@@ -130,7 +130,7 @@ class Rest_API
                     },
                     'args' => [
                         'form_id' => [
-                            'description'       => __('Form ID for the entry.', 'save-wpf-entries'),
+                            'description'       => __('Form ID for the entry.', 'advanced-entries-manager-for-wpforms'),
                             'required'          => true,
                             'validate_callback' => function ($param) {
                                 return is_string($param) || is_numeric($param);
@@ -138,14 +138,14 @@ class Rest_API
                             'sanitize_callback' => 'sanitize_text_field',
                         ],
                         'entry' => [
-                            'description'       => __('Entry data as an associative array.', 'save-wpf-entries'),
+                            'description'       => __('Entry data as an associative array.', 'advanced-entries-manager-for-wpforms'),
                             'required'          => true,
                             'validate_callback' => function ($param) {
                                 return is_array($param);
                             },
                         ],
                         'status' => [
-                            'description'       => __('Read/unread status for the entry.', 'save-wpf-entries'),
+                            'description'       => __('Read/unread status for the entry.', 'advanced-entries-manager-for-wpforms'),
                             'required'          => false,
                             'validate_callback' => function ($param) {
                                 return in_array($param, ['unread', 'read'], true);
@@ -154,7 +154,7 @@ class Rest_API
                             'default'           => 'unread',
                         ],
                         'is_favorite' => [
-                            'description'       => __('Mark entry as favorite (0 or 1).', 'save-wpf-entries'),
+                            'description'       => __('Mark entry as favorite (0 or 1).', 'advanced-entries-manager-for-wpforms'),
                             'required'          => false,
                             'validate_callback' => function ($param) {
                                 return is_numeric($param) && in_array($param, [0, 1], true);
@@ -163,7 +163,7 @@ class Rest_API
                             'default'           => 0,
                         ],
                         'note' => [
-                            'description'       => __('Internal note for the entry (max 500 words).', 'save-wpf-entries'),
+                            'description'       => __('Internal note for the entry (max 500 words).', 'advanced-entries-manager-for-wpforms'),
                             'required'          => false,
                             'validate_callback' => function ($param) {
                                 return is_string($param) && str_word_count($param) <= 500;
@@ -171,7 +171,7 @@ class Rest_API
                             'sanitize_callback' => 'sanitize_text_field',
                         ],
                         'exported_to_csv' => [
-                            'description'       => __('Exported to CSV flag (0 or 1).', 'save-wpf-entries'),
+                            'description'       => __('Exported to CSV flag (0 or 1).', 'advanced-entries-manager-for-wpforms'),
                             'required'          => false,
                             'validate_callback' => function ($param) {
                                 return is_numeric($param) && in_array($param, [0, 1], true);
@@ -180,7 +180,7 @@ class Rest_API
                             'default'           => 0,
                         ],
                         'synced_to_gsheet' => [
-                            'description'       => __('Synced to Google Sheet flag (0 or 1).', 'save-wpf-entries'),
+                            'description'       => __('Synced to Google Sheet flag (0 or 1).', 'advanced-entries-manager-for-wpforms'),
                             'required'          => false,
                             'validate_callback' => function ($param) {
                                 return is_numeric($param) && in_array($param, [0, 1], true);
@@ -189,7 +189,7 @@ class Rest_API
                             'default'           => 0,
                         ],
                         'printed_at' => [
-                            'description'       => __('Printed at datetime (Y-m-d H:i:s).', 'save-wpf-entries'),
+                            'description'       => __('Printed at datetime (Y-m-d H:i:s).', 'advanced-entries-manager-for-wpforms'),
                             'required'          => false,
                             'validate_callback' => function ($param) {
                                 return strtotime($param) !== false;
@@ -199,7 +199,7 @@ class Rest_API
                             },
                         ],
                         'resent_at' => [
-                            'description'       => __('Resent at datetime (Y-m-d H:i:s).', 'save-wpf-entries'),
+                            'description'       => __('Resent at datetime (Y-m-d H:i:s).', 'advanced-entries-manager-for-wpforms'),
                             'required'          => false,
                             'validate_callback' => function ($param) {
                                 return strtotime($param) !== false;
@@ -247,7 +247,7 @@ class Rest_API
                     },
                     'args' => [
                         'id' => [
-                            'description'       => __('Entry ID to update.', 'save-wpf-entries'),
+                            'description'       => __('Entry ID to update.', 'advanced-entries-manager-for-wpforms'),
                             'required'          => true,
                             'sanitize_callback' => 'absint',
                             'validate_callback' => function ($param) {
@@ -255,7 +255,7 @@ class Rest_API
                             },
                         ],
                         'form_id' => [
-                            'description'       => __('Form ID for the entry.', 'save-wpf-entries'),
+                            'description'       => __('Form ID for the entry.', 'advanced-entries-manager-for-wpforms'),
                             'required'          => true,
                             'sanitize_callback' => 'absint',
                             'validate_callback' => function ($param) {
@@ -263,14 +263,14 @@ class Rest_API
                             },
                         ],
                         'entry' => [
-                            'description'       => __('Entry data as an associative array.', 'save-wpf-entries'),
+                            'description'       => __('Entry data as an associative array.', 'advanced-entries-manager-for-wpforms'),
                             'required'          => false,
                             'validate_callback' => function ($param) {
                                 return is_array($param);
                             },
                         ],
                         'status' => [
-                            'description'       => __('Read/unread status for the entry.', 'save-wpf-entries'),
+                            'description'       => __('Read/unread status for the entry.', 'advanced-entries-manager-for-wpforms'),
                             'required'          => false,
                             'validate_callback' => function ($param) {
                                 return in_array($param, ['unread', 'read'], true);
@@ -279,7 +279,7 @@ class Rest_API
                             'default'           => 'unread',
                         ],
                         'note' => [
-                            'description'       => __('Internal note for the entry (max 500 words).', 'save-wpf-entries'),
+                            'description'       => __('Internal note for the entry (max 500 words).', 'advanced-entries-manager-for-wpforms'),
                             'required'          => false,
                             'validate_callback' => function ($param) {
                                 return is_string($param) && str_word_count($param) <= 500;
@@ -287,7 +287,7 @@ class Rest_API
                             'sanitize_callback' => 'sanitize_text_field',
                         ],
                         'is_favorite' => [
-                            'description'       => __('Mark entry as favorite (0 or 1).', 'save-wpf-entries'),
+                            'description'       => __('Mark entry as favorite (0 or 1).', 'advanced-entries-manager-for-wpforms'),
                             'required'          => false,
                             'validate_callback' => function ($param) {
                                 return is_numeric($param) && in_array($param, [0, 1], true);
@@ -296,7 +296,7 @@ class Rest_API
                             'default'           => 0,
                         ],
                         'exported_to_csv' => [
-                            'description'       => __('Exported to CSV flag (0 or 1).', 'save-wpf-entries'),
+                            'description'       => __('Exported to CSV flag (0 or 1).', 'advanced-entries-manager-for-wpforms'),
                             'required'          => false,
                             'validate_callback' => function ($param) {
                                 return is_numeric($param) && in_array($param, [0, 1], true);
@@ -305,7 +305,7 @@ class Rest_API
                             'default'           => 0,
                         ],
                         'synced_to_gsheet' => [
-                            'description'       => __('Synced to Google Sheet flag (0 or 1).', 'save-wpf-entries'),
+                            'description'       => __('Synced to Google Sheet flag (0 or 1).', 'advanced-entries-manager-for-wpforms'),
                             'required'          => false,
                             'validate_callback' => function ($param) {
                                 return is_numeric($param) && in_array($param, [0, 1], true);
@@ -314,7 +314,7 @@ class Rest_API
                             'default'           => 0,
                         ],
                         'printed_at' => [
-                            'description'       => __('Printed at datetime (Y-m-d H:i:s).', 'save-wpf-entries'),
+                            'description'       => __('Printed at datetime (Y-m-d H:i:s).', 'advanced-entries-manager-for-wpforms'),
                             'required'          => false,
                             'validate_callback' => function ($param) {
                                 return strtotime($param) !== false;
@@ -324,7 +324,7 @@ class Rest_API
                             },
                         ],
                         'resent_at' => [
-                            'description'       => __('Resent at datetime (Y-m-d H:i:s).', 'save-wpf-entries'),
+                            'description'       => __('Resent at datetime (Y-m-d H:i:s).', 'advanced-entries-manager-for-wpforms'),
                             'required'          => false,
                             'validate_callback' => function ($param) {
                                 return strtotime($param) !== false;
@@ -526,7 +526,7 @@ class Rest_API
         if ( ! current_user_can( 'manage_options' ) ) {
             return new \WP_Error(
                 'rest_forbidden',
-                __( 'You do not have permission to view this data.', 'save-wpf-entries' ),
+                __( 'You do not have permission to view this data.', 'advanced-entries-manager-for-wpforms' ),
                 [ 'status' => 403 ]
             );
         }
@@ -586,7 +586,7 @@ class Rest_API
         if (!$form_id || !is_array($entry)) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => __('Invalid or missing form_id or entry data.', 'save-wpf-entries'),
+                'message' => __('Invalid or missing form_id or entry data.', 'advanced-entries-manager-for-wpforms'),
             ], 400);
         }
 
@@ -604,7 +604,7 @@ class Rest_API
         // if ( ! current_user_can( 'manage_options' ) ) {
         //     return new WP_REST_Response([
         //         'success' => false,
-        //         'message' => __( 'Insufficient permissions to create entry.', 'save-wpf-entries' ),
+        //         'message' => __( 'Insufficient permissions to create entry.', 'advanced-entries-manager-for-wpforms' ),
         //     ], 403);
         // }
 
@@ -651,7 +651,7 @@ class Rest_API
         if ($inserted === false) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => __('Database insert failed.', 'save-wpf-entries'),
+                'message' => __('Database insert failed.', 'advanced-entries-manager-for-wpforms'),
             ], 500);
         }
 
@@ -668,7 +668,7 @@ class Rest_API
 
         return new WP_REST_Response([
             'success'  => true,
-            'message'  => __('Entry created successfully.', 'save-wpf-entries'),
+            'message'  => __('Entry created successfully.', 'advanced-entries-manager-for-wpforms'),
             'entry_id' => $wpdb->insert_id,
         ], 201);
     }
@@ -695,7 +695,7 @@ class Rest_API
         if (!$id || !$form_id) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => __('Missing or invalid entry ID or form ID.', 'save-wpf-entries'),
+                'message' => __('Missing or invalid entry ID or form ID.', 'advanced-entries-manager-for-wpforms'),
             ], 400);
         }
 
@@ -747,7 +747,7 @@ class Rest_API
         if (empty($data)) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => __('No valid fields provided for update.', 'save-wpf-entries'),
+                'message' => __('No valid fields provided for update.', 'advanced-entries-manager-for-wpforms'),
             ], 400);
         }
 
@@ -772,7 +772,7 @@ class Rest_API
         if ($updated === false) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => __('Database update failed.', 'save-wpf-entries'),
+                'message' => __('Database update failed.', 'advanced-entries-manager-for-wpforms'),
             ], 500);
         }
 
@@ -787,7 +787,7 @@ class Rest_API
 
         return new WP_REST_Response([
             'success'        => true,
-            'message'        => __('Entry updated successfully.', 'save-wpf-entries'),
+            'message'        => __('Entry updated successfully.', 'advanced-entries-manager-for-wpforms'),
             'updated_fields' => array_keys($data),
             'entry_id'       => $id,
         ], 200);
@@ -818,14 +818,14 @@ class Rest_API
         if ( ! $id || ! $form_id ) {
             return new WP_REST_Response( [
                 'deleted' => false,
-                'message' => __( 'Missing required parameters.', 'save-wpf-entries' ),
+                'message' => __( 'Missing required parameters.', 'advanced-entries-manager-for-wpforms' ),
             ], 400 );
         }
 
         if ( ! current_user_can( 'manage_options' ) ) {
             return new WP_REST_Response( [
                 'deleted' => false,
-                'message' => __( 'You are not allowed to delete entries.', 'save-wpf-entries' ),
+                'message' => __( 'You are not allowed to delete entries.', 'advanced-entries-manager-for-wpforms' ),
             ], 403 );
         }
 
@@ -846,7 +846,7 @@ class Rest_API
 
         return new WP_REST_Response( [
             'deleted' => false,
-            'message' => __( 'Entry not found or already deleted.', 'save-wpf-entries' ),
+            'message' => __( 'Entry not found or already deleted.', 'advanced-entries-manager-for-wpforms' ),
         ], 404 );
     }
 }

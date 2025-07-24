@@ -27,7 +27,7 @@
 
                     <!-- Entry Details Header with Copy Button -->
                     <div class="flex items-center justify-between mb-6">
-                        <h2 class="text-2xl font-extrabold text-indigo-700"> <?php esc_html_e('Entry Details', 'save-wpf-entries'); ?></h2>
+                        <h2 class="text-2xl font-extrabold text-indigo-700"> <?php esc_html_e('Entry Details', 'advanced-entries-manager-for-wpforms'); ?></h2>
 
                         <button
                             @click="copyEntryToClipboard"
@@ -52,7 +52,7 @@
                                     class="font-semibold text-gray-700"
                                     x-text="key.charAt(0).toUpperCase() + key.slice(1) + ':'">
                                 </strong>
-                                <span class="ml-1" x-text="value || '<?php echo esc_js(__('-', 'save-wpf-entries')); ?>'"></span>
+                                <span class="ml-1" x-text="value || '<?php echo esc_js(__('-', 'advanced-entries-manager-for-wpforms')); ?>'"></span>
                             </div>
                         </template>
                     </div>
@@ -64,17 +64,17 @@
                             @click="toggleModalReadStatus()"
                             class="px-5 py-2.5 cursor-pointer bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition">
                             <template x-if="selectedEntry.status === 'unread'">
-                                ✅ <span><?php esc_html_e('Mark as Read', 'save-wpf-entries'); ?></span>
+                                ✅ <span><?php esc_html_e('Mark as Read', 'advanced-entries-manager-for-wpforms'); ?></span>
                             </template>
                             <template x-if="selectedEntry.status === 'read'">
-                                🕓 <span><?php esc_html_e('Mark as unread', 'save-wpf-entries'); ?></span>
+                                🕓 <span><?php esc_html_e('Mark as unread', 'advanced-entries-manager-for-wpforms'); ?></span>
                             </template>
                         </button>
 
                         <button
                             @click="deleteEntry()"
                             class="px-5 py-2.5 cursor-pointer bg-red-600 text-white rounded-lg !font-bold hover:bg-red-700 transition">
-                            🗑️ <?php esc_html_e('Delete', 'save-wpf-entries'); ?>
+                            🗑️ <?php esc_html_e('Delete', 'advanced-entries-manager-for-wpforms'); ?>
                         </button>
 
                     </div>

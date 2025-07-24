@@ -1,12 +1,12 @@
 <?php
 /**
- * Plugin Name: Save WPFORMS Entries
- * Plugin URI:  https://almn.me/save-wpforms-entries
- * Description: Easily store all your WPForms submissions directly in your WordPress database.
+ * Plugin Name: Advanced Entries Manager for WPFroms
+ * Plugin URI:  https://almn.me/advanced-entries-manager-for-wpforms
+ * Description: The ultimate dashboard to manage, search, and sync WPForms entries like a pro.
  * Version:     1.0.0
  * Author:      Md. Al Amin
  * Author URI:  https://almn.me
- * Text Domain: save-wpf-entries
+ * Text Domain: advanced-entries-manager-for-wpforms
  * Domain Path: /languages
  * License:     GPL-2.0+
  * License URI: http://www.gnu.org/licenses/gpl-2.0.txt
@@ -15,7 +15,7 @@
  * Requires PHP: 7.0
  * Requires Plugins: WPForms Lite
  *
- * @package     save-wpforms-entries
+ * @package     advanced-entries-manager
  * @author      Md. Al Amin
  * @copyright   Al Amin
  * @license     GPL-2.0+

@@ -11,7 +11,7 @@
  *
  * @package    Save_WPForms_Entries
  * @subpackage Entry_Storage
- * @author     Mamu
+ * @author     Al Amin
  * @since      1.0.0
  */
 
