@@ -78,17 +78,14 @@ function formTable(form) {
                 this.currentPage--;
                 this.fetchEntries();
             }
-        },
-
-        sortByDate() {
-            this.entries.sort((a, b) => {
+        },sortByDate() {
+            this.entries = [...this.entries].sort((a, b) => {
                 return this.sortAsc
                     ? new Date(a.date) - new Date(b.date)
                     : new Date(b.date) - new Date(a.date);
             });
             this.sortAsc = !this.sortAsc;
         },
-
         sortByStatus() {
             this.entries.sort((a, b) => {
                 if (a.status === b.status) return 0;
