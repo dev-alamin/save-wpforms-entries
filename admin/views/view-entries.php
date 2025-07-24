@@ -3,7 +3,7 @@
     <div class="mb-8 bg-slate-700 text-white px-4 py-2 rounded-lg">
         <h1 class="!text-4xl !font-extrabold !text-indigo-100 !tracking-tight mb-2 flex items-center gap-3">
             📋 <span><?php esc_html_e('WPForms Entries Overview', 'save-wpf-entries'); ?></span>
-        </h1>
+        </h1> 
         <p class="text-gray-200 !text-[15px] leading-relaxed">
             <?php esc_html_e('Browse and manage form entries submitted by users. Click on a form to view its submissions, mark entries as read/unread, or delete them as needed.', 'save-wpf-entries'); ?>
         </p>
