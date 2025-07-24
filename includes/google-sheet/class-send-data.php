@@ -1,4 +1,22 @@
 <?php
+/**
+ * Send_Data Class
+ *
+ * Handles sending WPForms form submission data to Google Sheets.
+ *
+ * This class listens to the `wpforms_process_complete` action hook, extracts submitted
+ * form field values, and sends the data to a specified Google Sheet using the Sheets API.
+ * Requires a valid Google OAuth access token to function.
+ *
+ * @package    Save_WPForms_Entries
+ * @subpackage Google_Sheets_Integration
+ * @author     Mamu
+ * @copyright  Copyright (c) 2025
+ * @license    GPL-2.0-or-later
+ * @since      1.0.0
+ *
+ * @see        https://developers.google.com/sheets/api
+ */
 
 namespace SWPFE\GSHEET;
 
@@ -6,16 +24,33 @@ include __DIR__ . '/../helper.php';
 
 class Send_Data
 {
-
+    /**
+     * Constructor.
+     *
+     * Hooks into the `wpforms_process_complete` action to trigger Google Sheets sync
+     * when a WPForms form is successfully submitted.
+     */
     public function __construct()
     {
         add_action('wpforms_process_complete', [$this, 'swpfe_send_to_google_sheets'], 10, 4);
     }
 
-    function swpfe_send_to_google_sheets($fields, $entry, $form_data, $entry_id)
+    /**
+     * Send form data to Google Sheets.
+     *
+     * Called when WPForms completes processing a submission.
+     * It builds the request body from submitted form fields and
+     * appends a new row to the connected Google Sheet using Sheets API v4.
+     *
+     * @param array $fields     Array of submitted form fields.
+     * @param array $entry      Entry-specific meta data.
+     * @param array $form_data  Form settings and configuration.
+     * @param int   $entry_id   WPForms entry ID.
+     *
+     * @return void
+     */
+    public function swpfe_send_to_google_sheets($fields, $entry, $form_data, $entry_id)
     {
-        $spreadsheet_id = '1iaHvsexQRtdtuDSYNPhnWmuPuy_0ij7PCQnMQj0SWuY';
-
         $access_token = swpfe_get_access_token();
 
         if (!$access_token) {
@@ -30,8 +65,8 @@ class Send_Data
 
         $body = ['values' => [$values]];
 
-        $spreadsheet_id = 'your-sheet-id'; // Replace with actual ID
-        $range = 'Sheet1'; // Adjust sheet name if needed
+        $spreadsheet_id = '1iaHvsexQRtdtuDSYNPhnWmuPuy_0ij7PCQnMQj0SWuY';
+        $range = 'Sheet1';
 
         $response = wp_remote_post(
             "https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheet_id}/values/{$range}:append?valueInputOption=RAW",
@@ -40,7 +75,7 @@ class Send_Data
                     'Authorization' => 'Bearer ' . $access_token,
                     'Content-Type'  => 'application/json',
                 ],
-                'body' => json_encode($body),
+                'body'    => json_encode($body),
                 'timeout' => 15,
             ]
         );

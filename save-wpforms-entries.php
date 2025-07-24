@@ -64,3 +64,4 @@ function swpfe_capture_token_from_url() {
         exit;
     }
 }
+

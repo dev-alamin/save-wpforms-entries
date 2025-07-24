@@ -1,11 +1,9 @@
 <div
     x-show="setError && Object.keys(forms).length === 0"
     class="flex flex-col items-center justify-center mt-20 space-y-6 text-gray-600">
-    <!-- <pre x-text="JSON.stringify(forms, null, 2)"></pre> -->
-    <!-- Lottie JSON animation (optional, needs lottie-player script) -->
-    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+
     <lottie-player
-        src="https://assets5.lottiefiles.com/packages/lf20_qp1q7mct.json"
+        src="<?php echo esc_url( SWPFE_URL . 'admin/assets/empty-page.json' ); ?>"
         background="transparent"
         speed="1"
         style="width: 320px; height: 320px"
@@ -13,10 +11,16 @@
         autoplay>
     </lottie-player>
 
-    <h2 class="!text-2xl sm:text-3xl !font-extrabold text-gray-800">No Entries Found</h2>
+    <h2 class="!text-2xl sm:text-3xl !font-extrabold text-gray-800">
+        <?php esc_html_e( 'No Entries Found', 'save-wpforms-entries' ); ?>
+    </h2>
 
     <p class="!text-base !sm:text-lg text-gray-500 max-w-md text-center">
-        Looks like this form hasn't received any submissions yet.<br class="hidden sm:block">
-        Sit back and relax — we’ll show the entries here as soon as they arrive! 📨
+        <?php echo wp_kses_post( sprintf(
+            __( "Looks like this form hasn't received any submissions yet.
+            <br class='hidden sm:block'>Sit back and relax — 
+            we’ll show the entries here as soon as they arrive! 📨", 
+            'save-wpforms-entries' )
+        ) ); ?>
     </p>
 </div>

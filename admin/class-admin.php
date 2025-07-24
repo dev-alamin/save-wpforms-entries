@@ -6,6 +6,7 @@ class Admin {
 		add_action( 'admin_menu', [ $this, 'add_menu' ] );
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
         add_action( 'admin_init', [ $this, 'register_settings' ] );
+        add_action('admin_head', [ $this, 'hide_update_notices' ]);
 	}
 
     public function register_settings() {
@@ -53,17 +54,28 @@ class Admin {
         wp_enqueue_script( 'swpfe-admin-js', SWPFE_URL . 'admin/assets/admin.js', [], time() );
         wp_enqueue_script( 'swpfe-landash', 'https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js', [], time(), false );
 
-            wp_enqueue_script(
-        'lottie-web',
-        'https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.0/lottie.min.js',
-        [],
-        '5.12.0',
-        true
-    );
+        wp_enqueue_script( 'lottie-web', SWPFE_URL . 'admin/assets/lottie-player.js', [], '5.12.0', false );
 
         wp_localize_script('swpfe-admin-js', 'swpfeSettings', [
             'restUrl' => esc_url_raw(rest_url()),
             'nonce'   => wp_create_nonce('wp_rest'),
         ]);
 	}
+
+    public function hide_update_notices() {
+        $screen = get_current_screen();
+
+        if (strpos($screen->id, 'swpfe') !== false) {
+            echo '<style>
+                .update-nag, 
+                .updated, 
+                .notice, 
+                .update-message,
+                div.notice.notice-warning,
+                .notice.is-dismissible {
+                    display: none !important;
+                }
+            </style>';
+        }
+    }
 }

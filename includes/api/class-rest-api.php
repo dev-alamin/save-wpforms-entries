@@ -8,6 +8,7 @@ use WP_REST_Server;
 
 /**
  * REST API handler for WPForms entries.
+ * 
  * @since 1.0.0
  * @package wp-save-entries
  */
@@ -31,26 +32,38 @@ class Rest_API
     }
 
     /**
-     * Registers custom REST API routes for WPForms entries.
-     *
-     * Defines endpoints for retrieving all entries, creating entries, and fetching single form details.
-     *
+     * Registers all REST API routes for the Save WPForms Entries plugin.
+     * 
+     * This method defines routes for managing form entries, including:
+     * - Fetching entries with filters and pagination
+     * - Creating new entries
+     * - Retrieving form metadata
+     * - Updating existing entries
+     * - Deleting entries
+     * 
+     * Each route uses proper permission callbacks ensuring only authorized users
+     * (typically admins with 'manage_options') can perform operations.
+     * 
+     * Validation and sanitization callbacks are defined for all route parameters
+     * to enforce data integrity and security.
+     * 
      * @return void
      */
     public function register_route()
     {
         $data = [
+            // Route: GET /entries - List entries with filtering and pagination
             [
                 'route' => '/entries',
                 'data' => [
-                    'methods'             => WP_REST_Server::READABLE,
-                    'callback'            => [$this, 'get_entries'],
-                    'permission_callback' => function(){
-                        return current_user_can( 'manage_options' )  && is_user_logged_in();
+                    'methods'  => WP_REST_Server::READABLE,
+                    'callback' => [$this, 'get_entries'],
+                    'permission_callback' => function () {
+                        return current_user_can('manage_options') && is_user_logged_in();
                     },
-                    'args'                => [
+                    'args' => [
                         'per_page' => [
-                            'description'       => __( 'Number of entries per page.', 'save-wpf-entries' ),
+                            'description'       => __('Number of entries per page.', 'save-wpf-entries'),
                             'type'              => 'integer',
                             'default'           => 50,
                             'sanitize_callback' => 'absint',
@@ -79,7 +92,7 @@ class Rest_API
                         'status' => [
                             'description'       => __('Filter by read/unread status.', 'save-wpf-entries'),
                             'type'              => 'string',
-                            'validate_callback' => function($value) {
+                            'validate_callback' => function ($value) {
                                 return in_array($value, ['read', 'unread', '', null], true);
                             },
                             'required'          => false,
@@ -89,8 +102,8 @@ class Rest_API
                             'type'              => 'string',
                             'required'          => false,
                             'sanitize_callback' => 'sanitize_text_field',
-                            'validate_callback' => function( $param ) {
-                                return preg_match( '/^\d{4}-\d{2}-\d{2}$/', $param );
+                            'validate_callback' => function ($param) {
+                                return preg_match('/^\d{4}-\d{2}-\d{2}$/', $param);
                             },
                         ],
                         'date_to' => [
@@ -98,85 +111,86 @@ class Rest_API
                             'type'              => 'string',
                             'required'          => false,
                             'sanitize_callback' => 'sanitize_text_field',
-                            'validate_callback' => function( $param ) {
-                                return preg_match( '/^\d{4}-\d{2}-\d{2}$/', $param );
+                            'validate_callback' => function ($param) {
+                                return preg_match('/^\d{4}-\d{2}-\d{2}$/', $param);
                             },
                         ],
                     ],
                 ],
             ],
+
+            // Route: POST /create - Create a new form entry
             [
                 'route' => '/create',
-                'data'  => [
+                'data' => [
                     'methods'             => WP_REST_Server::CREATABLE,
                     'callback'            => [$this, 'create_entries'],
-                    // 'permission_callback' => current_user_can('can_create_wpf_entries'),
-                    'permission_callback' => function(){
-                        return current_user_can( 'manage_options' )  && is_user_logged_in();
+                    'permission_callback' => function () {
+                        return current_user_can('manage_options') && is_user_logged_in();
                     },
                     'args' => [
                         'form_id' => [
-                            'description' => __('Form ID for the entry.', 'save-wpf-entries'),
-                            'required' => true,
+                            'description'       => __('Form ID for the entry.', 'save-wpf-entries'),
+                            'required'          => true,
                             'validate_callback' => function ($param) {
                                 return is_string($param) || is_numeric($param);
                             },
                             'sanitize_callback' => 'sanitize_text_field',
                         ],
                         'entry' => [
-                            'description' => __('Entry data as an associative array.', 'save-wpf-entries'),
-                            'required' => true,
+                            'description'       => __('Entry data as an associative array.', 'save-wpf-entries'),
+                            'required'          => true,
                             'validate_callback' => function ($param) {
                                 return is_array($param);
                             },
                         ],
                         'status' => [
-                            'description' => __('Read/unread status for the entry.', 'save-wpf-entries'),
-                            'required' => false,
+                            'description'       => __('Read/unread status for the entry.', 'save-wpf-entries'),
+                            'required'          => false,
                             'validate_callback' => function ($param) {
                                 return in_array($param, ['unread', 'read'], true);
                             },
                             'sanitize_callback' => 'sanitize_text_field',
-                            'default' => 'unread',
+                            'default'           => 'unread',
                         ],
                         'is_favorite' => [
-                            'description' => __('Mark entry as favorite (0 or 1).', 'save-wpf-entries'),
-                            'required' => false,
+                            'description'       => __('Mark entry as favorite (0 or 1).', 'save-wpf-entries'),
+                            'required'          => false,
                             'validate_callback' => function ($param) {
                                 return is_numeric($param) && in_array($param, [0, 1], true);
                             },
                             'sanitize_callback' => 'absint',
-                            'default' => '0'
+                            'default'           => 0,
                         ],
                         'note' => [
-                            'description' => __('Internal note for the entry (max 500 words).', 'save-wpf-entries'),
-                            'required' => false,
+                            'description'       => __('Internal note for the entry (max 500 words).', 'save-wpf-entries'),
+                            'required'          => false,
                             'validate_callback' => function ($param) {
                                 return is_string($param) && str_word_count($param) <= 500;
                             },
                             'sanitize_callback' => 'sanitize_text_field',
                         ],
                         'exported_to_csv' => [
-                            'description' => __('Exported to CSV flag (0 or 1).', 'save-wpf-entries'),
-                            'required' => false,
+                            'description'       => __('Exported to CSV flag (0 or 1).', 'save-wpf-entries'),
+                            'required'          => false,
                             'validate_callback' => function ($param) {
                                 return is_numeric($param) && in_array($param, [0, 1], true);
                             },
                             'sanitize_callback' => 'absint',
-                            'default' => 0
+                            'default'           => 0,
                         ],
                         'synced_to_gsheet' => [
-                            'description' => __('Synced to Google Sheet flag (0 or 1).', 'save-wpf-entries'),
-                            'required' => false,
+                            'description'       => __('Synced to Google Sheet flag (0 or 1).', 'save-wpf-entries'),
+                            'required'          => false,
                             'validate_callback' => function ($param) {
                                 return is_numeric($param) && in_array($param, [0, 1], true);
                             },
                             'sanitize_callback' => 'absint',
-                            'default' => 0
+                            'default'           => 0,
                         ],
                         'printed_at' => [
-                            'description' => __('Printed at datetime (Y-m-d H:i:s).', 'save-wpf-entries'),
-                            'required' => false,
+                            'description'       => __('Printed at datetime (Y-m-d H:i:s).', 'save-wpf-entries'),
+                            'required'          => false,
                             'validate_callback' => function ($param) {
                                 return strtotime($param) !== false;
                             },
@@ -185,8 +199,8 @@ class Rest_API
                             },
                         ],
                         'resent_at' => [
-                            'description' => __('Resent at datetime (Y-m-d H:i:s).', 'save-wpf-entries'),
-                            'required' => false,
+                            'description'       => __('Resent at datetime (Y-m-d H:i:s).', 'save-wpf-entries'),
+                            'required'          => false,
                             'validate_callback' => function ($param) {
                                 return strtotime($param) !== false;
                             },
@@ -197,105 +211,111 @@ class Rest_API
                     ],
                 ],
             ],
+
+            // Route: GET /single - Get a single form metadata (alias)
             [
                 'route' => '/single',
                 'data'  => [
                     'methods'             => WP_REST_Server::READABLE,
                     'callback'            => [$this, 'get_forms'],
-                    'permission_callback' => function(){
-                        return current_user_can( 'manage_options' )  && is_user_logged_in();
+                    'permission_callback' => function () {
+                        return current_user_can('manage_options') && is_user_logged_in();
                     },
                 ],
             ],
+
+            // Route: GET /forms - Get all form metadata
             [
                 'route' => '/forms',
                 'data' => [
-                    'methods'  => WP_REST_Server::READABLE,
-                    'callback' => [$this, 'get_forms'],
-                    'permission_callback' => function(){
-                        return current_user_can( 'manage_options' )  && is_user_logged_in();
+                    'methods'             => WP_REST_Server::READABLE,
+                    'callback'            => [$this, 'get_forms'],
+                    'permission_callback' => function () {
+                        return current_user_can('manage_options') && is_user_logged_in();
                     },
                 ],
             ],
+
+            // Route: POST/PATCH /update - Update an existing entry
             [
                 'route' => '/update',
                 'data' => [
-                    'methods'  => WP_REST_Server::EDITABLE,
-                    'callback' => [$this, 'update_entries'],
-                    'permission_callback' => function(){
-                        return current_user_can( 'manage_options' )  && is_user_logged_in();
+                    'methods'             => WP_REST_Server::EDITABLE,
+                    'callback'            => [$this, 'update_entries'],
+                    'permission_callback' => function () {
+                        return current_user_can('manage_options') && is_user_logged_in();
                     },
                     'args' => [
                         'id' => [
-                            'description' => __('Entry ID to update.', 'save-wpf-entries'),
-                            'required' => true,
+                            'description'       => __('Entry ID to update.', 'save-wpf-entries'),
+                            'required'          => true,
                             'sanitize_callback' => 'absint',
                             'validate_callback' => function ($param) {
                                 return is_numeric($param) && $param > 0;
                             },
                         ],
                         'form_id' => [
-                            'description' => __('Form ID for the entry.', 'save-wpf-entries'),
-                            'required' => true,
+                            'description'       => __('Form ID for the entry.', 'save-wpf-entries'),
+                            'required'          => true,
                             'sanitize_callback' => 'absint',
                             'validate_callback' => function ($param) {
                                 return is_numeric($param) && $param > 0;
                             },
                         ],
                         'entry' => [
-                            'description' => __('Entry data as an associative array.', 'save-wpf-entries'),
-                            'required' => false,
+                            'description'       => __('Entry data as an associative array.', 'save-wpf-entries'),
+                            'required'          => false,
                             'validate_callback' => function ($param) {
                                 return is_array($param);
                             },
                         ],
                         'status' => [
-                            'description' => __('Read/unread status for the entry.', 'save-wpf-entries'),
-                            'required' => false,
+                            'description'       => __('Read/unread status for the entry.', 'save-wpf-entries'),
+                            'required'          => false,
                             'validate_callback' => function ($param) {
                                 return in_array($param, ['unread', 'read'], true);
                             },
                             'sanitize_callback' => 'sanitize_text_field',
-                            'default' => 'unread',
+                            'default'           => 'unread',
                         ],
                         'note' => [
-                            'description' => __('Internal note for the entry (max 500 words).', 'save-wpf-entries'),
-                            'required' => false,
+                            'description'       => __('Internal note for the entry (max 500 words).', 'save-wpf-entries'),
+                            'required'          => false,
                             'validate_callback' => function ($param) {
                                 return is_string($param) && str_word_count($param) <= 500;
                             },
                             'sanitize_callback' => 'sanitize_text_field',
                         ],
                         'is_favorite' => [
-                            'description' => __('Mark entry as favorite (0 or 1).', 'save-wpf-entries'),
-                            'required' => false,
+                            'description'       => __('Mark entry as favorite (0 or 1).', 'save-wpf-entries'),
+                            'required'          => false,
                             'validate_callback' => function ($param) {
                                 return is_numeric($param) && in_array($param, [0, 1], true);
                             },
                             'sanitize_callback' => 'absint',
-                            'default' => 0
+                            'default'           => 0,
                         ],
                         'exported_to_csv' => [
-                            'description' => __('Exported to CSV flag (0 or 1).', 'save-wpf-entries'),
-                            'required' => false,
+                            'description'       => __('Exported to CSV flag (0 or 1).', 'save-wpf-entries'),
+                            'required'          => false,
                             'validate_callback' => function ($param) {
                                 return is_numeric($param) && in_array($param, [0, 1], true);
                             },
                             'sanitize_callback' => 'absint',
-                            'default' => 0
+                            'default'           => 0,
                         ],
                         'synced_to_gsheet' => [
-                            'description' => __('Synced to Google Sheet flag (0 or 1).', 'save-wpf-entries'),
-                            'required' => false,
+                            'description'       => __('Synced to Google Sheet flag (0 or 1).', 'save-wpf-entries'),
+                            'required'          => false,
                             'validate_callback' => function ($param) {
                                 return is_numeric($param) && in_array($param, [0, 1], true);
                             },
                             'sanitize_callback' => 'absint',
-                            'default' => 0
+                            'default'           => 0,
                         ],
                         'printed_at' => [
-                            'description' => __('Printed at datetime (Y-m-d H:i:s).', 'save-wpf-entries'),
-                            'required' => false,
+                            'description'       => __('Printed at datetime (Y-m-d H:i:s).', 'save-wpf-entries'),
+                            'required'          => false,
                             'validate_callback' => function ($param) {
                                 return strtotime($param) !== false;
                             },
@@ -304,8 +324,8 @@ class Rest_API
                             },
                         ],
                         'resent_at' => [
-                            'description' => __('Resent at datetime (Y-m-d H:i:s).', 'save-wpf-entries'),
-                            'required' => false,
+                            'description'       => __('Resent at datetime (Y-m-d H:i:s).', 'save-wpf-entries'),
+                            'required'          => false,
                             'validate_callback' => function ($param) {
                                 return strtotime($param) !== false;
                             },
@@ -316,15 +336,17 @@ class Rest_API
                     ],
                 ],
             ],
+
+            // Route: DELETE /delete - Delete a specific entry
             [
                 'route' => '/delete',
                 'data'  => [
                     'methods'             => WP_REST_Server::DELETABLE,
                     'callback'            => [$this, 'delete_entry'],
-                    'permission_callback' => function(){
-                        return current_user_can( 'manage_options' )  && is_user_logged_in();
+                    'permission_callback' => function () {
+                        return current_user_can('manage_options') && is_user_logged_in();
                     },
-                    'args'                => [
+                    'args' => [
                         'id' => [
                             'required'          => true,
                             'sanitize_callback' => 'absint',
@@ -333,25 +355,11 @@ class Rest_API
                             },
                         ],
                         'form_id' => [
-                            'required'          => true, // optional, based on use
+                            'required'          => true,
                             'sanitize_callback' => 'absint',
                             'validate_callback' => function ($param) {
                                 return is_numeric($param) && $param > 0;
                             },
-                        ],
-                    ],
-                ],
-            ],
-            [
-                'route' => '/oauth/callback',
-                'data' => [
-                    'method' => WP_REST_Server::READABLE,
-                    'callback' => [ $this, 'oauth_callback' ],
-                    'permission_callback' => '__return_true',
-                    'args' => [
-                        'code' => [
-                            'required' => true,
-                            'type' => 'string',
                         ],
                     ],
                 ],
@@ -361,42 +369,6 @@ class Rest_API
         foreach ($data as $item) {
             register_rest_route($this->namespace, $item['route'], $item['data']);
         }
-    }
-
-    public function oauth_callback( WP_REST_Request $request ) {
-        $code = $request->get_param('code');
-
-        if (!$code) {
-            return new WP_REST_Response(['error' => 'Missing code'], 400);
-        }
-
-        $client_id     = get_option('swpfe_google_client_id');
-        $client_secret = get_option('swpfe_google_client_secret');
-        $redirect_uri  = 'https://shaliktheme.com/wp-json/wpforms/entries/v1/oauth/callback';
-
-        $response = wp_remote_post('https://oauth2.googleapis.com/token', [
-            'body' => [
-                'code'          => $code,
-                'client_id'     => $client_id,
-                'client_secret' => $client_secret,
-                'redirect_uri'  => $redirect_uri,
-                'grant_type'    => 'authorization_code',
-            ],
-        ]);
-
-        $body = json_decode(wp_remote_retrieve_body($response), true);
-
-        if (!empty($body['access_token'])) {
-            update_option('swpfe_google_access_token', $body['access_token']);
-            update_option('swpfe_google_refresh_token', $body['refresh_token']);
-            update_option('swpfe_google_token_expires', time() + $body['expires_in']);
-
-            // Optional: redirect back to admin
-            wp_redirect(admin_url('admin.php?page=swpfe-settings&connected=true'));
-            exit;
-        }
-
-        return new WP_REST_Response(['error' => $body], 400);
     }
 
     /**
@@ -421,106 +393,172 @@ class Rest_API
         $date_to   = $request->get_param('date_to');
         $offset    = ($page - 1) * $per_page;
 
-        $where  = 'WHERE 1=1';
+        $where_clauses = [];
         $params = [];
 
+        // Base condition
+        $where_clauses[] = '1=1';
+
         if ($form_id) {
-            $where    .= ' AND form_id = %d';
+            $where_clauses[] = 'form_id = %d';
             $params[] = $form_id;
         }
 
         if ($status === 'read' || $status === 'unread') {
-            $where    .= ' AND status = %s';
+            $where_clauses[] = 'status = %s';
             $params[] = $status;
         }
 
         if ($search) {
-            $where    .= ' AND entry LIKE %s';
+            $where_clauses[] = 'entry LIKE %s';
             $params[] = '%' . $wpdb->esc_like($search) . '%';
         }
 
         if ($date_from) {
-            $where    .= ' AND created_at >= %s';
+            $where_clauses[] = 'created_at >= %s';
             $params[] = $date_from . ' 00:00:00';
         }
 
         if ($date_to) {
-            $where    .= ' AND created_at <= %s';
+            $where_clauses[] = 'created_at <= %s';
             $params[] = $date_to . ' 23:59:59';
         }
 
-        // Clone params to use in COUNT query
-        $count_params = $params;
+        $where = 'WHERE ' . implode(' AND ', $where_clauses);
 
-        // Add LIMIT + OFFSET
-        $params[] = $per_page;
-        $params[] = $offset;
+        /**
+         * Filter the WHERE clause and parameters before the query is executed.
+         *
+         * @param string          $where  The WHERE clause.
+         * @param array           $params Query parameters.
+         * @param WP_REST_Request $request The current REST request.
+         */
+        $where = apply_filters('swpfe_get_entries_where', $where, $params, $request);
 
+        // Prepare SQL with LIMIT and OFFSET
         $sql = $wpdb->prepare(
             "SELECT * FROM $table $where ORDER BY created_at DESC LIMIT %d OFFSET %d",
-            ...$params
+            ...array_merge($params, [$per_page, $offset])
         );
 
         $results = $wpdb->get_results($sql);
-        $data    = [];
 
-        // Total count (no LIMIT)
-        $count_sql = $wpdb->prepare("SELECT COUNT(*) FROM $table $where", ...$count_params);
+        // Prepare COUNT query to get total results
+        $count_sql = $wpdb->prepare(
+            "SELECT COUNT(*) FROM $table $where",
+            ...$params
+        );
         $total_count = (int) $wpdb->get_var($count_sql);
 
+        $data = [];
         foreach ($results as $row) {
             $entry_raw = maybe_unserialize($row->entry);
             $entry_normalized = [];
 
-            foreach ($entry_raw as $key => $value) {
-                $entry_normalized[ucwords(strtolower($key))] = $value;
+            if (is_array($entry_raw)) {
+                foreach ($entry_raw as $key => $value) {
+                    $entry_normalized[ucwords(strtolower($key))] = $value;
+                }
             }
 
             $data[] = [
-                'id'            => $row->id,
-                'form_title'    => get_the_title($row->form_id),
-                'entry'         => $entry_normalized,
-                'status'        => $row->status,
-                'date'          => $row->created_at,
-                'note'          => $row->note,
-                'is_favorite'   => (bool) $row->is_favorite,
-                'exported'      => (bool) $row->exported_to_csv,
-                'synced'        => (bool) $row->synced_to_gsheet,
-                'printed_at'    => $row->printed_at,
-                'resent_at'     => $row->resent_at,
-                'form_id'       => $row->form_id,
+                'id'           => (int) $row->id,
+                'form_title'   => get_the_title($row->form_id),
+                'entry'        => $entry_normalized,
+                'status'       => $row->status,
+                'date'         => $row->created_at,
+                'note'         => $row->note,
+                'is_favorite'  => (bool) $row->is_favorite,
+                'exported'     => (bool) $row->exported_to_csv,
+                'synced'       => (bool) $row->synced_to_gsheet,
+                'printed_at'   => $row->printed_at,
+                'resent_at'    => $row->resent_at,
+                'form_id'      => (int) $row->form_id,
             ];
         }
 
-        return rest_ensure_response([
-            'entries' => $data,           // ✅ Flat array now
-            'total'   => $total_count     // ✅ Real total count
+        /**
+         * Filter the entries data before returning the response.
+         *
+         * @param array           $data    The entries data array.
+         * @param array           $results Raw DB results.
+         * @param WP_REST_Request $request The current REST request.
+         */
+        $data = apply_filters('swpfe_get_entries_data', $data, $results, $request);
+
+        $response = rest_ensure_response([
+            'entries' => $data,
+            'total'   => $total_count,
+            'page'    => $page,
+            'per_page'=> $per_page,
         ]);
+
+        /**
+         * Filter the full REST response before returning.
+         *
+         * @param WP_REST_Response $response The REST response object.
+         * @param WP_REST_Request  $request  The current REST request.
+         */
+        return apply_filters('swpfe_get_entries_response', $response, $request);
     }
 
+
+    /**
+     * Get list of forms with their entry counts.
+     *
+     * Queries the custom entries table to retrieve all unique form IDs and
+     * the number of entries associated with each form. Also fetches the form
+     * title using `get_the_title()`. The result is formatted as a REST response.
+     *
+     * @global wpdb $wpdb WordPress database abstraction object.
+     *
+     * @return WP_REST_Response JSON-formatted response containing form data:
+     *                          - form_id (int)
+     *                          - form_title (string)
+     *                          - entry_count (int)
+     */
     public function get_forms()
     {
         global $wpdb;
         $table = $wpdb->prefix . 'swpfe_entries';
 
-        $results = $wpdb->get_results("
-            SELECT form_id, COUNT(*) as entry_count 
-            FROM $table 
-            GROUP BY form_id
-        ");
+        // Optional: Check permission, customize capability as needed
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return new \WP_Error(
+                'rest_forbidden',
+                __( 'You do not have permission to view this data.', 'save-wpf-entries' ),
+                [ 'status' => 403 ]
+            );
+        }
+
+        // Query distinct form IDs and their entry counts
+        $results = $wpdb->get_results(
+            "SELECT form_id, COUNT(*) as entry_count 
+            FROM {$table} 
+            GROUP BY form_id",
+            OBJECT
+        );
 
         $forms = [];
 
-        foreach ($results as $row) {
+        foreach ( $results as $row ) {
+            $form_id = (int) $row->form_id;
+
             $forms[] = [
-                'form_id'     => (int) $row->form_id,
-                'form_title'  => get_the_title($row->form_id),
+                'form_id'     => $form_id,
+                'form_title'  => get_the_title( $form_id ),
                 'entry_count' => (int) $row->entry_count,
             ];
         }
 
-        return rest_ensure_response($forms);
+        /**
+         * Filter the list of forms returned by get_forms().
+         *
+         * @param array $forms List of forms with entry counts.
+         */
+        return rest_ensure_response( apply_filters( 'swpfe_get_forms', $forms ) );
     }
+
 
     /**
      * Handle creation of a new WPForms entry saved into custom DB table using rest.
@@ -538,81 +576,99 @@ class Rest_API
         global $wpdb;
         $table = $wpdb->prefix . 'swpfe_entries';
 
-        // Get parameters from request JSON body
+        // Get parameters from JSON body
         $params = $request->get_json_params();
 
-        /* ============== DB STRUCTURE TO FOLLOW ====================
-         --id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-         --form_id BIGINT UNSIGNED NOT NULL,
-         --entry LONGTEXT NOT NULL,
-         --status VARCHAR(20) DEFAULT 'unread',
-         --is_favorite TINYINT(1) DEFAULT 0,              -- marked favorite
-         --note TEXT DEFAULT NULL,                        -- internal comment
-         --exported_to_csv TINYINT(1) DEFAULT 0,          -- 0 = no, 1 = exported
-         --synced_to_gsheet TINYINT(1) DEFAULT 0,         -- synced flag
-         --printed_at DATETIME DEFAULT NULL,              -- print log
-         --resent_at DATETIME DEFAULT NULL,               -- last resend time
-         --created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        */
-
-        $form_id    = isset($params['form_id']) ? sanitize_text_field($params['form_id']) : null;
-        $entry      = isset($params['entry']) ? $params['entry'] : null; // associative array expected
-        $status     = isset($params['status']) ? sanitize_text_field($params['status']) : 'unread';
-        $is_fav     = isset($params['is_favorite']) ? absint($params['is_favorite']) : 0;
-        $note       = isset($params['note']) ? sanitize_textarea_field($params['note']) : null;
-        $exported   = isset($params['exported_to_csv']) ? absint($params['exported_to_csv']) : 0;
-        $synced     = isset($params['synced_to_gsheet']) ? absint($params['synced_to_gsheet']) : 0;
-        $printed_at = isset($params['printed_at']) ? sanitize_text_field($params['printed_at']) : null;
-        $resent_at  = isset($params['resent_at']) ? sanitize_text_field($params['resent_at']) : null;
+        // Sanitize and validate required fields
+        $form_id = isset($params['form_id']) ? absint($params['form_id']) : 0;
+        $entry = isset($params['entry']) ? $params['entry'] : null; // expecting array
 
         if (!$form_id || !is_array($entry)) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => 'Invalid or missing form_id or entry data.'
+                'message' => __('Invalid or missing form_id or entry data.', 'save-wpf-entries'),
             ], 400);
         }
 
-        // Prepare data to insert
+        // Optional fields with sanitization and normalization
+        $status           = isset($params['status']) ? sanitize_text_field($params['status']) : 'unread';
+        $is_favorite      = isset($params['is_favorite']) ? absint($params['is_favorite']) : 0;
+        $note             = isset($params['note']) ? sanitize_textarea_field($params['note']) : null;
+        $exported_to_csv  = isset($params['exported_to_csv']) ? absint($params['exported_to_csv']) : 0;
+        $synced_to_gsheet = isset($params['synced_to_gsheet']) ? absint($params['synced_to_gsheet']) : 0;
+        // Normalize datetime fields or set null if empty/invalid
+        $printed_at       = !empty($params['printed_at']) ? date('Y-m-d H:i:s', strtotime($params['printed_at'])) : null;
+        $resent_at        = !empty($params['resent_at']) ? date('Y-m-d H:i:s', strtotime($params['resent_at'])) : null;
+
+        // Optional: capability check (uncomment if needed)
+        // if ( ! current_user_can( 'manage_options' ) ) {
+        //     return new WP_REST_Response([
+        //         'success' => false,
+        //         'message' => __( 'Insufficient permissions to create entry.', 'save-wpf-entries' ),
+        //     ], 403);
+        // }
+
+        /**
+         * Fires before inserting a new entry.
+         *
+         * @param int             $form_id Form ID.
+         * @param array           $entry   Entry data (array).
+         * @param array           $params  Full request parameters.
+         * @param WP_REST_Request $request REST request object.
+         */
+        do_action('swpfe_before_entry_create', $form_id, $entry, $params, $request);
+
+        // Prepare data for DB insert
         $data = [
             'form_id'          => $form_id,
-            'entry'            => maybe_serialize($entry), // serialize array to store as text
+            'entry'            => maybe_serialize($entry),
             'status'           => $status,
-            'is_favorite'      => $is_fav,
+            'is_favorite'      => $is_favorite,
             'note'             => $note,
-            'exported_to_csv'  => $exported,
-            'synced_to_gsheet' => $synced,
+            'exported_to_csv'  => $exported_to_csv,
+            'synced_to_gsheet' => $synced_to_gsheet,
             'printed_at'       => $printed_at,
-            'resent_at'        => $resent_at
+            'resent_at'        => $resent_at,
+            'created_at'       => current_time('mysql'),
         ];
 
-        // Insert into database
-        $inserted = $wpdb->insert(
-            $table,
-            $data,
-            [
-                '%d', // form_id
-                '%s', // serialized entry
-                '%s', // status
-                '%d', // is_favorite
-                '%s', // note
-                '%d', // exported_to_csv
-                '%d', // synced_to_gsheet
-                '%s', // printed_at
-                '%s', // resent_at
-            ]
-        );
+        // Define formats — handle nullable string fields properly
+        $format = [
+            '%d', // form_id
+            '%s', // entry
+            '%s', // status
+            '%d', // is_favorite
+            $note === null ? '%s' : '%s', // note (allow null)
+            '%d', // exported_to_csv
+            '%d', // synced_to_gsheet
+            $printed_at === null ? '%s' : '%s', // printed_at (allow null)
+            $resent_at === null ? '%s' : '%s', // resent_at (allow null)
+            '%s', // created_at
+        ];
+
+        $inserted = $wpdb->insert($table, $data, $format);
 
         if ($inserted === false) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => 'Database insert failed.'
+                'message' => __('Database insert failed.', 'save-wpf-entries'),
             ], 500);
         }
 
-        // Return success with inserted ID
+        /**
+         * Fires after successfully inserting a new entry.
+         *
+         * @param int             $entry_id Inserted entry ID.
+         * @param int             $form_id  Form ID.
+         * @param array           $entry    Entry data.
+         * @param array           $params   Full request parameters.
+         * @param WP_REST_Request $request  REST request object.
+         */
+        do_action('swpfe_after_entry_create', $wpdb->insert_id, $form_id, $entry, $params, $request);
+
         return new WP_REST_Response([
-            'success' => true,
-            'message' => 'Entry created successfully.',
+            'success'  => true,
+            'message'  => __('Entry created successfully.', 'save-wpf-entries'),
             'entry_id' => $wpdb->insert_id,
         ], 201);
     }
@@ -632,14 +688,14 @@ class Rest_API
 
         $params = $request->get_json_params();
 
-        // Require entry ID
+        // Require entry ID and form ID, sanitize
         $id = isset($params['id']) ? absint($params['id']) : 0;
         $form_id = isset($params['form_id']) ? absint($params['form_id']) : 0;
 
-        if (! $id || ! $form_id) {
+        if (!$id || !$form_id) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => 'Missing or invalid entry ID or form ID.'
+                'message' => __('Missing or invalid entry ID or form ID.', 'save-wpf-entries'),
             ], 400);
         }
 
@@ -691,9 +747,18 @@ class Rest_API
         if (empty($data)) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => __('No valid fields provided for update.', 'save-wpf-entries')
+                'message' => __('No valid fields provided for update.', 'save-wpf-entries'),
             ], 400);
         }
+
+        /**
+         * Fires before an entry update is performed.
+         *
+         * @param int             $id      Entry ID.
+         * @param array           $data    Data to update (column => value).
+         * @param WP_REST_Request $request Full REST request object.
+         */
+        do_action('swpfe_before_entry_update', $id, $data, $request);
 
         // Perform DB update
         $updated = $wpdb->update(
@@ -707,9 +772,18 @@ class Rest_API
         if ($updated === false) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => __('Database update failed.', 'save-wpf-entries')
+                'message' => __('Database update failed.', 'save-wpf-entries'),
             ], 500);
         }
+
+        /**
+         * Fires after an entry has been successfully updated.
+         *
+         * @param int             $id      Entry ID.
+         * @param array           $data    Data that was updated.
+         * @param WP_REST_Request $request Full REST request object.
+         */
+        do_action('swpfe_after_entry_update', $id, $data, $request);
 
         return new WP_REST_Response([
             'success'        => true,
@@ -719,14 +793,45 @@ class Rest_API
         ], 200);
     }
 
+    /**
+     * Delete a specific form entry.
+     *
+     * Handles a REST API request to delete a single entry from the custom entries table
+     * based on its entry ID and form ID. Returns a success or failure response.
+     *
+     * Example request: DELETE /wp-json/your-namespace/v1/entries?id=123&form_id=45
+     *
+     * @param WP_REST_Request $request REST request object containing 'id' and 'form_id'.
+     *
+     * @global wpdb $wpdb WordPress database abstraction object.
+     *
+     * @return WP_REST_Response JSON response indicating success or failure:
+     *                          - deleted (bool)
+     *                          - message (string, optional)
+     */
     public function delete_entry( WP_REST_Request $request ) {
         global $wpdb;
 
-        $id = $request->get_param( 'id' );
-        $form_id = $request->get_param( 'form_id' );
+        $id      = absint( $request->get_param( 'id' ) );
+        $form_id = absint( $request->get_param( 'form_id' ) );
+
+        if ( ! $id || ! $form_id ) {
+            return new WP_REST_Response( [
+                'deleted' => false,
+                'message' => __( 'Missing required parameters.', 'save-wpf-entries' ),
+            ], 400 );
+        }
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return new WP_REST_Response( [
+                'deleted' => false,
+                'message' => __( 'You are not allowed to delete entries.', 'save-wpf-entries' ),
+            ], 403 );
+        }
+
+        do_action( 'swpfe_before_entry_delete', $id, $form_id );
 
         $table = $wpdb->prefix . 'swpfe_entries';
-
         $deleted = $wpdb->delete(
             $table,
             [ 'id' => $id, 'form_id' => $form_id ],
@@ -734,9 +839,14 @@ class Rest_API
         );
 
         if ( $deleted ) {
+            do_action( 'swpfe_after_entry_delete', $id, $form_id );
+
             return new WP_REST_Response( [ 'deleted' => true ], 200 );
         }
 
-        return new WP_REST_Response( [ 'deleted' => false, 'message' => 'Entry not found or already deleted.' ], 404 );
+        return new WP_REST_Response( [
+            'deleted' => false,
+            'message' => __( 'Entry not found or already deleted.', 'save-wpf-entries' ),
+        ], 404 );
     }
 }
