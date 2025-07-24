@@ -46,25 +46,25 @@ class DB_Handler
         $charset_collate = $wpdb->get_charset_collate();
 
         $sql = "CREATE TABLE $table (
-                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-                form_id BIGINT UNSIGNED NOT NULL,
-                entry JSON NOT NULL,                          -- Use JSON column type for structured form entry data
-                status ENUM('unread','read') DEFAULT 'unread', -- More strict status enum
-                is_favorite BOOLEAN DEFAULT FALSE,
-                note TEXT DEFAULT NULL,
-                exported_to_csv BOOLEAN DEFAULT FALSE,
-                synced_to_gsheet BOOLEAN DEFAULT FALSE,
-                printed_at DATETIME DEFAULT NULL,
-                resent_at DATETIME DEFAULT NULL,
-                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            form_id BIGINT UNSIGNED NOT NULL,
+            entry LONGTEXT NOT NULL,
+            status ENUM('unread','read') DEFAULT 'unread',
+            is_favorite BOOLEAN DEFAULT FALSE,
+            note TEXT DEFAULT NULL,
+            exported_to_csv BOOLEAN DEFAULT FALSE,
+            synced_to_gsheet BOOLEAN DEFAULT FALSE,
+            printed_at DATETIME DEFAULT NULL,
+            resent_at DATETIME DEFAULT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            INDEX idx_form_id (form_id),
+            INDEX idx_status (status),
+            INDEX idx_created_at (created_at)
+        ) $charset_collate;";
 
-                PRIMARY KEY (id),
-                KEY idx_form_id (form_id),
-                KEY idx_status (status),
-                KEY idx_created_at (created_at)
-            ) $charset_collate;
-            ";
+
 
         dbDelta($sql);
 

@@ -35,17 +35,8 @@ class Admin {
 	}
 
     function render_settings_page() {
-        $connected     = isset($_GET['connected']) && $_GET['connected'] === 'true';
-        $client_id     = get_option('swpfe_google_client_id');
-        $client_secret = get_option('swpfe_google_client_secret');
-        $access_token  = get_option('swpfe_google_access_token');
-        
         include SWPFE_PATH . 'admin/views/settings-page.php';
-        ?>
-        
-        <?php
     }
-
 
 	public function render_page() {
 		include SWPFE_PATH . 'admin/views/view-entries.php';
@@ -61,6 +52,14 @@ class Admin {
 		wp_enqueue_script( 'swpfe-alpine', 'https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js', [], null, true );
         wp_enqueue_script( 'swpfe-admin-js', SWPFE_URL . 'admin/assets/admin.js', [], time() );
         wp_enqueue_script( 'swpfe-landash', 'https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js', [], time(), false );
+
+            wp_enqueue_script(
+        'lottie-web',
+        'https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.0/lottie.min.js',
+        [],
+        '5.12.0',
+        true
+    );
 
         wp_localize_script('swpfe-admin-js', 'swpfeSettings', [
             'restUrl' => esc_url_raw(rest_url()),

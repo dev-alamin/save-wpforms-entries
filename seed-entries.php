@@ -66,3 +66,4 @@ for ($i = 0; $i < $total; $i += $batch_size) {
 }
 
 echo "Seeding complete.\n";
+?>
