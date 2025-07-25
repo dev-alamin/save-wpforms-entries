@@ -172,6 +172,33 @@
                                 >
                                 <span><?php esc_html_e('Only Favorites', 'advanced-entries-manager-for-wpforms'); ?></span>
                             </label>
+                            <!-- Date From -->
+                            <div>
+                                <label for="date_from" class="block text-xs font-medium text-gray-600 mb-1">
+                                    <?php esc_html_e('From Date', 'advanced-entries-manager-for-wpforms'); ?>
+                                </label>
+                                <input
+                                    type="date"
+                                    id="date_from"
+                                    x-model="dateFrom"
+                                    @change="handleDateFilterChange"
+                                    class="border px-3 py-2 rounded text-sm text-gray-700"
+                                >
+                            </div>
+
+                            <!-- Date To -->
+                            <div>
+                                <label for="date_to" class="block text-xs font-medium text-gray-600 mb-1">
+                                    <?php esc_html_e('To Date', 'advanced-entries-manager-for-wpforms'); ?>
+                                </label>
+                                <input
+                                    type="date"
+                                    id="date_to"
+                                    x-model="dateTo"
+                                    @change="handleDateFilterChange"
+                                    class="border px-3 py-2 rounded text-sm text-gray-700"
+                                >
+                            </div>
                         </div>
                     </div>
 
@@ -221,7 +248,7 @@
                     <?php include __DIR__ . '/table/pagination.php'; ?>
                 </div>
             </div>
-
+            <!-- Entries Table --> 
             <!-- Entry Modal -->
             <?php include __DIR__ . '/modal.php'; ?>
         </div>

@@ -48,6 +48,8 @@ class DB_Handler
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
             form_id BIGINT UNSIGNED NOT NULL,
             entry LONGTEXT NOT NULL,
+            name VARCHAR(255) DEFAULT NULL,
+            email VARCHAR(255) DEFAULT NULL,
             status ENUM('unread','read') DEFAULT 'unread',
             is_favorite BOOLEAN DEFAULT FALSE,
             note TEXT DEFAULT NULL,
@@ -60,9 +62,11 @@ class DB_Handler
             PRIMARY KEY (id),
             INDEX idx_form_id (form_id),
             INDEX idx_status (status),
-            INDEX idx_created_at (created_at)
+            INDEX idx_created_at (created_at),
+            INDEX idx_email (email),
+            INDEX idx_name (name),
+            INDEX idx_formid_id (form_id, id) -- Composite index for pagination performance
         ) $charset_collate;";
-
 
 
         dbDelta($sql);

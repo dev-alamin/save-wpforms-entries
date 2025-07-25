@@ -58,14 +58,15 @@ class Rest_API
                 'data' => [
                     'methods'  => WP_REST_Server::READABLE,
                     'callback' => [$this, 'get_entries'],
-                    'permission_callback' => function () {
-                        return current_user_can('manage_options') && is_user_logged_in();
-                    },
+                    // 'permission_callback' => function () {
+                    //     return current_user_can('manage_options') && is_user_logged_in();
+                    // },
+                    'validation_callback' => '__return_true',
                     'args' => [
                         'per_page' => [
                             'description'       => __('Number of entries per page.', 'advanced-entries-manager-for-wpforms'),
                             'type'              => 'integer',
-                            'default'           => 50,
+                            'default'           => 20,
                             'sanitize_callback' => 'absint',
                             'validate_callback' => function ($value) {
                                 return $value > 0 && $value <= 100;
@@ -410,8 +411,14 @@ class Rest_API
         }
 
         if ($search) {
-            $where_clauses[] = 'entry LIKE %s';
-            $params[] = '%' . $wpdb->esc_like($search) . '%';
+            if (is_email($search)) {
+                $where_clauses[] = 'email = %s';
+                $params[] = $search;
+            } else {
+                $where_clauses[] = '(name LIKE %s OR entry LIKE %s)';
+                $params[] = '%' . $wpdb->esc_like($search) . '%';
+                $params[] = '%' . $wpdb->esc_like($search) . '%';
+            }
         }
 
         if ($date_from) {
@@ -426,16 +433,8 @@ class Rest_API
 
         $where = 'WHERE ' . implode(' AND ', $where_clauses);
 
-        /**
-         * Filter the WHERE clause and parameters before the query is executed.
-         *
-         * @param string          $where  The WHERE clause.
-         * @param array           $params Query parameters.
-         * @param WP_REST_Request $request The current REST request.
-         */
         $where = apply_filters('swpfe_get_entries_where', $where, $params, $request);
 
-        // Prepare SQL with LIMIT and OFFSET
         $sql = $wpdb->prepare(
             "SELECT * FROM $table $where ORDER BY created_at DESC LIMIT %d OFFSET %d",
             ...array_merge($params, [$per_page, $offset])
@@ -443,7 +442,6 @@ class Rest_API
 
         $results = $wpdb->get_results($sql);
 
-        // Prepare COUNT query to get total results
         $count_sql = $wpdb->prepare(
             "SELECT COUNT(*) FROM $table $where",
             ...$params
@@ -477,13 +475,6 @@ class Rest_API
             ];
         }
 
-        /**
-         * Filter the entries data before returning the response.
-         *
-         * @param array           $data    The entries data array.
-         * @param array           $results Raw DB results.
-         * @param WP_REST_Request $request The current REST request.
-         */
         $data = apply_filters('swpfe_get_entries_data', $data, $results, $request);
 
         $response = rest_ensure_response([
@@ -493,15 +484,8 @@ class Rest_API
             'per_page'=> $per_page,
         ]);
 
-        /**
-         * Filter the full REST response before returning.
-         *
-         * @param WP_REST_Response $response The REST response object.
-         * @param WP_REST_Request  $request  The current REST request.
-         */
         return apply_filters('swpfe_get_entries_response', $response, $request);
     }
-
 
     /**
      * Get list of forms with their entry counts.

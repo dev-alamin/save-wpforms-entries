@@ -6,7 +6,7 @@ function formTable(form) {
         totalEntries: form.entry_count,
         entries: [],
         currentPage: 1,
-        pageSize: 20,
+        pageSize: 5,
         totalPages: 1,
         sortAsc: true,
         sortAscStatus: true,

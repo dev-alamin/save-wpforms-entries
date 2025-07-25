@@ -18,31 +18,15 @@
 namespace SWPFE;
 
 class Entry_Handler {
-	/**
-	 * Constructor.
-	 *
-	 * Hooks into WPForms entry save process to capture form submissions.
-	 */
 	public function __construct() {
 		add_action( 'wpforms_process_entry_save', [ $this, 'save_entry' ], 10, 3 );
+		add_action( 'wpforms_process_complete', [ $this, 'update_meta_fields' ], 10, 4 );
 	}
 
-	/**
-	 * Save form entry to custom database table.
-	 *
-	 * Called after WPForms saves the entry. This stores the entry data
-	 * in a custom table defined by DB_Handler::table_name().
-	 *
-	 * @param array $fields   Submitted form fields.
-	 * @param array $entry    Entry meta data.
-	 * @param int   $form_id  ID of the submitted form.
-	 *
-	 * @return void
-	 */
 	public function save_entry( $fields, $entry, $form_id ) {
 		global $wpdb;
 
-		$table = DB_Handler::table_name();
+		$table = DB_Handler::table_name(); // e.g., 'wp_swpfe_entries'
 
 		$data = [];
 		foreach ( $fields as $field ) {
@@ -56,6 +40,41 @@ class Entry_Handler {
 			'status'     => 'unread',
 			'created_at' => current_time( 'mysql' ),
 		] );
+
+		// Store entry ID in wp_options to update later
+		update_option( "swpfe_last_entry_id_{$form_id}", $wpdb->insert_id );
+	}
+
+	public function update_meta_fields( $fields, $entry, $form_data, $entry_id ) {
+		global $wpdb;
+
+		$table = DB_Handler::table_name();
+
+		$name  = '';
+		$email = '';
+
+		foreach ( $fields as $field ) {
+			if ( $field['type'] === 'name' ) {
+				$first = $field['first'] ?? '';
+				$last  = $field['last'] ?? '';
+				$name  = trim( $first . ' ' . $last );
+			}
+			if ( $field['type'] === 'email' ) {
+				$email = $field['value'];
+			}
+		}
+
+		$last_id = get_option( "swpfe_last_entry_id_{$form_data['id']}" );
+
+		if ( $last_id ) {
+			$wpdb->update(
+				$table,
+				[ 'name' => $name, 'email' => $email ],
+				[ 'id' => $last_id ]
+			);
+		}
+
+		//error_log( "[Entry $entry_id] Updated: Name: $name | Email: $email | Last ID: $last_id" );
 	}
 }
 

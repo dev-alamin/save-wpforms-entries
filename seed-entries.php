@@ -1,24 +1,36 @@
 <?php
-// Run via WP-CLI or plugin context
+// Run this file using: wp eval-file seed.php --allow-root
 global $wpdb;
 
 $table = $wpdb->prefix . 'swpfe_entries';
 $form_id = 2;
-$status_options = ['read', 'unread'];
 $batch_size = 1000;
-$total = 1000000; // 1 million
-// $total = 100;
+$total = 2000000;
+$status_options = ['read', 'unread'];
 
-// Sample data sets
-$names = ['Rafiul Islam', 'Sadia Jahan', 'Tanvir Ahmed', 'Nusrat Nila', 'Fahim Hossain', 'Ayesha Khanum'];
-$emails = ['rafiul@example.com', 'sadia@example.com', 'tanvir@example.com', 'nila@example.com', 'fahim@example.com', 'ayesha@example.com'];
+// Sample UK/US realistic names and emails
+$names = [
+    'James Smith', 'Mary Johnson', 'Robert Brown', 'Patricia Taylor', 'John Williams',
+    'Jennifer Davis', 'Michael Miller', 'Linda Wilson', 'William Moore', 'Elizabeth Anderson',
+    'David Thomas', 'Susan Jackson', 'Richard White', 'Jessica Harris', 'Joseph Martin',
+    'Sarah Thompson', 'Charles Garcia', 'Karen Martinez', 'Thomas Robinson', 'Nancy Clark'
+];
+
+$emails = [
+    'james.smith@example.com', 'mary.johnson@example.co.uk', 'robert.brown@mail.com', 'patricia.taylor@ukmail.com', 'john.williams@gmail.com',
+    'jennifer.davis@yahoo.com', 'michael.miller@outlook.com', 'linda.wilson@hotmail.com', 'william.moore@aol.com', 'elizabeth.anderson@icloud.com',
+    'david.thomas@live.com', 'susan.jackson@mail.co.uk', 'richard.white@gmail.co.uk', 'jessica.harris@protonmail.com', 'joseph.martin@mailinator.com',
+    'sarah.thompson@example.org', 'charles.garcia@fastmail.com', 'karen.martinez@inbox.com', 'thomas.robinson@mail.com', 'nancy.clark@zoho.com'
+];
+
 $comments = [
-    'Works as expected',
-    'Great form experience!',
-    'Test comment for debugging',
-    'Just checking functionality',
-    'Hope this reaches you well',
-    'Simple and effective input'
+    'Works as expected.', 'Great form experience!', 'Test comment for debugging.',
+    'Just checking functionality.', 'Hope this reaches you well.', 'Simple and effective input.',
+    'Loved the user interface!', 'Could be improved in responsiveness.',
+    'Submission went through smoothly.', 'Error message appeared briefly.',
+    'Form validation is great.', 'Need more help options.', 'Very user-friendly design.',
+    'Thank you for quick response.', 'Highly recommend this service.', 'Data submission looks good.',
+    'Please add more fields.', 'Encountered a small bug.', 'Satisfied with the results.', 'Great customer support.'
 ];
 
 for ($i = 0; $i < $total; $i += $batch_size) {
@@ -27,43 +39,49 @@ for ($i = 0; $i < $total; $i += $batch_size) {
 
     for ($j = 0; $j < $batch_size; $j++) {
         $status = $status_options[array_rand($status_options)];
-
         $name = $names[array_rand($names)];
-        $email_prefix = explode('@', $emails[array_rand($emails)]);
-        $email = $email_prefix[0] . "{$i}_{$j}@" . $email_prefix[1];
+        
+        // Unique email by adding batch and row numbers
+        $email_base = $emails[array_rand($emails)];
+        $email_parts = explode('@', $email_base);
+        $email = $email_parts[0] . "+{$i}_{$j}@" . $email_parts[1];
+
         $comment = $comments[array_rand($comments)];
 
         $entry_data = maybe_serialize([
-            "Name" => $name,
-            "Email" => $email,
-            "Comment Or Message" => $comment
+            'Name' => $name,
+            'Email' => $email,
+            'Comment Or Message' => $comment,
         ]);
 
         $created_at = date('Y-m-d H:i:s', strtotime("-" . rand(0, 365) . " days"));
         $printed_at = date('Y-m-d H:i:s', strtotime("-" . rand(0, 365) . " days"));
-        $resent_at = '1970-01-01 00:00:00'; // default
+        $resent_at = null; // leave NULL
+        $note = null;
 
+        // Maintain DB column order
         $values[] = $form_id;
+        $values[] = $name;
+        $values[] = $email;
         $values[] = $entry_data;
         $values[] = $status;
         $values[] = $created_at;
-        $values[] = 1; // is_favorite
+        $values[] = rand(0, 1); // is_favorite
         $values[] = 0; // exported_to_csv
         $values[] = 0; // synced_to_gsheet
         $values[] = $printed_at;
         $values[] = $resent_at;
-        $values[] = ""; // note
+        $values[] = $note;
 
-        $placeholders[] = "(%d, %s, %s, %s, %d, %d, %d, %s, %s, %s)";
+        $placeholders[] = "(%d, %s, %s, %s, %s, %s, %d, %d, %d, %s, %s, %s)";
     }
 
     $sql = "INSERT INTO $table 
-        (form_id, entry, status, created_at, is_favorite, exported_to_csv, synced_to_gsheet, printed_at, resent_at, note) 
-        VALUES " . implode(", ", $placeholders);
+        (form_id, name, email, entry, status, created_at, is_favorite, exported_to_csv, synced_to_gsheet, printed_at, resent_at, note) 
+        VALUES " . implode(', ', $placeholders);
 
     $wpdb->query($wpdb->prepare($sql, ...$values));
     echo "Inserted batch: " . ($i + 1) . " to " . ($i + $batch_size) . "\n";
 }
 
-echo "Seeding complete.\n";
-?>
+echo "✅ Seeding complete.\n";
