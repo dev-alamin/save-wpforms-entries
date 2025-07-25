@@ -136,6 +136,7 @@ class Admin {
         wp_localize_script('swpfe-admin-js', 'swpfeSettings', [
             'restUrl' => esc_url_raw(rest_url()),
             'nonce'   => wp_create_nonce('wp_rest'),
+            'perPage' => get_option('swpfe_entries_per_page', 20), 
         ]);
     }
 

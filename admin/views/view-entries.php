@@ -220,7 +220,7 @@
                         <div role="columnheader" class="text-right"><?php esc_html_e('Actions', 'advanced-entries-manager-for-wpforms'); ?></div>
                     </div>
 
-                    <div class="relative">
+                    <div class="relative min-h-60">
                         <!-- Entries Rows -->
                         <template x-show="!loading" x-for="(entry, i) in paginatedEntries" :key="entry.id">
                             <div

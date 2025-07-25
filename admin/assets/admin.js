@@ -6,7 +6,7 @@ function formTable(form) {
         totalEntries: form.entry_count,
         entries: [],
         currentPage: 1,
-        pageSize: 10,
+        pageSize: swpfeSettings.perPage,
         totalPages: 1,
         sortAsc: true,
         sortAscStatus: true,
