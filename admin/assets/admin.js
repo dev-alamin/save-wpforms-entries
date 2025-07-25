@@ -6,10 +6,13 @@ function formTable(form) {
         totalEntries: form.entry_count,
         entries: [],
         currentPage: 1,
-        pageSize: 5,
+        pageSize: 10,
         totalPages: 1,
         sortAsc: true,
         sortAscStatus: true,
+        dateFrom: "",
+        dateTo: "",
+        loading: false,
 
         entryModalOpen: false,
         selectedEntry: {},
@@ -24,6 +27,7 @@ function formTable(form) {
             return this.entries;
         },
         async fetchEntries() {
+            this.loading = true;
             try {
                 const query = new URLSearchParams({
                     form_id: this.formId,
@@ -55,6 +59,8 @@ function formTable(form) {
                 this.totalPages = Math.ceil(this.totalEntries / this.pageSize);
             } catch (error) {
                 console.error("Failed to fetch entries:", error);
+            }finally{
+                this.loading = false;
             }
         },
         toggleOpen() {
@@ -63,26 +69,24 @@ function formTable(form) {
                 this.fetchEntries();
             }
         },
-
         goToPage(page) {
             if (page < 1 || page > this.totalPages) return;
             this.currentPage = page;
             this.fetchEntries();
         },
-
         nextPage() {
             if (this.currentPage < this.totalPages) {
                 this.currentPage++;
                 this.fetchEntries();
             }
         },
-
         prevPage() {
             if (this.currentPage > 1) {
                 this.currentPage--;
                 this.fetchEntries();
             }
-        }, sortByDate() {
+        },
+        sortByDate() {
             this.entries = [...this.entries].sort((a, b) => {
                 return this.sortAsc
                     ? new Date(a.date) - new Date(b.date)
@@ -228,14 +232,12 @@ function formTable(form) {
                 this.entries[index].status = newStatus;
                 this.updateEntry(index, { status: newStatus });
             }
-        }
-        ,
+        },
         syncToGoogleSheet(index) {
             const entry = this.entries[index];
             entry.synced_to_gsheet = 1;
             this.updateEntry(index, { synced_to_gsheet: 1 });
         },
-
         printEntry(index) {
             const entry = this.entries[index];
             const formTitle = entry.form_title || "Form Entry";
@@ -377,9 +379,6 @@ function formTable(form) {
         formatFullNumber(n) {
             return Number(n).toLocaleString('en-US'); // e.g. 1,234,567
         }
-
-
-
     };
 }
 
@@ -528,5 +527,3 @@ function formEntriesApp(formId, entryCount) {
         }
     }
 }
-
-console.log(swpfeSettings.nonce);

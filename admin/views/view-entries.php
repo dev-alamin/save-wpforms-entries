@@ -220,29 +220,48 @@
                         <div role="columnheader" class="text-right"><?php esc_html_e('Actions', 'advanced-entries-manager-for-wpforms'); ?></div>
                     </div>
 
-                    <!-- Entries Rows -->
-                    <template x-for="(entry, i) in paginatedEntries" :key="entry.id">
-                        <div
-                            :class="[
-                                bgClasses[i % bgClasses.length],
-                                entry.status === 'unread' ? 'font-bold' : 'font-normal'
-                            ]"
-                            class="grid items-center px-6 text-sm text-gray-800 border-b border-gray-100 hover:bg-gray-50"
-                            style="grid-template-columns: 1fr 1fr 150px 250px"
-                            role="row"
-                        >
-                            <div class="py-4 cursor-pointer" title="<?php echo esc_attr__('Click for details', 'advanced-entries-manager-for-wpforms'); ?>" @click="showEntry(i)" x-text="entry.entry?.Email || entry.entry?.email || '-'"></div>
-                            <div class="py-4 text-center" x-text="timeAgo(entry.date)" :title="entry.date"></div>
-                            <div class="py-4 text-center">
-                                <span
-                                    class="inline-block px-3 py-1 rounded-full text-xs font-semibold"
-                                    :class="entry.status === 'unread' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'"
-                                    x-text="entry.status.charAt(0).toUpperCase() + entry.status.slice(1)"
-                                ></span>
+                    <div class="relative">
+                        <!-- Entries Rows -->
+                        <template x-show="!loading" x-for="(entry, i) in paginatedEntries" :key="entry.id">
+                            <div
+                                :class="[
+                                    bgClasses[i % bgClasses.length],
+                                    entry.status === 'unread' ? 'font-bold' : 'font-normal'
+                                ]"
+                                class="grid items-center px-6 text-sm text-gray-800 border-b border-gray-100 hover:bg-gray-50"
+                                style="grid-template-columns: 1fr 1fr 150px 250px"
+                                role="row"
+                            >
+                                <div class="py-4 cursor-pointer" title="<?php echo esc_attr__('Click for details', 'advanced-entries-manager-for-wpforms'); ?>" @click="showEntry(i)" x-text="entry.entry?.Email || entry.entry?.email || '-'"></div>
+                                <div class="py-4 text-center" x-text="timeAgo(entry.date)" :title="entry.date"></div>
+                                <div class="py-4 text-center">
+                                    <span
+                                        class="inline-block px-3 py-1 rounded-full text-xs font-semibold"
+                                        :class="entry.status === 'unread' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'"
+                                        x-text="entry.status.charAt(0).toUpperCase() + entry.status.slice(1)"
+                                    ></span>
+                                </div>
+                                <?php include __DIR__ . '/table/action-column.php'; ?>
                             </div>
-                            <?php include __DIR__ . '/table/action-column.php'; ?>
+                        </template>
+                        
+                        <!-- Loader Overlay -->
+                        <div
+                            x-show="loading"
+                            x-transition
+                            class="absolute inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-sm"
+                        >
+                            <lottie-player
+                                src="<?php echo esc_url( SWPFE_URL . 'admin/assets/loading.json' ); ?>"
+                                background="transparent"
+                                speed="1"
+                                class="w-auto h-auto"
+                                loop
+                                autoplay>
+                            </lottie-player>
                         </div>
-                    </template>
+
+                    </div>
 
                     <!-- Pagination Controls -->
                     <?php include __DIR__ . '/table/pagination.php'; ?>
