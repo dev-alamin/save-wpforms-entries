@@ -13,6 +13,7 @@ function formTable(form) {
         dateFrom: "",
         dateTo: "",
         loading: false,
+        jumpTo: 1,
 
         entryModalOpen: false,
         selectedEntry: {},
@@ -70,9 +71,11 @@ function formTable(form) {
             }
         },
         goToPage(page) {
-            if (page < 1 || page > this.totalPages) return;
-            this.currentPage = page;
-            this.fetchEntries();
+            page = Number(page);
+            if (page > 0 && page <= this.totalPages) {
+                this.currentPage = page;
+                this.fetchEntries();
+            }
         },
         nextPage() {
             if (this.currentPage < this.totalPages) {

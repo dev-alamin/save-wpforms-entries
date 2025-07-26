@@ -35,4 +35,26 @@
         aria-label="<?php esc_attr_e('Next Page', 'advanced-entries-manager-for-wpforms'); ?>">
         &gt;
     </button>
+    
+    <!-- Go to Page Input -->
+    <div class="ml-4 flex items-center gap-1">
+        <span class="text-sm text-gray-600"><?php esc_html_e( 'Go to', 'save-wpf-entries' ); ?></span>
+
+        <input
+            type="number"
+            min="1"
+            :max="totalPages"
+            x-model.number="jumpTo"
+            @keydown.enter.prevent="
+                if (jumpTo >= 1 && jumpTo <= totalPages) {
+                    goToPage(jumpTo);
+                }
+            "
+            class="w-16 px-2 py-1 border border-gray-300 rounded-md text-center text-sm focus:outline-none focus:ring focus:border-indigo-500"
+            :placeholder="currentPage"
+            aria-label="<?php esc_attr_e( 'Jump to page number', 'save-wpf-entries' ); ?>"
+        />
+
+        <span class="text-sm text-gray-600">/ <span x-text="totalPages"></span></span>
+    </div>
 </div>
