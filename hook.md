@@ -114,4 +114,13 @@ $data = apply_filters('swpfe_get_entries_data', $data, $results, $request);
     */
 return apply_filters('swpfe_get_entries_response', $response, $request);
 
-## 
+## swpfe_check_new_entries
+/**
+    * Filter the new entry result rows.
+    *
+    * @param array           $rows    The result set.
+    * @param int             $form_id The form ID.
+    * @param int             $last_id The last seen entry ID.
+    * @param WP_REST_Request $request The original REST request.
+    */
+$rows = apply_filters('swpfe_check_new_entries', $rows, $form_id, $last_id, $request);

@@ -365,11 +365,96 @@ class Rest_API
                     ],
                 ],
             ],
+            [
+                'route' => '/entries/check-new',
+                'data' => [
+                    'methods' => WP_REST_Server::READABLE,
+                    'callback' => [$this, 'check_new'],
+                    'permission_callback' => function () {
+                        return current_user_can('manage_options') && is_user_logged_in();
+                    },
+                    // 'permission_callback' => '__return_true',
+                    'args' => [
+                        'form_id' => [
+                            'required' => true,
+                            'type'     => 'integer',
+                            'sanitize_callback' => 'absint',
+                            'validate_callback' => function ($param) {
+                                return $param > 0;
+                            },
+                        ],
+                        'last_seen_id' => [
+                            'required' => true,
+                            'type'     => 'integer',
+                            'sanitize_callback' => 'absint',
+                            'validate_callback' => function ($param) {
+                                return $param > 0;
+                            },
+                        ],
+                    ],
+                ],
+            ]
         ];
 
         foreach ($data as $item) {
             register_rest_route($this->namespace, $item['route'], $item['data']);
         }
+    }
+
+    /**
+     * Check for new entries for a given form after the last known entry ID.
+     *
+     * This endpoint is designed to be used for polling and detecting new form submissions in near real-time.
+     *
+     * @param WP_REST_Request $request The REST request object containing 'form_id' and 'last_seen_id'.
+     *
+     * @return WP_REST_Response|WP_Error REST response containing new entries or an error object.
+     */
+    public function check_new(WP_REST_Request $request)
+    {
+        global $wpdb;
+
+        // Sanitize and validate input
+        $form_id = absint($request->get_param('form_id'));
+        $last_id = absint($request->get_param('last_seen_id'));
+
+        if (!$form_id || !$last_id) {
+            return new \WP_Error(
+                'swpfe_missing_params',
+                __('Missing form ID or last seen ID.', 'save-wpf-entries'),
+                ['status' => 400]
+            );
+        }
+
+        $table = $wpdb->prefix . 'swpfe_entries';
+
+        $cache_key = "swpfe_new_entries_{$form_id}_{$last_id}";
+        $cached = get_transient($cache_key);
+        if ($cached !== false) {
+            return rest_ensure_response($cached);
+        }
+
+        $query = $wpdb->prepare(
+            "SELECT id, created_at FROM $table WHERE form_id = %d AND id > %d ORDER BY id ASC LIMIT 3",
+            $form_id,
+            $last_id
+        );
+
+        $rows = $wpdb->get_results($query);
+
+        set_transient($cache_key, $rows, 10);
+
+        /**
+         * Filter the new entry result rows.
+         *
+         * @param array           $rows    The result set.
+         * @param int             $form_id The form ID.
+         * @param int             $last_id The last seen entry ID.
+         * @param WP_REST_Request $request The original REST request.
+         */
+        $rows = apply_filters('swpfe_check_new_entries', $rows, $form_id, $last_id, $request);
+
+        return rest_ensure_response($rows);
     }
 
     /**
@@ -481,7 +566,7 @@ class Rest_API
             'entries' => $data,
             'total'   => $total_count,
             'page'    => $page,
-            'per_page'=> $per_page,
+            'per_page' => $per_page,
         ]);
 
         return apply_filters('swpfe_get_entries_response', $response, $request);
@@ -507,11 +592,11 @@ class Rest_API
         $table = $wpdb->prefix . 'swpfe_entries';
 
         // Optional: Check permission, customize capability as needed
-        if ( ! current_user_can( 'manage_options' ) ) {
+        if (! current_user_can('manage_options')) {
             return new \WP_Error(
                 'rest_forbidden',
-                __( 'You do not have permission to view this data.', 'advanced-entries-manager-for-wpforms' ),
-                [ 'status' => 403 ]
+                __('You do not have permission to view this data.', 'advanced-entries-manager-for-wpforms'),
+                ['status' => 403]
             );
         }
 
@@ -525,12 +610,12 @@ class Rest_API
 
         $forms = [];
 
-        foreach ( $results as $row ) {
+        foreach ($results as $row) {
             $form_id = (int) $row->form_id;
 
             $forms[] = [
                 'form_id'     => $form_id,
-                'form_title'  => get_the_title( $form_id ),
+                'form_title'  => get_the_title($form_id),
                 'entry_count' => (int) $row->entry_count,
             ];
         }
@@ -540,7 +625,7 @@ class Rest_API
          *
          * @param array $forms List of forms with entry counts.
          */
-        return rest_ensure_response( apply_filters( 'swpfe_get_forms', $forms ) );
+        return rest_ensure_response(apply_filters('swpfe_get_forms', $forms));
     }
 
 
@@ -793,44 +878,45 @@ class Rest_API
      *                          - deleted (bool)
      *                          - message (string, optional)
      */
-    public function delete_entry( WP_REST_Request $request ) {
+    public function delete_entry(WP_REST_Request $request)
+    {
         global $wpdb;
 
-        $id      = absint( $request->get_param( 'id' ) );
-        $form_id = absint( $request->get_param( 'form_id' ) );
+        $id      = absint($request->get_param('id'));
+        $form_id = absint($request->get_param('form_id'));
 
-        if ( ! $id || ! $form_id ) {
-            return new WP_REST_Response( [
+        if (! $id || ! $form_id) {
+            return new WP_REST_Response([
                 'deleted' => false,
-                'message' => __( 'Missing required parameters.', 'advanced-entries-manager-for-wpforms' ),
-            ], 400 );
+                'message' => __('Missing required parameters.', 'advanced-entries-manager-for-wpforms'),
+            ], 400);
         }
 
-        if ( ! current_user_can( 'manage_options' ) ) {
-            return new WP_REST_Response( [
+        if (! current_user_can('manage_options')) {
+            return new WP_REST_Response([
                 'deleted' => false,
-                'message' => __( 'You are not allowed to delete entries.', 'advanced-entries-manager-for-wpforms' ),
-            ], 403 );
+                'message' => __('You are not allowed to delete entries.', 'advanced-entries-manager-for-wpforms'),
+            ], 403);
         }
 
-        do_action( 'swpfe_before_entry_delete', $id, $form_id );
+        do_action('swpfe_before_entry_delete', $id, $form_id);
 
         $table = $wpdb->prefix . 'swpfe_entries';
         $deleted = $wpdb->delete(
             $table,
-            [ 'id' => $id, 'form_id' => $form_id ],
-            [ '%d', '%d' ]
+            ['id' => $id, 'form_id' => $form_id],
+            ['%d', '%d']
         );
 
-        if ( $deleted ) {
-            do_action( 'swpfe_after_entry_delete', $id, $form_id );
+        if ($deleted) {
+            do_action('swpfe_after_entry_delete', $id, $form_id);
 
-            return new WP_REST_Response( [ 'deleted' => true ], 200 );
+            return new WP_REST_Response(['deleted' => true], 200);
         }
 
-        return new WP_REST_Response( [
+        return new WP_REST_Response([
             'deleted' => false,
-            'message' => __( 'Entry not found or already deleted.', 'advanced-entries-manager-for-wpforms' ),
-        ], 404 );
+            'message' => __('Entry not found or already deleted.', 'advanced-entries-manager-for-wpforms'),
+        ], 404);
     }
 }
