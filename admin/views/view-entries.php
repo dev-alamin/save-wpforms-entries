@@ -97,12 +97,20 @@
                             class="items-center px-6 py-3 bg-gray-100 border-b border-gray-300 text-sm font-semibold text-gray-700 uppercase tracking-wide"
                             style="display: grid; grid-template-columns: 50px 1fr 150px 150px 250px;"
                             role="row">
+
                             <div role="columnheader"> 
                                 <!-- <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1f1f1f">
                                     <path d="M240-360h280l80-80H240v80Zm0-160h240v-80H240v80Zm-80-160v400h280l-80 80H80v-560h800v120h-80v-40H160Zm756 212q5 5 5 11t-5 11l-36 36-70-70 36-36q5-5 11-5t11 5l48 48ZM520-120v-70l266-266 70 70-266 266h-70ZM160-680v400-400Z"/>
                                 </svg> -->
-                                <input type="checkbox" name="buil_action_main" id="bulk_action_main">
+                                <input 
+                                    type="checkbox" 
+                                    id="bulk_action_main" 
+                                    @change="toggleSelectAll($event)" 
+                                    x-model="selectAll"
+                                    class="cursor-pointer"
+                                />
                             </div>
+
                             <div role="columnheader"><?php esc_html_e('Email', 'advanced-entries-manager-for-wpforms'); ?></div>
                             <div role="columnheader" class="text-center cursor-pointer select-none flex items-center justify-center gap-1" @click="sortByDate">
                                 <span><?php esc_html_e('Date', 'advanced-entries-manager-for-wpforms'); ?></span>
@@ -127,7 +135,13 @@
                                 style="grid-template-columns: 50px 1fr 150px 150px 250px;"
                                 role="row"
                             >
-                                <input type="checkbox" name="buil_action" id="bulk_action">
+                                <input 
+                                    type="checkbox"
+                                    :value="entry.id"
+                                    x-model="bulkSelected"
+                                    class="cursor-pointer"
+                                />
+
                                 <div class="py-4 cursor-pointer" title="<?php echo esc_attr__('Click for details', 'advanced-entries-manager-for-wpforms'); ?>" @click="showEntry(i)" x-text="entry.entry?.Email || entry.entry?.email || '-'"></div>
                                 <div class="py-4 text-center" x-text="timeAgo(entry.date)" :title="entry.date"></div>
                                 <div class="py-4 text-center">

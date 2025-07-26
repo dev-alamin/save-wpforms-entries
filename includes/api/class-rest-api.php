@@ -393,12 +393,153 @@ class Rest_API
                         ],
                     ],
                 ],
-            ]
+            ],
+            [
+                'route' => '/bulk',
+                'data' => [
+                    'methods'  => 'POST',
+                    'callback' => [$this, 'bulk_actions'],
+                    // 'permission_callback' => function () {
+                    //     return current_user_can('manage_options') && is_user_logged_in();
+                    // },
+                    'permission_callback' => '__return_true',
+                    'args' => [
+                        'ids' => [
+                            'required' => true,
+                            'type'     => 'array',
+                            'items'    => [
+                                'type' => 'integer',
+                            ],
+                            'sanitize_callback' => function ($ids) {
+                                return array_map('intval', (array) $ids);
+                            },
+                            'validate_callback' => function ($ids) {
+                                return is_array($ids) && count($ids) > 0;
+                            },
+                        ],
+                        'action' => [
+                            'required'          => true,
+                            'type'              => 'string',
+                            'sanitize_callback' => 'sanitize_text_field',
+                            'validate_callback' => function ($action) {
+                                return in_array($action, [
+                                    'mark_read',
+                                    'mark_unread',
+                                    'favorite',
+                                    'unfavorite',
+                                    'mark_spam',
+                                    'unmark_spam',
+                                    'delete',
+                                ], true);
+                            },
+                        ],
+                    ],
+                ],
+            ],
         ];
 
         foreach ($data as $item) {
             register_rest_route($this->namespace, $item['route'], $item['data']);
         }
+    }
+
+    /**
+     * Handle bulk actions on entries.
+     *
+     * This endpoint processes bulk operations like marking as read/unread,
+     * favoriting/unfavoriting, and deleting multiple WPForms entries.
+     *
+     * @since 1.0.0
+     *
+     * @param WP_REST_Request $request The REST request object.
+     * @return WP_REST_Response JSON response indicating success or failure.
+     */
+    public function bulk_actions(WP_REST_Request $request)
+    {
+        $ids = $request->get_param('ids');
+        $action = sanitize_text_field($request->get_param('action'));
+
+        // Validate IDs
+        if (!is_array($ids) || empty($ids)) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => __('Invalid or missing entry IDs.', 'advanced-entries-manager-for-wpforms'),
+            ], 400);
+        }
+
+        // Sanitize each ID
+        $ids = array_map('absint', $ids);
+
+        // Validate action
+        $valid_actions = ['delete', 'mark_read', 'mark_unread', 'favorite', 'unfavorite'];
+        if (!in_array($action, $valid_actions, true)) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => __('Invalid action provided.', 'advanced-entries-manager-for-wpforms'),
+            ], 400);
+        }
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'swpfe_entries';
+
+        $affected = 0;
+
+        foreach ($ids as $id) {
+            switch ($action) {
+                case 'delete':
+                    $deleted = $wpdb->delete($table, ['id' => $id]);
+                    if ($deleted !== false) {
+                        $affected++;
+                    }
+                    break;
+
+                case 'mark_read':
+                    $updated = $wpdb->update($table, ['status' => 'read'], ['id' => $id]);
+                    if ($updated !== false) {
+                        $affected++;
+                    }
+                    break;
+
+                case 'mark_unread':
+                    $updated = $wpdb->update($table, ['status' => 'unread'], ['id' => $id]);
+                    if ($updated !== false) {
+                        $affected++;
+                    }
+                    break;
+
+                case 'favorite':
+                    $updated = $wpdb->update($table, ['is_favorite' => 1], ['id' => $id]);
+                    if ($updated !== false) {
+                        $affected++;
+                    }
+                    break;
+
+                case 'unfavorite':
+                    $updated = $wpdb->update($table, ['is_favorite' => 0], ['id' => $id]);
+                    if ($updated !== false) {
+                        $affected++;
+                    }
+                    break;
+
+                case 'mark_spam':
+                    $updated = $wpdb->update($table, ['is_spam' => 1], ['id' => $id]);
+                    break;
+
+                case 'unmark_spam':
+                    $updated = $wpdb->update($table, ['is_spam' => 0], ['id' => $id]);
+                    break;
+            }
+        }
+
+        return rest_ensure_response([
+            'success' => true,
+            'message' => sprintf(
+                // translators: %d is number of affected entries
+                _n('%d entry updated.', '%d entries updated.', $affected, 'advanced-entries-manager-for-wpforms'),
+                $affected
+            ),
+            'affected' => $affected,
+        ]);
     }
 
     /**
@@ -421,7 +562,7 @@ class Rest_API
         if (!$form_id || !$last_id) {
             return new \WP_Error(
                 'swpfe_missing_params',
-                __('Missing form ID or last seen ID.', 'save-wpf-entries'),
+                __('Missing form ID or last seen ID.', 'advanced-entries-manager-for-wpforms'),
                 ['status' => 400]
             );
         }
@@ -789,7 +930,7 @@ class Rest_API
 
         if (isset($params['note'])) {
             $raw_note = sanitize_textarea_field($params['note']);
-            
+
             // Limit character length (hard limit for DB and performance)
             $max_length = 1000;
             $trimmed_note = mb_substr($raw_note, 0, $max_length);

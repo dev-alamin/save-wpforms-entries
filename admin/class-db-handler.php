@@ -56,6 +56,7 @@ class DB_Handler
             exported_to_csv BOOLEAN DEFAULT FALSE,
             synced_to_gsheet BOOLEAN DEFAULT FALSE,
             printed_at DATETIME DEFAULT NULL,
+            is_spam TINYINT(1) DEFAULT 0,
             resent_at DATETIME DEFAULT NULL,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

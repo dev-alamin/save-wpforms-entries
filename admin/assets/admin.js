@@ -15,6 +15,9 @@ function formTable(form) {
         loading: false,
         jumpTo: 1,
         noteOpen: false,
+        bulkSelected: [],
+        selectAll: false,
+
 
         entryModalOpen: false,
         selectedEntry: {},
@@ -28,6 +31,87 @@ function formTable(form) {
         get paginatedEntries() {
             return this.entries;
         },
+        async performBulkAction(action) {
+            if (!this.bulkSelected.length) return;
+
+            const actionLabel = action.replace(/_/g, ' ');
+            const confirmed = confirm(`Are you sure you want to ${actionLabel} ${this.bulkSelected.length} entr${this.bulkSelected.length > 1 ? 'ies' : 'y'}?`);
+            if (!confirmed) return;
+
+            // Find indexes of entries to update based on bulkSelected ids
+            const indexesToUpdate = this.entries.reduce((acc, entry, i) => {
+                if (this.bulkSelected.includes(entry.id)) acc.push(i);
+                return acc;
+            }, []);
+
+            // Optimistically update local state & call updateEntry for each index
+            for (const index of indexesToUpdate) {
+                let changes = {};
+
+                switch (action) {
+                    case 'mark_read':
+                        this.entries[index].status = 'read';
+                        changes.status = 'read';
+                        this.toggleRead(index);
+                        break;
+                    case 'mark_unread':
+                        this.entries[index].status = 'unread';
+                        changes.status = 'unread';
+                        break;
+                    case 'favorite':
+                        this.entries[index].is_favorite = 1;
+                        changes.is_favorite = 1;
+                        break;
+                    case 'unfavorite':
+                        this.entries[index].is_favorite = 0;
+                        changes.is_favorite = 0;
+                        break;
+                    case 'mark_spam':
+                        this.entries[index].is_spam = 1;
+                        changes.is_spam = 1;
+                        break;
+                    case 'unmark_spam':
+                        this.entries[index].is_spam = 0;
+                        changes.is_spam = 0;
+                        break;
+                    case 'delete':
+                        // Defer delete after backend confirms
+                        break;
+                }
+
+                if (action !== 'delete') {
+                    this.updateEntry(index, changes);
+                }
+            }
+
+            try {
+                const res = await fetch(`${swpfeSettings.restUrl}wpforms/entries/v1/bulk`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-WP-Nonce': swpfeSettings.nonce
+                    },
+                    body: JSON.stringify({
+                        ids: this.bulkSelected,
+                        action: action
+                    })
+                });
+
+                const data = await res.json();
+                console.log("Bulk result:", data);
+
+                if (action === 'delete') {
+                    // Remove deleted entries after backend success
+                    this.entries = this.entries.filter(entry => !this.bulkSelected.includes(entry.id));
+                }
+
+                this.bulkSelected = [];
+                this.selectAll = false;
+
+            } catch (error) {
+                console.error("Bulk action failed:", error);
+            }
+        },
         async fetchEntries() {
             this.loading = true;
             try {
@@ -37,7 +121,7 @@ function formTable(form) {
                     per_page: this.pageSize,
                 });
 
-                const res = await fetch(`http://localhost/devspark/wordpress-backend/wp-json/wpforms/entries/v1/entries?${query}`, {
+                const res = await fetch(`${swpfeSettings.restUrl}wpforms/entries/v1/entries?${query}`, {
                     headers: {
                         'X-WP-Nonce': swpfeSettings.nonce,
                     },
@@ -63,6 +147,13 @@ function formTable(form) {
                 console.error("Failed to fetch entries:", error);
             }finally{
                 this.loading = false;
+            }
+        },
+        toggleSelectAll(event) {
+            if (event.target.checked) {
+                this.bulkSelected = this.paginatedEntries.map(entry => entry.id);
+            } else {
+                this.bulkSelected = [];
             }
         },
         toggleOpen() {
@@ -163,7 +254,7 @@ function formTable(form) {
             };
 
             try {
-                const res = await fetch("http://localhost/devspark/wordpress-backend/wp-json/wpforms/entries/v1/update", {
+                const res = await fetch(`${swpfeSettings.restUrl}wpforms/entries/v1/update`, {
                     method: "POST",
                     headers: { 
                         "Content-Type": "application/json", 
@@ -183,7 +274,7 @@ function formTable(form) {
             if (!this.selectedEntry) return;
 
             try {
-                const response = await fetch('http://localhost/devspark/wordpress-backend/wp-json/wpforms/entries/v1/delete', {
+                const response = await fetch(`${swpfeSettings.restUrl}wpforms/entries/v1/delete`, {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',
@@ -263,7 +354,7 @@ function formTable(form) {
             };
 
             try {
-                const res = await fetch(`http://localhost/devspark/wordpress-backend/wp-json/wpforms/entries/v1/update`, {
+                const res = await fetch(`${swpfeSettings.restUrl}wpforms/entries/v1/update`, {
                     method: "POST",
                     headers: { 
                         "Content-Type": "application/json",
@@ -455,7 +546,7 @@ function entriesApp() {
 
         async fetchForms() {
             try {
-                const res = await fetch('http://localhost/devspark/wordpress-backend/wp-json/wpforms/entries/v1/forms', {
+                const res = await fetch(`${swpfeSettings.restUrl}wpforms/entries/v1/forms`, {
                     headers: {
                         'X-WP-Nonce': swpfeSettings.nonce,
                     },
@@ -481,7 +572,7 @@ function entriesApp() {
             });
 
             try {
-                const res = await fetch(`http://localhost/devspark/wordpress-backend/wp-json/wpforms/entries/v1/entries?${query}`, {
+                const res = await fetch(`${swpfeSettings.restUrl}wpforms/entries/v1/entries?${query}`, {
                     headers: {
                         'X-WP-Nonce': swpfeSettings.nonce,
                     },
@@ -545,7 +636,7 @@ function formEntriesApp(formId, entryCount) {
             // You can handle favorite filtering client-side if not supported by API
 
             try {
-                const res = await fetch(`http://localhost/devspark/wordpress-backend/wp-json/wpforms/entries/v1/entries?${queryParams}`, {
+                const res = await fetch(`${swpfeSettings.restUrl}wpforms/entries/v1/entries?${queryParams}`, {
                     headers: {
                         'X-WP-Nonce': swpfeSettings.nonce,
                     },
