@@ -2,7 +2,7 @@
 <div 
     x-data="entriesApp()" 
     x-init="fetchForms()" 
-    class="wrap swpfe-admin-page min-h-screen px-8 py-10 text-[15px] font-inter"
+    class="wrap swpfe-admin-page min-h-screen max-w-7xl !m-auto px-8 py-10 text-[15px] font-inter"
     role="main"
     aria-label="<?php echo esc_attr__('WPForms Entries Overview', 'advanced-entries-manager-for-wpforms'); ?>"
 >

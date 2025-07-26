@@ -788,7 +788,13 @@ class Rest_API
         }
 
         if (isset($params['note'])) {
-            $data['note'] = sanitize_textarea_field($params['note']);
+            $raw_note = sanitize_textarea_field($params['note']);
+            
+            // Limit character length (hard limit for DB and performance)
+            $max_length = 1000;
+            $trimmed_note = mb_substr($raw_note, 0, $max_length);
+
+            $data['note'] = $trimmed_note;
             $format[] = '%s';
         }
 

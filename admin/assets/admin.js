@@ -14,6 +14,7 @@ function formTable(form) {
         dateTo: "",
         loading: false,
         jumpTo: 1,
+        noteOpen: false,
 
         entryModalOpen: false,
         selectedEntry: {},
@@ -235,6 +236,60 @@ function formTable(form) {
                 this.entries[index].status = newStatus;
                 this.updateEntry(index, { status: newStatus });
             }
+        },
+        async updateSelectedEntry(changes = {}) {
+            const entryId = this.selectedEntry.id;
+
+            const index = this.entries.findIndex(e => e.id === entryId);
+            if (index === -1) {
+                console.error('❌ Entry not found in the list.');
+                return;
+            }
+
+            // Merge changes into selectedEntry
+            Object.assign(this.selectedEntry, changes);
+
+            const payload = {
+                id: this.selectedEntry.id,
+                form_id: this.selectedEntry.form_id,
+                entry: this.selectedEntry.entry,
+                status: this.selectedEntry.status,
+                is_favorite: Number(this.selectedEntry.is_favorite),
+                note: this.selectedEntry.note,
+                exported_to_csv: Number(this.selectedEntry.exported_to_csv),
+                synced_to_gsheet: Number(this.selectedEntry.synced_to_gsheet),
+                printed_at: this.selectedEntry.printed_at,
+                resent_at: this.selectedEntry.resent_at,
+            };
+
+            try {
+                const res = await fetch(`http://localhost/devspark/wordpress-backend/wp-json/wpforms/entries/v1/update`, {
+                    method: "POST",
+                    headers: { 
+                        "Content-Type": "application/json",
+                        "X-WP-Nonce": swpfeSettings.nonce,
+                    },
+                    body: JSON.stringify(payload),
+                });
+
+                const data = await res.json();
+                console.log("✅ Note saved via updateSelectedEntry:", data);
+
+                // Update local entry in entries[] as well
+                this.entries[index] = { ...this.selectedEntry };
+            } catch (err) {
+                console.error("❌ Failed to save selected entry:", err);
+            }
+        },
+        validateAndSaveNote() {
+            const note = this.selectedEntry.note?.trim() || '';
+
+            if (note.length > 1000) {
+                alert('Note is too long. Please limit to 1000 characters.', 'save-wpf-entries');
+                return;
+            }
+
+            this.updateSelectedEntry({ note });
         },
         syncToGoogleSheet(index) {
             const entry = this.entries[index];
