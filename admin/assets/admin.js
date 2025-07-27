@@ -34,55 +34,9 @@ function formTable(form) {
         async performBulkAction(action) {
             if (!this.bulkSelected.length) return;
 
-            const actionLabel = action.replace(/_/g, ' ');
-            const confirmed = confirm(`Are you sure you want to ${actionLabel} ${this.bulkSelected.length} entr${this.bulkSelected.length > 1 ? 'ies' : 'y'}?`);
-            if (!confirmed) return;
-
-            // Find indexes of entries to update based on bulkSelected ids
-            const indexesToUpdate = this.entries.reduce((acc, entry, i) => {
-                if (this.bulkSelected.includes(entry.id)) acc.push(i);
-                return acc;
-            }, []);
-
-            // Optimistically update local state & call updateEntry for each index
-            for (const index of indexesToUpdate) {
-                let changes = {};
-
-                switch (action) {
-                    case 'mark_read':
-                        this.entries[index].status = 'read';
-                        changes.status = 'read';
-                        this.toggleRead(index);
-                        break;
-                    case 'mark_unread':
-                        this.entries[index].status = 'unread';
-                        changes.status = 'unread';
-                        break;
-                    case 'favorite':
-                        this.entries[index].is_favorite = 1;
-                        changes.is_favorite = 1;
-                        break;
-                    case 'unfavorite':
-                        this.entries[index].is_favorite = 0;
-                        changes.is_favorite = 0;
-                        break;
-                    case 'mark_spam':
-                        this.entries[index].is_spam = 1;
-                        changes.is_spam = 1;
-                        break;
-                    case 'unmark_spam':
-                        this.entries[index].is_spam = 0;
-                        changes.is_spam = 0;
-                        break;
-                    case 'delete':
-                        // Defer delete after backend confirms
-                        break;
-                }
-
-                if (action !== 'delete') {
-                    this.updateEntry(index, changes);
-                }
-            }
+            const label = action.replace(/_/g, ' ');
+            // if (!confirm(`Are you sure you want to ${label} ${this.bulkSelected.length} entr${this.bulkSelected.length > 1 ? 'ies' : 'y'}?`))
+            //     return;
 
             try {
                 const res = await fetch(`${swpfeSettings.restUrl}wpforms/entries/v1/bulk`, {
@@ -91,27 +45,28 @@ function formTable(form) {
                         'Content-Type': 'application/json',
                         'X-WP-Nonce': swpfeSettings.nonce
                     },
-                    body: JSON.stringify({
-                        ids: this.bulkSelected,
-                        action: action
-                    })
+                    body: JSON.stringify({ ids: this.bulkSelected, action })
                 });
 
                 const data = await res.json();
                 console.log("Bulk result:", data);
 
-                if (action === 'delete') {
-                    // Remove deleted entries after backend success
-                    this.entries = this.entries.filter(entry => !this.bulkSelected.includes(entry.id));
-                }
+                // ✅ FORCE UI REFRESH (Best way)
+                await this.fetchEntries();
+                this.domKey = Date.now();
+
+                // ✅ Trick to trigger Alpine reactivity
+                this.entries = [...this.entries];
 
                 this.bulkSelected = [];
                 this.selectAll = false;
 
             } catch (error) {
                 console.error("Bulk action failed:", error);
+                alert('Bulk action failed. Please try again.');
             }
         },
+
         async fetchEntries() {
             this.loading = true;
             try {
@@ -120,17 +75,17 @@ function formTable(form) {
                     page: this.currentPage,
                     per_page: this.pageSize,
                 });
-
+                
                 const res = await fetch(`${swpfeSettings.restUrl}wpforms/entries/v1/entries?${query}`, {
                     headers: {
                         'X-WP-Nonce': swpfeSettings.nonce,
                     },
                 });
                 const data = await res.json();
-
+                
                 // Flat array now, no more need for lookup
                 const rawEntries = Array.isArray(data.entries) ? data.entries : [];
-
+                
                 this.entries = rawEntries.map(entry => ({
                     ...entry,
                     is_favorite: Number(entry.is_favorite),
@@ -139,10 +94,12 @@ function formTable(form) {
                     printed_at: entry.printed_at ?? null,
                     resent_at: entry.resent_at ?? null,
                     status: entry.status ?? 'unread',
+                    is_spam: entry.is_spam,
                 }));
 
                 this.totalEntries = Number(data.total) || rawEntries.length;
                 this.totalPages = Math.ceil(this.totalEntries / this.pageSize);
+                this.domKey = Date.now();
             } catch (error) {
                 console.error("Failed to fetch entries:", error);
             }finally{

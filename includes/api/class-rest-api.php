@@ -471,7 +471,7 @@ class Rest_API
         $ids = array_map('absint', $ids);
 
         // Validate action
-        $valid_actions = ['delete', 'mark_read', 'mark_unread', 'favorite', 'unfavorite'];
+        $valid_actions = ['delete', 'mark_read', 'mark_unread', 'favorite', 'unfavorite', 'mark_spam', 'unmark_spam'];
         if (!in_array($action, $valid_actions, true)) {
             return new WP_REST_Response([
                 'success' => false,
@@ -686,18 +686,19 @@ class Rest_API
             }
 
             $data[] = [
-                'id'           => (int) $row->id,
-                'form_title'   => get_the_title($row->form_id),
-                'entry'        => $entry_normalized,
-                'status'       => $row->status,
-                'date'         => $row->created_at,
-                'note'         => $row->note,
-                'is_favorite'  => (bool) $row->is_favorite,
-                'exported'     => (bool) $row->exported_to_csv,
-                'synced'       => (bool) $row->synced_to_gsheet,
-                'printed_at'   => $row->printed_at,
-                'resent_at'    => $row->resent_at,
-                'form_id'      => (int) $row->form_id,
+                'id'          => (int) $row->id,
+                'form_title'  => get_the_title($row->form_id),
+                'entry'       => $entry_normalized,
+                'status'      => $row->status,
+                'date'        => $row->created_at,
+                'note'        => $row->note,
+                'is_favorite' => (bool) $row->is_favorite,
+                'exported'    => (bool) $row->exported_to_csv,
+                'synced'      => (bool) $row->synced_to_gsheet,
+                'printed_at'  => $row->printed_at,
+                'resent_at'   => $row->resent_at,
+                'form_id'     => (int) $row->form_id,
+                'is_spam'     => (int) $row->is_spam,
             ];
         }
 

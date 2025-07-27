@@ -125,16 +125,18 @@
 
                     <div class="relative min-h-60">
                         <!-- Entries Rows -->
-                        <template x-show="!loading" x-for="(entry, i) in paginatedEntries" :key="entry.id">
+                        <template x-show="!loading" x-for="(entry, i) in entries" :key="entry.id">
+
                             <div
-                                :class="[
+                            :class="[
                                     bgClasses[i % bgClasses.length],
-                                    entry.status === 'unread' ? 'font-bold' : 'font-normal'
-                                ]"
-                                class="grid items-center px-6 text-sm text-gray-800 border-b border-gray-100 hover:bg-gray-50"
-                                style="grid-template-columns: 50px 1fr 150px 150px 250px;"
-                                role="row"
-                            >
+                                    entry.status === 'unread' ? 'font-bold' : 'font-normal',
+                                    entry.is_spam == 1 ? 'bg-red-50 opacity-50' : '',
+                                    ]"
+                                    class="grid items-center px-6 text-sm text-gray-800 border-b border-gray-100 hover:bg-gray-50"
+                                    style="grid-template-columns: 50px 1fr 150px 150px 250px;"
+                                    role="row"
+                                    >
                                 <input 
                                     type="checkbox"
                                     :value="entry.id"
