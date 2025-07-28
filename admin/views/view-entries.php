@@ -1,4 +1,20 @@
 <?php do_action( 'swpfe_before_entries_ui' ); ?>
+
+<div
+    x-data="toastHandler()"
+    x-show="visible"
+    x-transition
+    x-init="$watch('visible', v => v && setTimeout(() => visible = false, 3000))"
+    class="fixed top-10 right-4 z-50 px-4 py-2 rounded shadow-lg text-white d-none"
+    :class="{
+        'bg-[#4f46e5]': type === 'success',
+        'bg-red-600': type === 'error',
+        'bg-yellow-500': type === 'warning',
+        'bg-blue-600': type === 'info'
+    }"
+    x-text="message"
+></div>
+
 <div 
     x-data="entriesApp()" 
     x-init="fetchForms()" 

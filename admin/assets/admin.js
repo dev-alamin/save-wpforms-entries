@@ -35,8 +35,6 @@ function formTable(form) {
             if (!this.bulkSelected.length) return;
 
             const label = action.replace(/_/g, ' ');
-            // if (!confirm(`Are you sure you want to ${label} ${this.bulkSelected.length} entr${this.bulkSelected.length > 1 ? 'ies' : 'y'}?`))
-            //     return;
 
             try {
                 const res = await fetch(`${swpfeSettings.restUrl}wpforms/entries/v1/bulk`, {
@@ -49,14 +47,11 @@ function formTable(form) {
                 });
 
                 const data = await res.json();
-                console.log("Bulk result:", data);
-
-                // ✅ FORCE UI REFRESH (Best way)
-                await this.fetchEntries();
-                this.domKey = Date.now();
-
-                // ✅ Trick to trigger Alpine reactivity
-                this.entries = [...this.entries];
+                
+                this.$dispatch('toast', {
+                    type: 'success', // or 'error', 'info', etc.
+                    message: '✅ Bulk action completed successfully!'
+                });
 
                 this.bulkSelected = [];
                 this.selectAll = false;
@@ -66,7 +61,6 @@ function formTable(form) {
                 alert('Bulk action failed. Please try again.');
             }
         },
-
         async fetchEntries() {
             this.loading = true;
             try {
@@ -630,6 +624,21 @@ function formEntriesApp(formId, entryCount) {
         goToPage(pageNum) {
             this.currentPage = pageNum;
             this.fetchEntries();
+        }
+    }
+}
+
+function toastHandler() {
+    return {
+        message: '',
+        type: 'success',
+        visible: false,
+        init() {
+            window.addEventListener('toast', e => {
+                this.message = e.detail.message;
+                this.type = e.detail.type || 'success';
+                this.visible = true;
+            });
         }
     }
 }
