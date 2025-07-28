@@ -122,9 +122,9 @@
                                     type="checkbox" 
                                     id="bulk_action_main" 
                                     @change="toggleSelectAll($event)" 
-                                    x-model="selectAll"
                                     class="cursor-pointer"
                                 />
+                                
                             </div>
 
                             <div role="columnheader"><?php esc_html_e('Email', 'advanced-entries-manager-for-wpforms'); ?></div>
@@ -153,12 +153,14 @@
                                     style="grid-template-columns: 50px 1fr 150px 150px 250px;"
                                     role="row"
                                     >
-                                <input 
-                                    type="checkbox"
-                                    :value="entry.id"
-                                    x-model="bulkSelected"
-                                    class="cursor-pointer"
-                                />
+                               <input 
+    type="checkbox"
+    :value="entry.id"
+    x-model="bulkSelected"
+    @click="handleCheckbox($event, entry.id)"
+    class="cursor-pointer"
+/>
+
 
                                 <div class="py-4 cursor-pointer" title="<?php echo esc_attr__('Click for details', 'advanced-entries-manager-for-wpforms'); ?>" @click="showEntry(i)" x-text="entry.entry?.Email || entry.entry?.email || '-'"></div>
                                 <div class="py-4 text-center" x-text="timeAgo(entry.date)" :title="entry.date"></div>

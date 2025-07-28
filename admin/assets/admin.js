@@ -17,6 +17,7 @@ function formTable(form) {
         noteOpen: false,
         bulkSelected: [],
         selectAll: false,
+        lastCheckedIndex: null,
 
 
         entryModalOpen: false,
@@ -47,7 +48,7 @@ function formTable(form) {
                 });
 
                 const data = await res.json();
-                
+
                 this.$dispatch('toast', {
                     type: 'success', // or 'error', 'info', etc.
                     message: '✅ Bulk action completed successfully!'
@@ -61,6 +62,32 @@ function formTable(form) {
                 alert('Bulk action failed. Please try again.');
             }
         },
+
+        handleCheckbox(event, entryId) {
+            const index = this.entries.findIndex(e => e.id === entryId);
+            if (index === -1) return;
+
+            if (event.shiftKey && this.lastCheckedIndex !== null) {
+                const start = Math.min(index, this.lastCheckedIndex);
+                const end = Math.max(index, this.lastCheckedIndex);
+
+                for (let i = start; i <= end; i++) {
+                    const id = this.entries[i].id;
+                    if (!this.bulkSelected.includes(id)) {
+                        this.bulkSelected.push(id);
+                    }
+                }
+            } else {
+                const i = this.bulkSelected.indexOf(entryId);
+                if (i > -1) {
+                    this.bulkSelected.splice(i, 1);
+                } else {
+                    this.bulkSelected.push(entryId);
+                }
+            }
+
+            this.lastCheckedIndex = index;
+        },
         async fetchEntries() {
             this.loading = true;
             try {
@@ -69,17 +96,17 @@ function formTable(form) {
                     page: this.currentPage,
                     per_page: this.pageSize,
                 });
-                
+
                 const res = await fetch(`${swpfeSettings.restUrl}wpforms/entries/v1/entries?${query}`, {
                     headers: {
                         'X-WP-Nonce': swpfeSettings.nonce,
                     },
                 });
                 const data = await res.json();
-                
+
                 // Flat array now, no more need for lookup
                 const rawEntries = Array.isArray(data.entries) ? data.entries : [];
-                
+
                 this.entries = rawEntries.map(entry => ({
                     ...entry,
                     is_favorite: Number(entry.is_favorite),
@@ -96,7 +123,7 @@ function formTable(form) {
                 this.domKey = Date.now();
             } catch (error) {
                 console.error("Failed to fetch entries:", error);
-            }finally{
+            } finally {
                 this.loading = false;
             }
         },
@@ -207,8 +234,8 @@ function formTable(form) {
             try {
                 const res = await fetch(`${swpfeSettings.restUrl}wpforms/entries/v1/update`, {
                     method: "POST",
-                    headers: { 
-                        "Content-Type": "application/json", 
+                    headers: {
+                        "Content-Type": "application/json",
                         'X-WP-Nonce': swpfeSettings.nonce
                     },
                     body: JSON.stringify(payload),
@@ -307,7 +334,7 @@ function formTable(form) {
             try {
                 const res = await fetch(`${swpfeSettings.restUrl}wpforms/entries/v1/update`, {
                     method: "POST",
-                    headers: { 
+                    headers: {
                         "Content-Type": "application/json",
                         "X-WP-Nonce": swpfeSettings.nonce,
                     },
