@@ -133,15 +133,19 @@
                                 <p class="text-sm text-gray-500">
                                     <?php esc_html_e('Max 1000 characters. Avoid sensitive data.', 'save-wpf-entries'); ?>
                                 </p>
-                                <button
-                                    @click="validateAndSaveNote"
-                                    class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition font-semibold flex items-center"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="mr-2" height="20px" viewBox="0 -960 960 960" width="20px" fill="#fff">
-                                        <path d="M840-680v480q0 33-23.5 56.5T760-120H200q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h480l160 160Zm-80 34L646-760H200v560h560v-446ZM480-240q50 0 85-35t35-85q0-50-35-85t-85-35q-50 0-85 35t-35 85q0 50 35 85t85 35ZM240-560h360v-160H240v160Z"/>
-                                    </svg>
-                                    <?php esc_html_e('Save Note', 'save-wpf-entries'); ?>
-                                </button>
+<button
+    @click="validateAndSaveNote"
+    class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition font-semibold flex items-center"
+    x-data="{ saved: false }"
+    x-init="$watch('saved', val => { if (val) setTimeout(() => saved = false, 3000); })"
+    x-on:note-saved.window="saved = true"
+>
+    <svg xmlns="http://www.w3.org/2000/svg" class="mr-2" height="20px" viewBox="0 -960 960 960" width="20px" fill="#fff">
+        <path d="M840-680v480q0 33-23.5 56.5T760-120H200q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h480l160 160Zm-80 34L646-760H200v560h560v-446ZM480-240q50 0 85-35t35-85q0-50-35-85t-85-35q-50 0-85 35t-35 85q0 50 35 85t85 35ZM240-560h360v-160H240v160Z"/>
+    </svg>
+    <span x-text="saved ? '<?php echo esc_js(__('Saved Note', 'save-wpf-entries')); ?>' : '<?php echo esc_js(__('Save Note', 'save-wpf-entries')); ?>'"></span>
+</button>
+
                             </div>
                         </div>
                     </div>
