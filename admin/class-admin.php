@@ -132,6 +132,14 @@ class Admin {
         wp_enqueue_script('swpfe-alpine', SWPFE_URL . 'admin/assets/alpine.min.js', [], null, true);
         wp_enqueue_script('swpfe-lodash', SWPFE_URL . 'admin/assets/lodash.min.js', [], $version, false);
         wp_enqueue_script('lottie-web', SWPFE_URL . 'admin/assets/lottie-player.js', [], '5.12.0', false);
+        wp_enqueue_script(
+            'alpine-collapse',
+            'https://unpkg.com/@alpinejs/collapse@3.x.x/dist/cdn.min.js',
+            ['alpinejs'],
+            null,
+            true
+        );
+
 
         wp_localize_script('swpfe-admin-js', 'swpfeSettings', [
             'restUrl' => esc_url_raw(rest_url()),

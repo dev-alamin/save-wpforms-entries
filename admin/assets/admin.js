@@ -92,10 +92,11 @@ function formTable(form) {
     async fetchEntries() {
       this.loading = true;
       try {
+
         const query = new URLSearchParams({
-          form_id: this.formId,
-          page: this.currentPage,
-          per_page: this.pageSize,
+            form_id: this.formId,
+            page: this.currentPage,
+            per_page: this.pageSize,
         });
 
         const res = await fetch(
@@ -631,6 +632,7 @@ function formEntriesApp(formId, entryCount) {
     currentPage: 1,
     perPage: 10,
     loading: false,
+    searchType: 'email',
 
     async fetchEntries() {
       this.loading = true;
@@ -642,7 +644,8 @@ function formEntriesApp(formId, entryCount) {
       });
 
       if (this.searchQuery.trim() !== "") {
-        queryParams.append("search", this.searchQuery.trim());
+        queryParams.append('search', this.searchQuery.trim());
+        queryParams.append('search_type', this.searchType.trim()); // 👈 Add this line
       }
 
       if (this.filterStatus !== "all") {
@@ -675,20 +678,25 @@ function formEntriesApp(formId, entryCount) {
     },
 
     handleSearchInput() {
-      this.currentPage = 1;
-      this.fetchEntries();
-    },
+        const trimmed = this.searchQuery.trim();
 
+        if (trimmed === '') {
+            this.entries = [];
+            this.loading = false;
+            return;
+        }
+
+        this.loading = true;
+        this.fetchEntries();
+    },
     handleStatusChange() {
       this.currentPage = 1;
       this.fetchEntries();
     },
-
     handleFavoriteToggle() {
       this.currentPage = 1;
       this.fetchEntries();
     },
-
     goToPage(pageNum) {
       this.currentPage = pageNum;
       this.fetchEntries();

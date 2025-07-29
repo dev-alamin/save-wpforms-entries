@@ -610,15 +610,16 @@ class Rest_API
     {
         global $wpdb;
 
-        $table     = $wpdb->prefix . 'swpfe_entries';
-        $form_id   = absint($request->get_param('form_id'));
-        $status    = $request->get_param('status');
-        $search    = sanitize_text_field($request->get_param('search'));
-        $per_page  = absint($request->get_param('per_page')) ?: 50;
-        $page      = absint($request->get_param('page')) ?: 1;
-        $date_from = $request->get_param('date_from');
-        $date_to   = $request->get_param('date_to');
-        $offset    = ($page - 1) * $per_page;
+        $table       = $wpdb->prefix . 'swpfe_entries';
+        $form_id     = absint($request->get_param('form_id'));
+        $status      = $request->get_param('status');
+        $search      = sanitize_text_field($_GET['search'] ?? '');
+        $search_type = sanitize_text_field($_GET['search_type'] ?? 'email');
+        $per_page    = absint($request->get_param('per_page')) ?: 50;
+        $page        = absint($request->get_param('page')) ?: 1;
+        $date_from   = $request->get_param('date_from');
+        $date_to     = $request->get_param('date_to');
+        $offset      = ($page - 1) * $per_page;
 
         $where_clauses = [];
         $params = [];
@@ -637,13 +638,27 @@ class Rest_API
         }
 
         if ($search) {
-            if (is_email($search)) {
-                $where_clauses[] = 'email = %s';
-                $params[] = $search;
-            } else {
-                $where_clauses[] = '(name LIKE %s OR entry LIKE %s)';
-                $params[] = '%' . $wpdb->esc_like($search) . '%';
-                $params[] = '%' . $wpdb->esc_like($search) . '%';
+            switch ($search_type) {
+                case 'email':
+                    $where_clauses[] = 'email = %s';
+                    $params[] = $search;
+                    break;
+
+                case 'id':
+                    $where_clauses[] = 'id = %d';
+                    $params[] = (int) $search;
+                    break;
+
+                case 'name':
+                    $where_clauses[] = 'name = %s';
+                    $params[] = $search;
+                    break;
+
+                default:
+                    $where_clauses[] = '(name LIKE %s OR entry LIKE %s)';
+                    $params[] = '%' . $wpdb->esc_like($search) . '%';
+                    $params[] = '%' . $wpdb->esc_like($search) . '%';
+                    break;
             }
         }
 
@@ -689,6 +704,7 @@ class Rest_API
                 'id'          => (int) $row->id,
                 'form_title'  => get_the_title($row->form_id),
                 'entry'       => $entry_normalized,
+                'name'        => $row->name,
                 'status'      => $row->status,
                 'date'        => $row->created_at,
                 'note'        => $row->note,
