@@ -65,7 +65,7 @@
                  <button
                      type="button"
                      @click="showBulkMenu = !showBulkMenu"
-                     class="flex items-center justify-between w-full px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm text-gray-800 font-medium hover:border-indigo-500 transition"
+                     class="flex items-center justify-between w-full px-4 py-[11px] bg-white border border-gray-300 rounded-lg shadow-sm text-gray-800 font-medium hover:border-indigo-500 transition"
                      :disabled="bulkSelected.length === 0">
                      <!-- Render icon + label using x-html -->
                      <span class="flex items-center gap-2" x-html="bulkIcon() + ' ' + bulkLabel()"></span>
@@ -101,7 +101,7 @@
              <button
                  @click="performBulkAction(selectedBulkAction)"
                  :disabled="bulkSelected.length === 0 || !selectedBulkAction"
-                 class="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed font-semibold">
+                 class="px-5 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed font-semibold">
                  <?php esc_html_e('Apply', 'advanced-entries-manager-for-wpforms'); ?>
              </button>
          </div>
