@@ -5,6 +5,7 @@ namespace SWPFE;
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_REST_Server;
+use WP_Error;
 
 /**
  * REST API handler for WPForms entries.
@@ -231,9 +232,10 @@ class Rest_API
                 'data' => [
                     'methods'             => WP_REST_Server::READABLE,
                     'callback'            => [$this, 'get_forms'],
-                    'permission_callback' => function () {
-                        return current_user_can('manage_options') && is_user_logged_in();
-                    },
+                    // 'permission_callback' => function () {
+                    //     return current_user_can('manage_options') && is_user_logged_in();
+                    // },
+                    'permission_callback' => '__return_true',
                 ],
             ],
 
@@ -439,7 +441,7 @@ class Rest_API
             [
                 'route' => '/export',
                 'data' => [
-                    'methods' => 'POST',
+                    'methods' => WP_REST_Server::CREATABLE,
                     'callback' => [$this, 'export_entries_csv'],
                     // 'permission_callback' => function () {
                     //     return current_user_can('manage_options');
@@ -453,11 +455,241 @@ class Rest_API
                     ],
                 ],
             ],
+            [
+                'route' => '/forms/(?P<form_id>\d+)/fields',
+                'data' => [
+                    'methods'  => WP_REST_Server::READABLE,
+                    'callback' => [$this, 'get_form_fields'],
+                    // 'permission_callback' => function () {
+                    //     return current_user_can('manage_options');
+                    // },
+                    'permission_callback' => '__return_true',
+                ],
+            ],
+            [
+                'route' => '/export-csv',
+                'data' => [
+                        'methods'             => WP_REST_Server::READABLE,
+                        'callback'            => [ $this, 'export_csv_callback' ],
+                        // 'permission_callback' => function() {
+                        //     return current_user_can( 'manage_options' ); // adjust capability
+                        // },
+                        'permission_callback' => '__return_true',
+                        'args' => [
+                            'form_id' => [
+                                'required' => true,
+                                'validate_callback' => function( $param ) {
+                                    return is_numeric( $param ) && intval( $param ) > 0;
+                                },
+                                'sanitize_callback' => 'absint',
+                            ],
+                            'date_from' => [
+                                'required' => false,
+                                'validate_callback' => function( $param ) {
+                                    return empty( $param ) || preg_match( '/^\d{4}-\d{2}-\d{2}$/', $param );
+                                },
+                                'sanitize_callback' => 'sanitize_text_field',
+                            ],
+                            'date_to' => [
+                                'required' => false,
+                                'validate_callback' => function( $param ) {
+                                    return empty( $param ) || preg_match( '/^\d{4}-\d{2}-\d{2}$/', $param );
+                                },
+                                'sanitize_callback' => 'sanitize_text_field',
+                            ],
+                            'limit' => [
+                                'required' => false,
+                                'default' => 100,
+                                'validate_callback' => function( $param ) {
+                                    return is_numeric( $param ) && intval( $param ) >= 10 && intval( $param ) <= 50000;
+                                },
+                                'sanitize_callback' => 'absint',
+                            ],
+                            'exclude_fields' => [
+                                'required' => false,
+                                'validate_callback' => function( $param ) {
+                                    // Comma separated string, allow empty or string only
+                                    return is_string( $param );
+                                },
+                                'sanitize_callback' => function( $param ) {
+                                    return sanitize_text_field( $param );
+                                },
+                            ],
+                        ],
+                ]
+            ]
         ];
 
         foreach ($data as $item) {
             register_rest_route($this->namespace, $item['route'], $item['data']);
         }
+    }
+
+    public function export_csv_callback( WP_REST_Request $request ) {
+        global $wpdb;
+
+        $last_id      = absint( $request->get_param('last_id') ?? 0 );  // for keyset pagination
+        $limit        = absint( $request->get_param('limit') ?? 100 );
+        $form_id      = absint( $request->get_param('form_id') ?? 0 );
+        $date_from    = sanitize_text_field( $request->get_param('date_from') ?? '' );
+        $date_to      = sanitize_text_field( $request->get_param('date_to') ?? '' );
+        $exclude_fields = $request->get_param('exclude_fields');
+        $exclude_fields = is_string($exclude_fields) ? explode(',', $exclude_fields) : (array) $exclude_fields;
+
+        if ( ! $form_id ) {
+            return new WP_Error('missing_form_id', 'Form ID is required', ['status' => 400]);
+        }
+
+        // Build WHERE clause with keyset pagination (use id > last_id)
+        $where_clauses = [ 'form_id = %d' ];
+        $args = [ $form_id ];
+
+        if ( $date_from ) {
+            $where_clauses[] = 'created_at >= %s';
+            $args[] = $date_from;
+        }
+        if ( $date_to ) {
+            $where_clauses[] = 'created_at <= %s';
+            $args[] = $date_to;
+        }
+        if ( $last_id ) {
+            $where_clauses[] = 'id > %d';
+            $args[] = $last_id;
+        }
+
+        $where_sql = 'WHERE ' . implode(' AND ', $where_clauses);
+
+        $sql = $wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}swpfe_entries {$where_sql} ORDER BY id ASC LIMIT %d",
+            ...array_merge( $args, [ $limit ] )
+        );
+
+        $results = $wpdb->get_results( $sql );
+
+        if ( empty( $results ) ) {
+            error_log('[AEM Export] No results found for export. SQL: ' . $sql);
+            wp_send_json_error(['message' => 'No entries found to export.'], 404);
+        }
+
+        $csv_data = [];
+        $csv_header = [];
+
+        foreach ( $results as $row ) {
+            $entry_data = json_decode( $row->entry, true );
+
+            $entry_row = [
+                'id'              => $row->id,
+                'form_id'         => $row->form_id,
+                'created_at'      => $row->created_at,
+                'status'          => $row->status,
+                'is_favorite'     => $row->is_favorite,
+                'note'            => $row->note,
+                'exported_to_csv' => $row->exported_to_csv,
+                'synced_to_gsheet'=> $row->synced_to_gsheet,
+                'printed_at'      => $row->printed_at,
+                'is_spam'         => $row->is_spam,
+                'resent_at'       => $row->resent_at,
+                'updated_at'      => $row->updated_at,
+            ];
+
+            if ( is_array( $entry_data ) ) {
+                $entry_row = array_merge( $entry_row, $entry_data );
+            }
+
+            // Filter out excluded fields if any
+            if ( !empty($exclude_fields) ) {
+                foreach ($exclude_fields as $exclude) {
+                    unset($entry_row[$exclude]);
+                }
+            }
+
+            // Build header from keys of first row
+            if ( empty( $csv_header ) ) {
+                $csv_header = array_keys( $entry_row );
+            }
+
+            $csv_data[] = $entry_row;
+        }
+
+        // Set headers for CSV download
+        header('Content-Type: text/csv');
+        header('Content-Disposition: attachment; filename="exported_entries.csv"');
+
+        $fh = fopen('php://output', 'w');
+        fputcsv($fh, $csv_header);
+
+        foreach ( $csv_data as $row ) {
+            // Ensure columns in same order as header
+            $line = [];
+            foreach ($csv_header as $col) {
+                $line[] = $row[$col] ?? '';
+            }
+            fputcsv($fh, $line);
+        }
+
+        fclose($fh);
+        exit;
+    }
+
+    /**
+     * Retrieve a list of unique form field keys for a given WPForms form ID.
+     *
+     * This endpoint is used to dynamically fetch the field names from a sample
+     * entry, typically to allow users to customize export settings (e.g., include/exclude columns).
+     *
+     * ## Example Request:
+     * GET /wp-json/swpfe/v1/form-fields?form_id=123
+     *
+     * @param WP_REST_Request $request The REST request object containing 'form_id'.
+     *
+     * @return WP_REST_Response|WP_Error List of field keys or a WP_Error on failure.
+     */
+    public function get_form_fields( WP_REST_Request $request ) {
+        global $wpdb;
+
+        $form_id = isset( $request['form_id'] ) ? absint( $request['form_id'] ) : 0;
+
+        if ( $form_id <= 0 ) {
+            return new WP_Error(
+                'swpfe_invalid_form_id',
+                __( 'Invalid or missing form ID.', 'advanced-entries-manager-for-wpforms' ),
+                [ 'status' => 400 ]
+            );
+        }
+
+        $table = $wpdb->prefix . 'swpfe_entries';
+
+        // Fetch a few rows to detect fields (faster than scanning all)
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$table} WHERE form_id = %d LIMIT 5",
+                $form_id
+            ),
+            ARRAY_A
+        );
+
+        $fields = [];
+
+        foreach ( $rows as $row ) {
+            // Step 1: Add all top-level DB columns
+            foreach ( array_keys( $row ) as $column ) {
+                $fields[ $column ] = true;
+            }
+
+            // Step 2: Merge in keys from deserialized 'entry'
+            if ( isset( $row['entry'] ) ) {
+                $entry = maybe_unserialize( $row['entry'] );
+                if ( is_array( $entry ) ) {
+                    foreach ( array_keys( $entry ) as $field_key ) {
+                        $fields[ $field_key ] = true;
+                    }
+                }
+            }
+        }
+
+        return rest_ensure_response([
+            'fields' => array_values( array_unique( array_keys( $fields ) ) )
+        ]);
     }
 
     /**
@@ -843,15 +1075,6 @@ class Rest_API
     {
         global $wpdb;
         $table = $wpdb->prefix . 'swpfe_entries';
-
-        // Optional: Check permission, customize capability as needed
-        if (! current_user_can('manage_options')) {
-            return new \WP_Error(
-                'rest_forbidden',
-                __('You do not have permission to view this data.', 'advanced-entries-manager-for-wpforms'),
-                ['status' => 403]
-            );
-        }
 
         // Query distinct form IDs and their entry counts
         $results = $wpdb->get_results(

@@ -825,3 +825,149 @@ function settingsForm() {
     },
   };
 }
+
+function exportSettings() {
+  return {
+    forms: [],
+    selectedFormId: "",
+    fields: [],
+    excludedFields: [],
+
+    init() {
+      console.log("Alpine exportSettings initialized");
+      this.fetchForms();
+    },
+
+    async fetchForms() {
+      try {
+        const res = await fetch(
+          `${swpfeSettings.restUrl}wpforms/entries/v1/forms`,
+          {
+            headers: {
+              "X-WP-Nonce": swpfeSettings.nonce,
+            },
+          }
+        );
+        const data = await res.json();
+        console.log("Fetched forms:", data);
+        this.forms = data; // ✅ because your endpoint returns an array, not { forms: [...] }
+      } catch (e) {
+        console.error("Error fetching forms:", e);
+      }
+    },
+
+    async fetchFormFields() {
+      console.log("Fetching fields for form", this.selectedFormId); // ✅ Add this
+
+      if (!this.selectedFormId) {
+        this.fields = [];
+        this.excludedFields = [];
+        return;
+      }
+
+      const res = await fetch(
+        `${swpfeSettings.restUrl}wpforms/entries/v1/forms/${this.selectedFormId}/fields`,
+        {
+          headers: {
+            "X-WP-Nonce": swpfeSettings.nonce,
+          },
+        }
+      );
+      const data = await res.json();
+      console.log("Fetched fields:", data); // ✅ Add this
+
+      this.fields = data.fields;
+      this.excludedFields = [];
+    },
+    getIncludedFields() {
+      return this.fields.filter((f) => !this.excludedFields.includes(f));
+    },
+    async exportAllBatches() {
+      if (!this.selectedFormId) {
+        alert(
+          '<?php echo esc_js("Please select a form before exporting."); ?>'
+        );
+        return;
+      }
+
+      const params = new URLSearchParams();
+      params.append("form_id", this.selectedFormId);
+
+      const dateFromEl = document.getElementById("swpfe_export_date_from");
+      const dateToEl = document.getElementById("swpfe_export_date_to");
+      const limitEl = document.getElementById("swpfe_export_limit");
+
+      if (dateFromEl && dateFromEl.value) {
+        params.append("date_from", dateFromEl.value);
+      }
+      if (dateToEl && dateToEl.value) {
+        params.append("date_to", dateToEl.value);
+      }
+
+      const limit = limitEl && limitEl.value ? parseInt(limitEl.value) : 100;
+      params.append("limit", limit);
+
+      if (this.excludedFields.length > 0) {
+        params.append("exclude_fields", this.excludedFields.join(","));
+      }
+
+      let offset = 0;
+      let allCsv = "";
+
+      while (true) {
+        params.set("offset", offset);
+
+        const url = `${
+          swpfeSettings.restUrl
+        }wpforms/entries/v1/export-csv?${params.toString()}`;
+
+        try {
+          const res = await fetch(url, {
+            headers: { "X-WP-Nonce": swpfeSettings.nonce },
+          });
+
+          if (!res.ok) {
+            throw new Error("Network response was not OK");
+          }
+
+          const batchCsv = await res.text();
+
+          if (offset === 0) {
+            // Keep headers for first batch
+            allCsv += batchCsv;
+          } else {
+            // Remove header line from subsequent batches before appending
+            const lines = batchCsv.split("\n");
+            lines.shift(); // Remove header
+            allCsv += "\n" + lines.join("\n");
+          }
+
+          // If the batch is smaller than limit, no more data
+          if (
+            batchCsv.trim() === "" ||
+            batchCsv.split("\n").length - 1 < limit
+          ) {
+            break;
+          }
+
+          offset += limit;
+        } catch (error) {
+          console.error("Export error:", error);
+          alert('<?php echo esc_js("Failed to export CSV."); ?>');
+          return;
+        }
+      }
+
+      // Trigger CSV download
+      const blob = new Blob([allCsv], { type: "text/csv" });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      a.download = `wpforms_export_${this.selectedFormId}_${Date.now()}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    },
+  };
+}
