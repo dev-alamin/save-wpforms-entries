@@ -69,10 +69,18 @@
     </button>
 
     <!-- Print -->
-        
     <button class="py-4 cursor-pointer mr-4" @click="printEntry(i)" title="<?php esc_attr_e( 'Print Entry', 'advanced-entries-manager-for-wpforms' ); ?>">
         <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#4f46e5">
             <path d="M640-640v-120H320v120h-80v-200h480v200h-80Zm-480 80h640-640Zm560 100q17 0 28.5-11.5T760-500q0-17-11.5-28.5T720-540q-17 0-28.5 11.5T680-500q0 17 11.5 28.5T720-460Zm-80 260v-160H320v160h320Zm80 80H240v-160H80v-240q0-51 35-85.5t85-34.5h560q51 0 85.5 34.5T880-520v240H720v160Zm80-240v-160q0-17-11.5-28.5T760-560H200q-17 0-28.5 11.5T160-520v160h80v-80h480v80h80Z" />
+        </svg>
+    </button>
+
+    <!-- Export CSV -->
+    <button class="py-4 cursor-pointer mr-4"
+        @click="exportSingleEntry(entry)"
+        title="<?php esc_attr_e('Export as CSV', 'advanced-entries-manager-for-wpforms'); ?>">
+        <svg xmlns="http://www.w3.org/2000/svg" height="24px" width="24px" viewBox="0 0 24 24" fill="#4f46e5">
+            <path d="M5 20q-.825 0-1.412-.587Q3 18.825 3 18V6q0-.825.588-1.412Q4.175 4 5 4h14q.825 0 1.413.588Q21 5.175 21 6v12q0 .825-.587 1.413Q19.825 20 19 20Zm0-2h14V6H5v12Zm7-1-4-4h3V9h2v4h3Zm0-6Z" />
         </svg>
     </button>
 

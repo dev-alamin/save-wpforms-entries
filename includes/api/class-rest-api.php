@@ -436,11 +436,106 @@ class Rest_API
                     ],
                 ],
             ],
+            [
+                'route' => '/export',
+                'data' => [
+                    'methods' => 'POST',
+                    'callback' => [$this, 'export_entries_csv'],
+                    // 'permission_callback' => function () {
+                    //     return current_user_can('manage_options');
+                    // },
+                    'permission_callback' => '__return_true',
+                    'args' => [
+                        'ids' => [
+                            'required' => true,
+                            'type'     => 'array',
+                        ],
+                    ],
+                ],
+            ],
         ];
 
         foreach ($data as $item) {
             register_rest_route($this->namespace, $item['route'], $item['data']);
         }
+    }
+
+    /**
+     * Export selected WPForms entries as a CSV file download.
+     *
+     * This method handles a REST API POST request, expecting an array of entry IDs 
+     * under the 'ids' parameter. It fetches entries from the custom `swpfe_entries` table,
+     * unserializes the stored entry data, and outputs it as a CSV file.
+     * 
+     * The CSV file includes an 'id' column as the first column, followed by the entry data keys.
+     *
+     * @param WP_REST_Request $request The REST API request object containing parameters.
+     * 
+     * @return WP_Error|void Returns WP_Error on invalid input or no data; otherwise sends CSV download and exits.
+     * 
+     * @throws void Sends CSV headers and exits script after output.
+     */
+    public function export_entries_csv($request) {
+        // Check nonce for REST API request
+        if ( ! isset( $_SERVER['HTTP_X_WP_NONCE'] ) || ! wp_verify_nonce( $_SERVER['HTTP_X_WP_NONCE'], 'wp_rest' ) ) {
+            return new \WP_Error(
+                'rest_forbidden',
+                __('You are not allowed to perform this action.', 'advanced-entries-manager-for-wpforms'),
+                ['status' => 403]
+            );
+        }
+
+        global $wpdb;
+        $ids = $request->get_param('ids');
+
+        if (empty($ids) || !is_array($ids)) {
+            return new \WP_Error('invalid_data', __('No entries selected.', 'advanced-entries-manager-for-wpforms'), ['status' => 400]);
+        }
+
+        // Prepare placeholders for SQL IN clause
+        $placeholders = implode(',', array_fill(0, count($ids), '%d'));
+        $query = "SELECT * FROM {$wpdb->prefix}swpfe_entries WHERE id IN ($placeholders)";
+        $entries = $wpdb->get_results($wpdb->prepare($query, $ids), ARRAY_A);
+
+        if (empty($entries)) {
+            return new \WP_Error('no_data', __('No data found.', 'advanced-entries-manager-for-wpforms'), ['status' => 404]);
+        }
+
+        // Set headers for CSV file download
+        header('Content-Type: text/csv');
+        header('Content-Disposition: attachment; filename="aem-entries.csv"');
+
+        $output = fopen('php://output', 'w');
+
+        // Extract header columns from first entry's unserialized data keys
+        $first = $entries[0];
+        $entry_data = maybe_unserialize($first['entry']);
+        $headers = array_keys($entry_data);
+
+        // Add 'id' as first column header
+        array_unshift($headers, 'id');
+
+        // Write CSV headers
+        fputcsv($output, $headers);
+
+        // Write CSV rows including 'id' and entry data values
+        foreach ($entries as $entry) {
+            $data = maybe_unserialize($entry['entry']);
+            $row = [];
+
+            // Add the 'id' column value first
+            $row[] = $entry['id'];
+
+            // Add other columns in header order
+            foreach (array_slice($headers, 1) as $key) {
+                $row[] = $data[$key] ?? '-';
+            }
+
+            fputcsv($output, $row);
+        }
+
+        fclose($output);
+        exit; // Stop execution to prevent extra output
     }
 
     /**

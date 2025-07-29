@@ -21,6 +21,17 @@ class Admin {
         add_action('admin_enqueue_scripts', [$this, 'enqueue_assets']);
         add_action('admin_head', [$this, 'hide_update_notices']);
         add_action( 'admin_init', [ $this, 'register_settings' ] );
+
+        add_action('wp_ajax_swpfe_save_settings', function () {
+            check_ajax_referer('wp_rest');
+
+            update_option('swpfe_export_limit', absint($_POST['swpfe_export_limit'] ?? 100));
+            update_option('swpfe_entries_per_page', absint($_POST['swpfe_entries_per_page'] ?? 20));
+
+            wp_send_json_success(['message' => 'Saved']);
+        });
+
+
     }
 
     public function register_settings(){
@@ -129,22 +140,17 @@ class Admin {
         wp_enqueue_style('swpfe-admin-css', SWPFE_URL . 'admin/assets/admin.css', [], $version);
         wp_enqueue_script('swpfe-tailwind-css', SWPFE_URL . 'admin/assets/tailwind.min.js', [], $version, false);
         wp_enqueue_script('swpfe-admin-js', SWPFE_URL . 'admin/assets/admin.js', [], $version, true);
-        wp_enqueue_script('swpfe-alpine', SWPFE_URL . 'admin/assets/alpine.min.js', [], null, true);
+        wp_enqueue_script('alpine-collapse', SWPFE_URL . 'admin/assets/collapse.js', [], null, true );
+        wp_enqueue_script('swpfe-alpine', SWPFE_URL . 'admin/assets/alpine.min.js', ['alpine-collapse'], null, true);
         wp_enqueue_script('swpfe-lodash', SWPFE_URL . 'admin/assets/lodash.min.js', [], $version, false);
         wp_enqueue_script('lottie-web', SWPFE_URL . 'admin/assets/lottie-player.js', [], '5.12.0', false);
-        wp_enqueue_script(
-            'alpine-collapse',
-            'https://unpkg.com/@alpinejs/collapse@3.x.x/dist/cdn.min.js',
-            ['alpinejs'],
-            null,
-            true
-        );
 
 
         wp_localize_script('swpfe-admin-js', 'swpfeSettings', [
             'restUrl' => esc_url_raw(rest_url()),
             'nonce'   => wp_create_nonce('wp_rest'),
-            'perPage' => get_option('swpfe_entries_per_page', 20), 
+            'perPage' => get_option('swpfe_entries_per_page', 20),
+            'ajax_url' => admin_url('admin-ajax.php'),
         ]);
     }
 

@@ -34,27 +34,57 @@ function formTable(form) {
     async performBulkAction(action) {
       if (!this.bulkSelected.length) return;
 
-      const label = action.replace(/_/g, " ");
-
       try {
-        const res = await fetch(
-          `${swpfeSettings.restUrl}wpforms/entries/v1/bulk`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-WP-Nonce": swpfeSettings.nonce,
-            },
-            body: JSON.stringify({ ids: this.bulkSelected, action }),
-          }
-        );
+        if (action === "export_csv") {
+          const res = await fetch(
+            `${swpfeSettings.restUrl}wpforms/entries/v1/export`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-WP-Nonce": swpfeSettings.nonce,
+              },
+              body: JSON.stringify({ ids: this.bulkSelected }),
+            }
+          );
 
-        const data = await res.json();
+          const blob = await res.blob();
+          const url = window.URL.createObjectURL(blob);
 
-        this.$dispatch("toast", {
-          type: "success", // or 'error', 'info', etc.
-          message: "✅ Bulk action completed successfully!",
-        });
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `aem-entries-${Date.now()}.csv`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+
+          window.URL.revokeObjectURL(url);
+
+          this.$dispatch("toast", {
+            type: "success",
+            message: "✅ CSV exported successfully!",
+          });
+        } else {
+          // Handle other actions
+          const res = await fetch(
+            `${swpfeSettings.restUrl}wpforms/entries/v1/bulk`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-WP-Nonce": swpfeSettings.nonce,
+              },
+              body: JSON.stringify({ ids: this.bulkSelected, action }),
+            }
+          );
+
+          const data = await res.json();
+
+          this.$dispatch("toast", {
+            type: "success",
+            message: "✅ Bulk action completed successfully!",
+          });
+        }
 
         this.bulkSelected = [];
         this.selectAll = false;
@@ -63,7 +93,6 @@ function formTable(form) {
         alert("Bulk action failed. Please try again.");
       }
     },
-
     handleCheckbox(event, entryId) {
       const index = this.entries.findIndex((e) => e.id === entryId);
       if (index === -1) return;
@@ -92,11 +121,10 @@ function formTable(form) {
     async fetchEntries() {
       this.loading = true;
       try {
-
         const query = new URLSearchParams({
-            form_id: this.formId,
-            page: this.currentPage,
-            per_page: this.pageSize,
+          form_id: this.formId,
+          page: this.currentPage,
+          per_page: this.pageSize,
         });
 
         const res = await fetch(
@@ -461,6 +489,24 @@ function formTable(form) {
       printWindow.focus();
       printWindow.print();
     },
+    exportSingleEntry(entry) {
+      const csvContent =
+        `"Field","Value"\n` +
+        Object.entries(entry.entry)
+          .map(
+            ([key, val]) =>
+              `"${key.replace(/\r?\n|\r/g, " ")}","${(val ?? "")
+                .toString()
+                .replace(/"/g, '""')}"`
+          )
+          .join("\n");
+
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `entry-${entry.id}.csv`;
+      link.click();
+    },
     timeAgo(dateString) {
       // Convert "YYYY-MM-DD HH:mm:ss" → "YYYY-MM-DDTHH:mm:ssZ" (UTC)
       const utcDateString = dateString.replace(" ", "T") + "Z";
@@ -632,7 +678,7 @@ function formEntriesApp(formId, entryCount) {
     currentPage: 1,
     perPage: 10,
     loading: false,
-    searchType: 'email',
+    searchType: "email",
 
     async fetchEntries() {
       this.loading = true;
@@ -644,8 +690,8 @@ function formEntriesApp(formId, entryCount) {
       });
 
       if (this.searchQuery.trim() !== "") {
-        queryParams.append('search', this.searchQuery.trim());
-        queryParams.append('search_type', this.searchType.trim()); // 👈 Add this line
+        queryParams.append("search", this.searchQuery.trim());
+        queryParams.append("search_type", this.searchType.trim()); // 👈 Add this line
       }
 
       if (this.filterStatus !== "all") {
@@ -678,16 +724,16 @@ function formEntriesApp(formId, entryCount) {
     },
 
     handleSearchInput() {
-        const trimmed = this.searchQuery.trim();
+      const trimmed = this.searchQuery.trim();
 
-        if (trimmed === '') {
-            this.entries = [];
-            this.loading = false;
-            return;
-        }
+      if (trimmed === "") {
+        this.entries = [];
+        this.loading = false;
+        return;
+      }
 
-        this.loading = true;
-        this.fetchEntries();
+      this.loading = true;
+      this.fetchEntries();
     },
     handleStatusChange() {
       this.currentPage = 1;
@@ -714,7 +760,68 @@ function toastHandler() {
         this.message = e.detail.message;
         this.type = e.detail.type || "success";
         this.visible = true;
+
+        setTimeout(() => (this.visible = false), 3000);
       });
+    },
+  };
+}
+
+function settingsForm() {
+  return {
+    isSaving: false,
+    message: "",
+
+    async saveSettings() {
+      this.isSaving = true;
+      this.message = "";
+
+      const form = document.querySelector("#swpfe-settings-form");
+      const formData = new FormData(form);
+
+      // ❌ Remove default WP fields
+      formData.delete("option_page");
+      formData.delete("action");
+      formData.delete("_wpnonce");
+      formData.delete("_wp_http_referer");
+
+      // ✅ Add custom action and nonce
+      formData.append("action", "swpfe_save_settings");
+      formData.append("_wpnonce", swpfeSettings.nonce);
+
+      try {
+        const res = await fetch(ajaxurl, {
+          method: "POST",
+          body: formData,
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          window.dispatchEvent(
+            new CustomEvent("toast", {
+              detail: {
+                message: "✅ Settings saved successfully!",
+                type: "success",
+              },
+            })
+          );
+        } else {
+          window.dispatchEvent(
+            new CustomEvent("toast", {
+              detail: {
+                message: "❌ " + (data.data?.message || "Save failed."),
+                type: "error",
+              },
+            })
+          );
+        }
+      } catch (err) {
+        console.error(err);
+        this.message = "❌ Unexpected error occurred.";
+      }
+
+      this.isSaving = false;
     },
   };
 }
