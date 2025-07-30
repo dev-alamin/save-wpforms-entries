@@ -15,8 +15,8 @@
  * @since      1.0.0
  */
 
-namespace App\AdvancedEntryManger;
-use App\AdvancedEntryManger\DB_Handler;
+namespace App\AdvancedEntryManager;
+use App\AdvancedEntryManager\DB_Handler;
 
 class Entry_Handler {
 	public function __construct() {

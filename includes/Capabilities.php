@@ -8,7 +8,7 @@
  * @package advanced-entries-manager
  * @since 1.0.0
  */
-namespace App\AdvancedEntryManger;
+namespace App\AdvancedEntryManager;
 
 class Capabilities {
     public function __construct()

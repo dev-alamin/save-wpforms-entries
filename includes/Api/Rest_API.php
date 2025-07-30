@@ -1,6 +1,6 @@
 <?php
 
-namespace App\AdvancedEntryManger\Api;
+namespace App\AdvancedEntryManager\Api;
 
 use WP_REST_Request;
 use WP_REST_Response;

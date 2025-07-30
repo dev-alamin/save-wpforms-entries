@@ -37,27 +37,14 @@ require_once __DIR__ . '/vendor/autoload.php';
 add_action( 'plugins_loaded', function() {
 	load_plugin_textdomain( 'save-wpf-entries', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
     
-    new App\AdvancedEntryManger\Api\Route();
-    new App\AdvancedEntryManger\Entry_Handler();
+    new App\AdvancedEntryManager\Api\Route();
+    new App\AdvancedEntryManager\Entry_Handler();
 
     if ( is_admin() ) {
-        new App\AdvancedEntryManger\Admin\Admin();
+        new App\AdvancedEntryManager\Admin\Admin();
     }
 });
 
 // Activation Hook - Create DB table
-register_activation_hook( __FILE__, [ 'App\AdvancedEntryManger\DB_Handler', 'create_table' ] );
-
-add_action('init', 'swpfe_capture_token_from_url');
-
-function swpfe_capture_token_from_url() {
-    if ( isset($_GET['access_token']) ) {
-        update_option('swpfe_google_access_token', sanitize_text_field($_GET['access_token']));
-        update_option('swpfe_google_token_expires', time() + 3600); // fallback
-
-        // Optional: redirect to settings or a thank you screen
-        wp_safe_redirect(admin_url('admin.php?page=swpfe-settings&connected=true'));
-        exit;
-    }
-}
+register_activation_hook( __FILE__, [ 'App\AdvancedEntryManager\DB_Handler', 'create_table' ] );
 

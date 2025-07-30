@@ -1,16 +1,16 @@
 <?php
 
-namespace App\AdvancedEntryManger\Api;
+namespace App\AdvancedEntryManager\Api;
 
 use WP_REST_Server;
-use App\AdvancedEntryManger\Api\Callback\Bulk_Action;
-use App\AdvancedEntryManger\Api\Callback\Get_Entries;
-use App\AdvancedEntryManger\Api\Callback\Get_Forms;
-use App\AdvancedEntryManger\Api\Callback\Update_Entries;
-use App\AdvancedEntryManger\Api\Callback\Create_Entries;
-use App\AdvancedEntryManger\Api\Callback\Export_Entries;
-use App\AdvancedEntryManger\Api\Callback\Get_Form_Fields;
-use App\AdvancedEntryManger\Api\Callback\Delete_Single_Entry;
+use App\AdvancedEntryManager\Api\Callback\Bulk_Action;
+use App\AdvancedEntryManager\Api\Callback\Get_Entries;
+use App\AdvancedEntryManager\Api\Callback\Get_Forms;
+use App\AdvancedEntryManager\Api\Callback\Update_Entries;
+use App\AdvancedEntryManager\Api\Callback\Create_Entries;
+use App\AdvancedEntryManager\Api\Callback\Export_Entries;
+use App\AdvancedEntryManager\Api\Callback\Get_Form_Fields;
+use App\AdvancedEntryManager\Api\Callback\Delete_Single_Entry;
 
 /**
  * Class Route
@@ -23,7 +23,7 @@ use App\AdvancedEntryManger\Api\Callback\Delete_Single_Entry;
  * * The routes are registered during the 'rest_api_init' action,
  * allowing WordPress to recognize them
  * and process requests accordingly.
- * * @package App\AdvancedEntryManger\Api
+ * * @package App\AdvancedEntryManager\Api
  * * @since 1.0.0
  * * @see https://developer.wordpress.org/rest-api/extending-the-rest-api/adding-custom-endpoints/
  * * @see https://developer.wordpress.org/rest-api/reference/

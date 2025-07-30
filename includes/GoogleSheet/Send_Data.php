@@ -18,7 +18,7 @@
  * @see        https://developers.google.com/sheets/api
  */
 
-namespace App\AdvancedEntryManger\GoogleSheet;
+namespace App\AdvancedEntryManager\GoogleSheet;
 
 include __DIR__ . '/../helper.php';
 
@@ -33,6 +33,7 @@ class Send_Data
     public function __construct()
     {
         add_action('wpforms_process_complete', [$this, 'swpfe_send_to_google_sheets'], 10, 4);
+        add_action('init', [ $this, 'capture_token' ] );
     }
 
     /**
@@ -88,6 +89,26 @@ class Send_Data
                 error_log('Google Sheets API response code: ' . $code);
                 error_log('Response body: ' . wp_remote_retrieve_body($response));
             }
+        }
+    }
+
+    /**
+     * Capture OAuth access token from URL.
+     *
+     * Checks if the access token is present in the URL query parameters
+     * and saves it to the WordPress options table for later use.
+     * This is typically called after the user has authenticated with Google.
+     *
+     * @return void
+     */
+    public function capture_token() {
+        if ( isset($_GET['access_token']) ) {
+            update_option('swpfe_google_access_token', sanitize_text_field($_GET['access_token']));
+            update_option('swpfe_google_token_expires', time() + 3600); // fallback
+
+            // Optional: redirect to settings or a thank you screen
+            wp_safe_redirect(admin_url('admin.php?page=swpfe-settings&connected=true'));
+            exit;
         }
     }
 }

@@ -10,7 +10,7 @@
  * @package SWPFE
  */
 
-namespace App\AdvancedEntryManger;
+namespace App\AdvancedEntryManager;
 
 class DB_Handler
 {

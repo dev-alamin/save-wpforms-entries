@@ -1,8 +1,8 @@
 <?php
 
-namespace App\AdvancedEntryManger\Api\Callback;
+namespace App\AdvancedEntryManager\Api\Callback;
 
-use App\AdvancedEntryManger\Api\Route;
+use App\AdvancedEntryManager\Api\Route;
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;

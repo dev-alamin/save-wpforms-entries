@@ -1,7 +1,7 @@
 <?php
 
-namespace App\AdvancedEntryManger;
-use App\AdvancedEntryManger\DB_Handler;
+namespace App\AdvancedEntryManager;
+use App\AdvancedEntryManager\DB_Handler;
 
 /**
  * ExportCSV class

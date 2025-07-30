@@ -6,7 +6,7 @@
     "license": "GPLv2",
     "autoload": {
         "psr-4": {
-            "App\\AdvancedEntryManger\\": "includes/"
+            "App\\AdvancedEntryManager\\": "includes/"
         }
     },
     "authors": [
