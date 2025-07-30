@@ -15,7 +15,8 @@
  * @since      1.0.0
  */
 
-namespace SWPFE;
+namespace App\AdvancedEntryManger;
+use App\AdvancedEntryManger\DB_Handler;
 
 class Entry_Handler {
 	public function __construct() {
@@ -77,5 +78,3 @@ class Entry_Handler {
 		//error_log( "[Entry $entry_id] Updated: Name: $name | Email: $email | Last ID: $last_id" );
 	}
 }
-
-new Entry_Handler();

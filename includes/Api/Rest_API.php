@@ -1,6 +1,6 @@
 <?php
 
-namespace SWPFE;
+namespace App\AdvancedEntryManger\Api;
 
 use WP_REST_Request;
 use WP_REST_Response;
@@ -38,9 +38,15 @@ class Rest_API
      * This method defines routes for managing form entries, including:
      * - Fetching entries with filters and pagination
      * - Creating new entries
+     * - Fetching single entry
      * - Retrieving form metadata
      * - Updating existing entries
      * - Deleting entries
+     * - Checking for new entries
+     * - Performing bulk actions on entries
+     * - Exporting entries to CSV
+     * - Retrieving form fields
+     * - Exporting entries to CSV with various filters
      * 
      * Each route uses proper permission callbacks ensuring only authorized users
      * (typically admins with 'manage_options') can perform operations.

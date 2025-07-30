@@ -31,26 +31,22 @@ define( 'SWPFE_VERSION', WP_DEBUG_LOG ? time() : '1.0.0' );
 define( 'SWPFE_PATH', plugin_dir_path( __FILE__ ) );
 define( 'SWPFE_URL', plugin_dir_url( __FILE__ ) );
 
-require_once SWPFE_PATH . 'admin/class-db-handler.php';
-require_once SWPFE_PATH . 'admin/class-admin.php';
-require_once SWPFE_PATH . 'includes/class-entry-handler.php';
-require_once SWPFE_PATH . 'includes/api/class-rest-api.php';
-require_once plugin_dir_path(__FILE__) . 'includes/google-sheet/class-send-data.php';
+require_once __DIR__ . '/vendor/autoload.php';
 
 // Load textdomain
 add_action( 'plugins_loaded', function() {
 	load_plugin_textdomain( 'save-wpf-entries', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
     
-    new SWPFE\Rest_API();
-    new SWPFE\GSHEET\Send_Data();
+    new App\AdvancedEntryManger\Api\Route();
+    new App\AdvancedEntryManger\Entry_Handler();
 
     if ( is_admin() ) {
-        new SWPFE\Admin();
+        new App\AdvancedEntryManger\Admin\Admin();
     }
 });
 
 // Activation Hook - Create DB table
-register_activation_hook( __FILE__, [ 'SWPFE\DB_Handler', 'create_table' ] );
+register_activation_hook( __FILE__, [ 'App\AdvancedEntryManger\DB_Handler', 'create_table' ] );
 
 add_action('init', 'swpfe_capture_token_from_url');
 

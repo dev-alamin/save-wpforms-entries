@@ -8,7 +8,7 @@
  * @package advanced-entries-manager
  * @since 1.0.0
  */
-namespace SWPFE;
+namespace App\AdvancedEntryManger;
 
 class Capabilities {
     public function __construct()

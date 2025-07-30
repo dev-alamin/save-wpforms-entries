@@ -1,6 +1,6 @@
 <?php
 
-namespace SWPFE;
+namespace App\AdvancedEntryManger\Admin;
 /**
  * Class Admin
  *
@@ -101,7 +101,7 @@ class Admin {
      * @return void
      */
     public function render_page() {
-        include SWPFE_PATH . 'admin/views/view-entries.php';
+        include __DIR__ . '/views/view-entries.php';
     }
 
     /**
@@ -112,7 +112,7 @@ class Admin {
      * @return void
      */
     public function render_settings_page() {
-        include SWPFE_PATH . 'admin/views/settings-page.php';
+        include __DIR__ . '/views/settings-page.php';
     }
 
     /**
@@ -137,13 +137,13 @@ class Admin {
 
         $version = defined('SWPFE_VERSION') ? SWPFE_VERSION : time();
 
-        wp_enqueue_style('swpfe-admin-css', SWPFE_URL . 'admin/assets/admin.css', [], $version);
-        wp_enqueue_script('swpfe-tailwind-css', SWPFE_URL . 'admin/assets/tailwind.min.js', [], $version, false);
-        wp_enqueue_script('swpfe-admin-js', SWPFE_URL . 'admin/assets/admin.js', [], $version, true);
-        wp_enqueue_script('alpine-collapse', SWPFE_URL . 'admin/assets/collapse.js', [], null, true );
-        wp_enqueue_script('swpfe-alpine', SWPFE_URL . 'admin/assets/alpine.min.js', ['alpine-collapse'], null, true);
-        wp_enqueue_script('swpfe-lodash', SWPFE_URL . 'admin/assets/lodash.min.js', [], $version, false);
-        wp_enqueue_script('lottie-web', SWPFE_URL . 'admin/assets/lottie-player.js', [], '5.12.0', false);
+        wp_enqueue_style('swpfe-admin-css', SWPFE_URL . 'assets/admin/admin.css', [], $version);
+        wp_enqueue_script('swpfe-tailwind-css', SWPFE_URL . 'assets/admin/tailwind.min.js', [], $version, false);
+        wp_enqueue_script('swpfe-admin-js', SWPFE_URL . 'assets/admin/admin.js', [], $version, true);
+        wp_enqueue_script('alpine-collapse', SWPFE_URL . 'assets/admin/collapse.js', [], null, true );
+        wp_enqueue_script('swpfe-alpine', SWPFE_URL . 'assets/admin/alpine.min.js', ['alpine-collapse'], null, true);
+        wp_enqueue_script('swpfe-lodash', SWPFE_URL . 'assets/admin/lodash.min.js', [], $version, false);
+        wp_enqueue_script('lottie-web', SWPFE_URL . 'assets/admin/lottie-player.js', [], '5.12.0', false);
 
 
         wp_localize_script('swpfe-admin-js', 'swpfeSettings', [

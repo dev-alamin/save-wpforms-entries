@@ -18,7 +18,7 @@
  * @see        https://developers.google.com/sheets/api
  */
 
-namespace SWPFE\GSHEET;
+namespace App\AdvancedEntryManger\GoogleSheet;
 
 include __DIR__ . '/../helper.php';
 

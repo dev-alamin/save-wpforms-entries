@@ -10,7 +10,7 @@
  * @package SWPFE
  */
 
-namespace SWPFE;
+namespace App\AdvancedEntryManger;
 
 class DB_Handler
 {
@@ -71,7 +71,5 @@ class DB_Handler
 
 
         dbDelta($sql);
-
-        new \SWPFE\Capabilities();
     }
 }

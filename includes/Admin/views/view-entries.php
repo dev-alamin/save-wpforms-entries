@@ -171,7 +171,7 @@
                             x-transition
                             class="absolute inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-sm">
                             <lottie-player
-                                src="<?php echo esc_url(SWPFE_URL . 'admin/assets/loading.json'); ?>"
+                                src="<?php echo esc_url(SWPFE_URL . 'assets/admin/loading.json'); ?>"
                                 background="transparent"
                                 speed="1"
                                 class="w-auto h-auto"
