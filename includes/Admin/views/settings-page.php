@@ -51,53 +51,55 @@ $sheet_tab = get_option('swpfe_google_sheet_tab', 'Sheet1');
                 :class="tab === 'google' 
                     ? '!text-white !border-b-2 !border-indigo-600 !bg-indigo-700' 
                     : '!text-gray-500 hover:!text-indigo-600 hover:!bg-gray-100'"
-                class="!transition-all !px-5 !py-2 !rounded-t-lg !border-b-2 !border-transparent !bg-gray-50">
-                🔐 Google Sync
+                class="!transition-all !px-5 !py-2 !rounded-t-lg !border-b-2 !border-transparent !bg-gray-50 flex items-center gap-2">
+                <span>
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" class="fill-current text-inherit">
+                        <path d="M160-160v-80h110l-16-14q-52-46-73-105t-21-119q0-111 66.5-197.5T400-790v84q-72 26-116 88.5T240-478q0 45 17 87.5t53 78.5l10 10v-98h80v240H160Zm400-10v-84q72-26 116-88.5T720-482q0-45-17-87.5T650-648l-10-10v98h-80v-240h240v80H690l16 14q49 49 71.5 106.5T800-482q0 111-66.5 197.5T560-170Z"/>
+                    </svg>
+                </span>
+                <?php esc_html_e( 'Google Sync', 'advanced-entries-manager-for-wpforms' ); ?>
             </button>
+
             <button
                 @click="tab = 'csv'"
                 :class="tab === 'csv' 
                     ? '!text-white !border-b-2 !border-indigo-600 !bg-indigo-700' 
                     : '!text-gray-500 hover:!text-indigo-600 hover:!bg-gray-100'"
-                class="!transition-all !px-5 !py-2 !rounded-t-lg !border-b-2 !border-transparent !bg-gray-50">
-                📤 CSV Export
+                class="!transition-all !px-5 !py-2 !rounded-t-lg !border-b-2 !border-transparent !bg-gray-50 flex items-center gap-2">
+                <span>
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" class="fill-current text-inherit">
+                        <path d="M480-480ZM202-65l-56-57 118-118h-90v-80h226v226h-80v-89L202-65Zm278-15v-80h240v-440H520v-200H240v400h-80v-400q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H480Z"/>
+                    </svg>
+                </span>
+                <?php esc_html_e( 'Advanced Export (PRO)', 'advanced-entries-manager-for-wpforms' ); ?>
             </button>
+
             <button
                 @click="tab = 'general'"
                 :class="tab === 'general' 
                     ? '!text-white !border-b-2 !border-indigo-600 !bg-indigo-700' 
                     : '!text-gray-500 hover:!text-indigo-600 hover:!bg-gray-100'"
-                class="!transition-all !px-5 !py-2 !rounded-t-lg !border-b-2 !border-transparent !bg-gray-50">
-                📄 General Settings
+                class="!transition-all !px-5 !py-2 !rounded-t-lg !border-b-2 !border-transparent !bg-gray-50 flex items-center gap-2">
+                <span>
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" class="fill-current text-inherit">
+                        <path d="M440-280h80l12-60q12-5 22.5-10.5T576-364l58 18 40-68-46-40q2-14 2-26t-2-26l46-40-40-68-58 18q-11-8-21.5-13.5T532-620l-12-60h-80l-12 60q-12 5-22.5 10.5T384-596l-58-18-40 68 46 40q-2 14-2 26t2 26l-46 40 40 68 58-18q11 8 21.5 13.5T428-340l12 60Zm40-120q-33 0-56.5-23.5T400-480q0-33 23.5-56.5T480-560q33 0 56.5 23.5T560-480q0 33-23.5 56.5T480-400ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Zm0-560v560-560Z"/>
+                    </svg>
+                </span>
+                <?php esc_html_e( 'General Settings', 'advanced-entries-manager-for-wpforms' ); ?>
             </button>
         </nav>
 
         <form id="swpfe-settings-form" @submit.prevent="saveSettings" class="space-y-6">
-            <div x-show="tab === 'google'" x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="opacity-0 translate-y-4"
-                x-transition:enter-end="opacity-100 translate-y-0"
-                x-transition:leave="transition ease-in duration-200"
-                x-transition:leave-start="opacity-100 translate-y-0"
-                x-transition:leave-end="opacity-0 translate-y-2">
+            <div x-show="tab === 'google'">
                 <!-- ✅ Connected Notice -->
                 <?php include __DIR__ . '/tab/google-connection.php'; ?>
             </div>
 
-            <div x-show="tab === 'csv'" x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="opacity-0 translate-y-4"
-                x-transition:enter-end="opacity-100 translate-y-0"
-                x-transition:leave="transition ease-in duration-200"
-                x-transition:leave-start="opacity-100 translate-y-0"
-                x-transition:leave-end="opacity-0 translate-y-2">
+            <div x-show="tab === 'csv'" class="opacity-50">
                 <?php include __DIR__ . '/tab/csv-export.php'; ?>
             </div>
 
-            <div x-show="tab === 'general'" x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="opacity-0 translate-y-4"
-                x-transition:enter-end="opacity-100 translate-y-0"
-                x-transition:leave="transition ease-in duration-200"
-                x-transition:leave-start="opacity-100 translate-y-0"
-                x-transition:leave-end="opacity-0 translate-y-2">
+            <div x-show="tab === 'general'">
                 <?php include __DIR__ . '/tab/general-settings.php'; ?>
             </div>
 

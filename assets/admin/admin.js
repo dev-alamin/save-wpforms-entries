@@ -37,7 +37,7 @@ function formTable(form) {
       try {
         if (action === "export_csv") {
           const res = await fetch(
-            `${swpfeSettings.restUrl}wpforms/entries/v1/export`,
+            `${swpfeSettings.restUrl}aem/entries/v1/export`,
             {
               method: "POST",
               headers: {
@@ -67,7 +67,7 @@ function formTable(form) {
         } else {
           // Handle other actions
           const res = await fetch(
-            `${swpfeSettings.restUrl}wpforms/entries/v1/bulk`,
+            `${swpfeSettings.restUrl}aem/entries/v1/bulk`,
             {
               method: "POST",
               headers: {
@@ -128,7 +128,7 @@ function formTable(form) {
         });
 
         const res = await fetch(
-          `${swpfeSettings.restUrl}wpforms/entries/v1/entries?${query}`,
+          `${swpfeSettings.restUrl}aem/entries/v1/entries?${query}`,
           {
             headers: {
               "X-WP-Nonce": swpfeSettings.nonce,
@@ -269,7 +269,7 @@ function formTable(form) {
 
       try {
         const res = await fetch(
-          `${swpfeSettings.restUrl}wpforms/entries/v1/update`,
+          `${swpfeSettings.restUrl}aem/entries/v1/update`,
           {
             method: "POST",
             headers: {
@@ -291,7 +291,7 @@ function formTable(form) {
 
       try {
         const response = await fetch(
-          `${swpfeSettings.restUrl}wpforms/entries/v1/delete`,
+          `${swpfeSettings.restUrl}aem/entries/v1/delete`,
           {
             method: "DELETE",
             headers: {
@@ -376,7 +376,7 @@ function formTable(form) {
 
       try {
         const res = await fetch(
-          `${swpfeSettings.restUrl}wpforms/entries/v1/update`,
+          `${swpfeSettings.restUrl}aem/entries/v1/update`,
           {
             method: "POST",
             headers: {
@@ -604,7 +604,7 @@ function entriesApp() {
     async fetchForms() {
       try {
         const res = await fetch(
-          `${swpfeSettings.restUrl}wpforms/entries/v1/forms`,
+          `${swpfeSettings.restUrl}aem/entries/v1/forms`,
           {
             headers: {
               "X-WP-Nonce": swpfeSettings.nonce,
@@ -633,7 +633,7 @@ function entriesApp() {
 
       try {
         const res = await fetch(
-          `${swpfeSettings.restUrl}wpforms/entries/v1/entries?${query}`,
+          `${swpfeSettings.restUrl}aem/entries/v1/entries?${query}`,
           {
             headers: {
               "X-WP-Nonce": swpfeSettings.nonce,
@@ -702,7 +702,7 @@ function formEntriesApp(formId, entryCount) {
 
       try {
         const res = await fetch(
-          `${swpfeSettings.restUrl}wpforms/entries/v1/entries?${queryParams}`,
+          `${swpfeSettings.restUrl}aem/entries/v1/entries?${queryParams}`,
           {
             headers: {
               "X-WP-Nonce": swpfeSettings.nonce,
@@ -841,7 +841,7 @@ function exportSettings() {
     async fetchForms() {
       try {
         const res = await fetch(
-          `${swpfeSettings.restUrl}wpforms/entries/v1/forms`,
+          `${swpfeSettings.restUrl}aem/entries/v1/forms`,
           {
             headers: {
               "X-WP-Nonce": swpfeSettings.nonce,
@@ -866,7 +866,7 @@ function exportSettings() {
       }
 
       const res = await fetch(
-        `${swpfeSettings.restUrl}wpforms/entries/v1/forms/${this.selectedFormId}/fields`,
+        `${swpfeSettings.restUrl}aem/entries/v1/forms/${this.selectedFormId}/fields`,
         {
           headers: {
             "X-WP-Nonce": swpfeSettings.nonce,
@@ -919,7 +919,7 @@ function exportSettings() {
 
         const url = `${
           swpfeSettings.restUrl
-        }wpforms/entries/v1/export-csv?${params.toString()}`;
+        }aem/entries/v1/export-csv?${params.toString()}`;
 
         try {
           const res = await fetch(url, {

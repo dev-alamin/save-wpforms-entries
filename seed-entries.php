@@ -2,11 +2,11 @@
 // Run this file using: wp eval-file seed.php --allow-root
 global $wpdb;
 
-$table = $wpdb->prefix . 'swpfe_entries';
+$table   = $wpdb->prefix . 'swpfe_entries';
 $form_id = 2;
-$batch_size = 1000;
-$total = 2000000;
-$status_options = ['read', 'unread'];
+$batch   = 1000;
+$total   = 2000000;
+$status  = ['read', 'unread'];
 
 // Sample UK/US realistic names and emails
 $names = [
@@ -42,8 +42,8 @@ for ($i = 0; $i < $total; $i += $batch_size) {
         $name = $names[array_rand($names)];
         
         // Unique email by adding batch and row numbers
-        $email_base = $emails[array_rand($emails)];
-        $email_parts = explode('@', $email_base);
+        $email = $emails[array_rand($emails)];
+        $email = explode('@', $email_base);
         $email = $email_parts[0] . "+{$i}_{$j}@" . $email_parts[1];
 
         $comment = $comments[array_rand($comments)];

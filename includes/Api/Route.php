@@ -11,6 +11,7 @@ use App\AdvancedEntryManager\Api\Callback\Create_Entries;
 use App\AdvancedEntryManager\Api\Callback\Export_Entries;
 use App\AdvancedEntryManager\Api\Callback\Get_Form_Fields;
 use App\AdvancedEntryManager\Api\Callback\Delete_Single_Entry;
+use App\AdvancedEntryManager\Api\Callback\Migrate;
 
 /**
  * Class Route
@@ -29,7 +30,8 @@ use App\AdvancedEntryManager\Api\Callback\Delete_Single_Entry;
  * * @see https://developer.wordpress.org/rest-api/reference/
  * * This class is responsible for defining the API routes and their corresponding callbacks.
  */
-class Route {
+class Route
+{
 
     /**
      * Callback instances for handling various API routes.
@@ -79,13 +81,19 @@ class Route {
      * @var Delete_Single_Entry
      */
     protected $delete_single_entry;
+    /**
+     * Callback instances for handling migration from WPFormsDB plugin.
+     *
+     * @var Migrate
+     */
+    protected $migrate;
 
     /**
      * REST API namespace.
      *
      * @var string
      */
-    private $namespace = 'wpforms/entries/v1';
+    private $namespace = 'aem/entries/v1';
 
     /**
      * Constructor.
@@ -104,6 +112,7 @@ class Route {
         $this->export_entries      = new Export_Entries();
         $this->get_form_fields     = new Get_Form_Fields();
         $this->delete_single_entry = new Delete_Single_Entry();
+        $this->migrate             = new Migrate();
     }
 
     /**
@@ -549,55 +558,67 @@ class Route {
             [
                 'route' => '/export-csv',
                 'data' => [
-                        'methods'             => WP_REST_Server::READABLE,
-                        'callback'            => [ $this->export_entries, 'export_csv_callback' ],
-                        // 'permission_callback' => function() {
-                        //     return current_user_can( 'manage_options' ); // adjust capability
-                        // },
-                        'permission_callback' => '__return_true',
-                        'args' => [
-                            'form_id' => [
-                                'required' => true,
-                                'validate_callback' => function( $param ) {
-                                    return is_numeric( $param ) && intval( $param ) > 0;
-                                },
-                                'sanitize_callback' => 'absint',
-                            ],
-                            'date_from' => [
-                                'required' => false,
-                                'validate_callback' => function( $param ) {
-                                    return empty( $param ) || preg_match( '/^\d{4}-\d{2}-\d{2}$/', $param );
-                                },
-                                'sanitize_callback' => 'sanitize_text_field',
-                            ],
-                            'date_to' => [
-                                'required' => false,
-                                'validate_callback' => function( $param ) {
-                                    return empty( $param ) || preg_match( '/^\d{4}-\d{2}-\d{2}$/', $param );
-                                },
-                                'sanitize_callback' => 'sanitize_text_field',
-                            ],
-                            'limit' => [
-                                'required' => false,
-                                'default' => 100,
-                                'validate_callback' => function( $param ) {
-                                    return is_numeric( $param ) && intval( $param ) >= 10 && intval( $param ) <= 50000;
-                                },
-                                'sanitize_callback' => 'absint',
-                            ],
-                            'exclude_fields' => [
-                                'required' => false,
-                                'validate_callback' => function( $param ) {
-                                    // Comma separated string, allow empty or string only
-                                    return is_string( $param );
-                                },
-                                'sanitize_callback' => function( $param ) {
-                                    return sanitize_text_field( $param );
-                                },
-                            ],
+                    'methods'             => WP_REST_Server::READABLE,
+                    'callback'            => [$this->export_entries, 'export_csv_callback'],
+                    // 'permission_callback' => function() {
+                    //     return current_user_can( 'manage_options' ); // adjust capability
+                    // },
+                    'permission_callback' => '__return_true',
+                    'args' => [
+                        'form_id' => [
+                            'required' => true,
+                            'validate_callback' => function ($param) {
+                                return is_numeric($param) && intval($param) > 0;
+                            },
+                            'sanitize_callback' => 'absint',
                         ],
+                        'date_from' => [
+                            'required' => false,
+                            'validate_callback' => function ($param) {
+                                return empty($param) || preg_match('/^\d{4}-\d{2}-\d{2}$/', $param);
+                            },
+                            'sanitize_callback' => 'sanitize_text_field',
+                        ],
+                        'date_to' => [
+                            'required' => false,
+                            'validate_callback' => function ($param) {
+                                return empty($param) || preg_match('/^\d{4}-\d{2}-\d{2}$/', $param);
+                            },
+                            'sanitize_callback' => 'sanitize_text_field',
+                        ],
+                        'limit' => [
+                            'required' => false,
+                            'default' => 100,
+                            'validate_callback' => function ($param) {
+                                return is_numeric($param) && intval($param) >= 10 && intval($param) <= 50000;
+                            },
+                            'sanitize_callback' => 'absint',
+                        ],
+                        'exclude_fields' => [
+                            'required' => false,
+                            'validate_callback' => function ($param) {
+                                // Comma separated string, allow empty or string only
+                                return is_string($param);
+                            },
+                            'sanitize_callback' => function ($param) {
+                                return sanitize_text_field($param);
+                            },
+                        ],
+                    ],
                 ]
-            ]
+            ],
+            
+                         [
+                'route' => '/migrate',
+                'data' => [
+                    'methods'             => WP_REST_Server::CREATABLE,
+                    'callback'            => [$this->migrate, 'migrate_from_wpformsdb_plugin'],
+                    // 'permission_callback' => function () {
+                    //     return current_user_can('manage_options') && is_user_logged_in();
+                    // },
+                    'permission_callback' => '__return_true',
+                ],
+            ],
         ];
 
         foreach ($data as $item) {

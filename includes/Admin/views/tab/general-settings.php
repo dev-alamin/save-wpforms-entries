@@ -9,7 +9,7 @@
             <?php esc_html_e('Entries per Page', 'advanced-entries-manager-for-wpforms'); ?>
         </label>
         <input type="number" name="swpfe_entries_per_page" id="swpfe_entries_per_page"
-            value="<?php echo esc_attr($per_page); ?>" min="10" max="200"
+            value="<?php echo esc_attr($per_page); ?>" min="5" max="200"
             class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm">
     </div>
 </div>
