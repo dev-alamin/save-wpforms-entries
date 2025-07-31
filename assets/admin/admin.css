@@ -6,7 +6,8 @@ body.toplevel_page_swpfe-entries .notice {
 }
 
 body.toplevel_page_swpfe-entries,
-body.wpforms-entries_page_swpfe-settings  {
+body.wpforms-entries_page_swpfe-settings,
+body.wpforms-entries_page_swpfe-migration  {
 	background: #DDD !important;
     background-repeat: no-repeat;
     background-size: cover;

@@ -33,6 +33,41 @@
         </p>
     </div>
 
+    <!-- Migration Prompt -->
+    <?php
+    use App\AdvancedEntryManager\Utility\Helper;
+    if ( Helper::is_wpformsdb_table_exists() && ! Helper::get_option( 'migration_complete' ) ) : ?>
+        <div
+            x-data="{ showMigrationNotice: true }"
+            x-show="showMigrationNotice"
+            x-transition
+            class="mb-6 border border-yellow-400 bg-yellow-50 text-yellow-800 rounded-lg p-4 shadow-sm">
+            <div class="flex items-center justify-between gap-4">
+                <div class="flex-1">
+                    <h2 class="text-lg font-semibold mb-1">📦 Migrate from WPFormsDB</h2>
+                    <p class="text-sm">
+                        We found data in the legacy <code>wpforms_db</code> table.
+                        You can migrate all your entries into our advanced manager in just a few clicks.
+                    </p>
+                </div>
+                <div class="flex gap-2">
+                    <!-- Trigger modal or redirect -->
+                    <button
+                        @click="window.location.href = '<?php echo esc_url(admin_url('admin.php?page=swpfe-migration')); ?>'"
+                        class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md transition">
+                        🚀 Start Migration
+                    </button>
+                    <button
+                        @click="showMigrationNotice = false"
+                        class="text-sm text-gray-600 hover:text-gray-900 transition">
+                        ✖
+                    </button>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
+
+
     <!-- Loop Over Forms -->
     <template x-for="form in forms" :key="form.form_id">
         <div x-data="formTable(form)" class="mb-10">
@@ -171,7 +206,7 @@
                             x-transition
                             class="absolute inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-sm">
                             <lottie-player
-                                src="<?php echo esc_url(SWPFE_URL . 'assets/admin/loading.json'); ?>"
+                                src="<?php echo esc_url(SWPFE_URL . 'assets/admin/lottie/loading.json'); ?>"
                                 background="transparent"
                                 speed="1"
                                 class="w-auto h-auto"

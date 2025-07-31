@@ -1,6 +1,8 @@
 <?php
 
 namespace App\AdvancedEntryManager\Admin;
+
+use App\AdvancedEntryManager\Utility\Helper;
 /**
  * Class Menu
  *
@@ -90,7 +92,18 @@ class Menu {
             [$this, 'render_settings_page'],
             65
         );
-    }
+
+        if ( Helper::is_wpformsdb_table_exists() && ! Helper::get_option( 'migration_complete' ) ) :
+            add_submenu_page(
+                'swpfe-entries',
+                __('Migration', 'advanced-entries-manager-for-wpforms'),
+                __('Migration', 'advanced-entries-manager-for-wpforms'),
+                'manage_options',
+                'swpfe-migration',
+                [ $this, 'render_migration_page' ]
+            );
+        endif;
+        }
 
     /**
      * Render main entries page.
@@ -112,6 +125,17 @@ class Menu {
      */
     public function render_settings_page() {
         include __DIR__ . '/views/settings-page.php';
+    }
+
+    /**
+     * Render migration page.
+     *
+     * Includes the migration page view file.
+     *
+     * @return void
+     */
+    public function render_migration_page() {
+        include __DIR__ . '/views/migration-page.php';
     }
 
     /**

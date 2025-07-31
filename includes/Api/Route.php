@@ -609,16 +609,30 @@ class Route
             ],
             
                          [
-                'route' => '/migrate',
+                'route' => '/wpformsdb-source-entries-count',
                 'data' => [
-                    'methods'             => WP_REST_Server::CREATABLE,
-                    'callback'            => [$this->migrate, 'migrate_from_wpformsdb_plugin'],
+                    'methods'             => WP_REST_Server::READABLE,
+                    'callback'            => [$this->migrate, 'wpformsdb_data'],
                     // 'permission_callback' => function () {
                     //     return current_user_can('manage_options') && is_user_logged_in();
                     // },
                     'permission_callback' => '__return_true',
                 ],
             ],
+            [
+                'route' => '/trigger',
+                'data' => [
+                    'methods' => WP_REST_Server::CREATABLE,
+                    'callback' => function( \WP_REST_Request $request ) {
+                        $migrate = new \App\AdvancedEntryManager\Api\Callback\Migrate();
+                        return $migrate->trigger_migration();
+                    },
+                    // 'permission_callback' => function() {
+                    //     return current_user_can( 'manage_options' );
+                    // },
+                    'permission_callback' => '__return_true',
+                ]
+            ]
         ];
 
         foreach ($data as $item) {

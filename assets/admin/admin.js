@@ -971,3 +971,105 @@ function exportSettings() {
     },
   };
 }
+
+function migrationHandler() {
+  return {
+    totalEntries: 0,
+    batchSize: 50,
+    migrating: false,
+    complete: false,
+    progress: 0,
+    log: [],
+
+    init() {
+      // Fetch real total entries count from REST API on init
+      fetch(
+        `${swpfeSettings.restUrl}aem/entries/v1/wpformsdb-source-entries-count`,
+        {
+          headers: {
+            "X-WP-Nonce": swpfeSettings.nonce,
+          },
+        }
+      )
+        .then((res) => {
+          if (!res.ok) throw new Error("Failed to fetch entry counts");
+          return res.json();
+        })
+        .then((data) => {
+          // Sum all counts to get total entries
+          this.totalEntries = data.reduce(
+            (sum, item) => sum + parseInt(item.entry_count),
+            0
+          );
+          this.log.push(
+            `📊 Found total ${this.totalEntries} entries to migrate`
+          );
+        })
+        .catch((err) => {
+          this.log.push(`⚠️ Error loading total entries: ${err.message}`);
+          // fallback to default or zero
+          this.totalEntries = 0;
+        });
+    },
+
+    startMigration() {
+      if (this.totalEntries === 0) {
+        this.log.push("⚠️ No entries to migrate.");
+        return;
+      }
+
+      this.migrating = true;
+      this.complete = false;
+      this.log = [];
+      this.progress = 0;
+
+      const batches = Math.ceil(this.totalEntries / this.batchSize);
+      let current = 0;
+
+      this.log.push(`🔁 Starting migration with batch size: ${this.batchSize}`);
+
+      // Trigger backend migration via REST API
+      fetch(`${swpfeSettings.restUrl}aem/entries/v1/trigger`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-WP-Nonce": swpfeSettings.nonce,
+        },
+        body: JSON.stringify({
+          batch_size: this.batchSize,
+        }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            this.log.push("🚀 Migration triggered successfully.");
+
+            // Simulate progress (or you can replace this with polling logic)
+            const interval = setInterval(() => {
+              current++;
+              this.progress = Math.round((current / batches) * 100);
+              this.log.push(`✅ Batch ${current} migrated`);
+
+              if (current >= batches) {
+                clearInterval(interval);
+                this.migrating = false;
+                this.complete = true;
+                this.log.push("🎉 Migration complete");
+              }
+            }, 250);
+          } else {
+            this.migrating = false;
+            this.log.push(
+              `❌ Failed to start migration: ${
+                data.message || "Unknown error."
+              }`
+            );
+          }
+        })
+        .catch((error) => {
+          this.migrating = false;
+          this.log.push(`❌ Error: ${error.message}`);
+        });
+    },
+  };
+}

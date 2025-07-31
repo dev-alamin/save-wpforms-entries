@@ -90,7 +90,8 @@ class Assets {
     public function register_assets( $hook ) {
         if ( ! in_array( $hook, [
             'toplevel_page_swpfe-entries',
-            'wpforms-entries_page_swpfe-settings'
+            'wpforms-entries_page_swpfe-settings',
+            'wpforms-entries_page_swpfe-migration',
         ], true ) ) {
             return;
         }

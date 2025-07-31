@@ -3,7 +3,7 @@
     class="flex flex-col items-center justify-center mt-20 space-y-6 text-gray-600">
 
     <lottie-player
-        src="<?php echo esc_url( SWPFE_URL . 'assets/admin/empty-page.json' ); ?>"
+        src="<?php echo esc_url( SWPFE_URL . 'assets/admin/lottie/empty-page.json' ); ?>"
         background="transparent"
         speed="1"
         style="width: 320px; height: 320px"
