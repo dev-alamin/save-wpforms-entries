@@ -53,4 +53,3 @@ add_action( 'plugins_loaded', function() {
 
 // Activation Hook - Create DB table
 register_activation_hook( __FILE__, [ 'App\AdvancedEntryManager\DB_Handler', 'create_table' ] );
-

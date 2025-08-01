@@ -15,7 +15,7 @@
     <div class="bg-indigo-50 border border-indigo-200 p-6 rounded-lg space-y-4">
         <p>
             <strong>Total Entries:</strong>
-            <?php echo \App\AdvancedEntryManager\Utility\Helper::count_wpformsdb_entries(); ?>
+            <span x-text="totalEntries"></span>
         </p>
 
         <?php
@@ -30,32 +30,63 @@
             </p>
         </template>
 
-        <div class="flex items-center gap-4">
-            <template x-if="totalEntries > 100000">
-                <label class="block">
-                    <span class="text-gray-700 text-sm">Batch Size:</span>
-                    <input type="number" min="10" max="100" x-model="batchSize"
-                        class="mt-1 block w-32 rounded border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                </label>
-            </template>
+<div class="flex items-center gap-4">
+  <template x-if="totalEntries > 100000">
+    <label class="block">
+      <span class="text-gray-700 text-sm">Batch Size:</span>
+      <input type="number" min="10" max="100" x-model.number="batchSize"
+        class="mt-1 block w-32 rounded border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+    </label>
+  </template>
 
-            <button @click="startMigration"
-                x-show="!migrating && !complete"
-                class="px-6 py-2 text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded shadow">
-                <?php esc_html_e('Start Migration', 'advanced-entries-manager-for-wpforms'); ?>
-            </button>
+  <!-- Show Start only if not migrating and not complete and no migration in progress -->
+  <button @click="startMigration"
+    x-show="!migrating && !complete && !migrationInProgress"
+    class="px-6 py-2 text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded shadow">
+    <?php esc_html_e('Start Migration', 'advanced-entries-manager-for-wpforms'); ?>
+  </button>
 
-            <span x-show="complete" class="text-green-600 font-medium">
-                <?php esc_html_e('Migration Completed!', 'advanced-entries-manager-for-wpforms'); ?>
-            </span>
-        </div>
+  <!-- Show See Progress button if migration is in progress but not actively showing progress UI -->
+  <button @click="seeProgress"
+    x-show="!migrating && !complete && migrationInProgress"
+    class="px-6 py-2 text-sm font-semibold bg-yellow-500 hover:bg-yellow-600 text-white rounded shadow">
+    See Progress
+  </button>
+
+  <button @click="stopMigration"
+    x-show="migrating"
+    class="px-6 py-2 text-sm font-semibold bg-red-600 hover:bg-red-700 text-white rounded shadow">
+    <?php esc_html_e('Stop Migration', 'advanced-entries-manager-for-wpforms'); ?>
+  </button>
+
+  <span x-show="complete" class="text-green-600 font-medium">
+    <?php esc_html_e('Migration Completed!', 'advanced-entries-manager-for-wpforms'); ?>
+  </span>
+</div>
+
     </div>
 
-    <!-- Progress Bar -->
-    <div x-show="migrating" class="relative w-full h-4 bg-gray-200 rounded overflow-hidden">
-        <div :style="`width: ${progress}%`"
-            class="absolute h-full bg-indigo-600 transition-all duration-300">
+    <!-- Progress Wrapper -->
+    <div x-show="migrating" class="mt-4 space-y-2">
+
+        <!-- Label -->
+        <p class="text-sm text-gray-700 font-medium">
+            Migrating Entries: <span class="font-bold" x-text="migrated"></span> /
+            <span x-text="total"></span>
+        </p>
+
+        <!-- Estimated Time -->
+        <p class="text-sm text-gray-500 italic" x-show="estimatedTime">
+            Estimated time left: <span x-text="estimatedTime"></span>
+        </p>
+
+        <!-- Progress Bar -->
+        <div class="relative w-full h-4 bg-gray-200 rounded overflow-hidden">
+            <div :style="`width: ${progress}%`"
+                class="absolute h-full bg-indigo-600 transition-all duration-300">
+            </div>
         </div>
+
     </div>
 
     <!-- Logs -->

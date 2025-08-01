@@ -12,6 +12,7 @@ use App\AdvancedEntryManager\Api\Callback\Export_Entries;
 use App\AdvancedEntryManager\Api\Callback\Get_Form_Fields;
 use App\AdvancedEntryManager\Api\Callback\Delete_Single_Entry;
 use App\AdvancedEntryManager\Api\Callback\Migrate;
+use App\AdvancedEntryManager\Utility\Helper;
 
 /**
  * Class Route
@@ -412,7 +413,14 @@ class Route
                                 return strtotime($param) !== false;
                             },
                             'sanitize_callback' => function ($param) {
-                                return date('Y-m-d H:i:s', strtotime($param));
+                                if (empty($param) || !is_string($param)) {
+                                    return null; // or a default date/time string
+                                }
+                                $timestamp = strtotime($param);
+                                if ($timestamp === false) {
+                                    return null; // or a fallback date/time string
+                                }
+                                return date('Y-m-d H:i:s', $timestamp);
                             },
                         ],
                         'resent_at' => [
@@ -422,7 +430,14 @@ class Route
                                 return strtotime($param) !== false;
                             },
                             'sanitize_callback' => function ($param) {
-                                return date('Y-m-d H:i:s', strtotime($param));
+                                if (empty($param) || !is_string($param)) {
+                                    return null; // or return a default safe value like current date/time: date('Y-m-d H:i:s')
+                                }
+                                $timestamp = strtotime($param);
+                                if ($timestamp === false) {
+                                    return null; // or a fallback date/time
+                                }
+                                return date('Y-m-d H:i:s', $timestamp);
                             },
                         ],
                     ],
@@ -607,8 +622,8 @@ class Route
                     ],
                 ]
             ],
-            
-                         [
+
+            [
                 'route' => '/wpformsdb-source-entries-count',
                 'data' => [
                     'methods'             => WP_REST_Server::READABLE,
@@ -623,7 +638,7 @@ class Route
                 'route' => '/trigger',
                 'data' => [
                     'methods' => WP_REST_Server::CREATABLE,
-                    'callback' => function( \WP_REST_Request $request ) {
+                    'callback' => function (\WP_REST_Request $request) {
                         $migrate = new \App\AdvancedEntryManager\Api\Callback\Migrate();
                         return $migrate->trigger_migration();
                     },
@@ -632,7 +647,54 @@ class Route
                     // },
                     'permission_callback' => '__return_true',
                 ]
-            ]
+            ],
+            [
+                'route' => '/progress',
+                'data' => [
+                    'methods'  => 'GET',
+'callback' => function () {
+    $total    = (int) Helper::get_option('migration_total_entries', 0);
+    $migrated = (int) Helper::get_option('migration_last_id', 0); // Or count rows if needed
+
+    if ($total === 0) {
+        return rest_ensure_response([
+            'progress' => 100,
+            'complete' => true,
+            'migrated' => $migrated,
+            'total'    => $total,
+            'eta'      => null,
+        ]);
+    }
+
+    $progress = ($migrated / $total) * 100;
+    $progress = min(100, round($progress, 2));
+
+    $complete = (bool) Helper::get_option('migration_complete', false);
+
+    $start = (int) Helper::get_option('swpfe_migration_started_at', 0);
+    $eta   = null;
+
+    if ($start > 0 && $migrated > 0 && !$complete) {
+        $elapsed = time() - $start;
+        $eta = ( ( $total - $migrated ) / $migrated ) * $elapsed;
+        $eta = max(0, (int) $eta); // ensure it's not negative
+    }
+
+    return rest_ensure_response([
+        'progress' => $progress,
+        'complete' => $complete,
+        'migrated' => $migrated,
+        'total'    => $total,
+        'eta'      => $eta,
+    ]);
+},
+
+                    // 'permission_callback' => function () {
+                    //     return current_user_can('manage_options');
+                    // },
+                    'permission_callback' => '__return_true',
+                ],
+            ],
         ];
 
         foreach ($data as $item) {

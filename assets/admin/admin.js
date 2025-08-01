@@ -980,15 +980,27 @@ function migrationHandler() {
     complete: false,
     progress: 0,
     log: [],
+    pollInterval: null,
+
+    migrated: 0,
+    total: 0,
+    estimatedTime: "",
+    startTime: null,
+    lastLoggedProgress: null,
+
+    // New flag to track ongoing migration even if not showing progress UI
+    migrationInProgress: false,
 
     init() {
-      // Fetch real total entries count from REST API on init
+      // Load batch size from localStorage if you want to persist that too
+      const savedBatch = localStorage.getItem("swpfe_batch_size");
+      if (savedBatch) this.batchSize = parseInt(savedBatch, 10);
+
+      // Fetch total entries count
       fetch(
         `${swpfeSettings.restUrl}aem/entries/v1/wpformsdb-source-entries-count`,
         {
-          headers: {
-            "X-WP-Nonce": swpfeSettings.nonce,
-          },
+          headers: { "X-WP-Nonce": swpfeSettings.nonce },
         }
       )
         .then((res) => {
@@ -996,7 +1008,6 @@ function migrationHandler() {
           return res.json();
         })
         .then((data) => {
-          // Sum all counts to get total entries
           this.totalEntries = data.reduce(
             (sum, item) => sum + parseInt(item.entry_count),
             0
@@ -1007,12 +1018,24 @@ function migrationHandler() {
         })
         .catch((err) => {
           this.log.push(`⚠️ Error loading total entries: ${err.message}`);
-          // fallback to default or zero
           this.totalEntries = 0;
         });
+
+      // Check if migration was in progress before page reload
+      const inProgress = localStorage.getItem("swpfe_migration_in_progress");
+      if (inProgress === "true") {
+        this.migrationInProgress = true;
+
+        // Check current backend status once and decide whether to show progress UI
+        this.checkProgress().then(() => {
+          if (!this.complete) {
+            this.migrating = false; // Not actively polling yet
+          }
+        });
+      }
     },
 
-    startMigration() {
+    async startMigration() {
       if (this.totalEntries === 0) {
         this.log.push("⚠️ No entries to migrate.");
         return;
@@ -1022,54 +1045,123 @@ function migrationHandler() {
       this.complete = false;
       this.log = [];
       this.progress = 0;
-
-      const batches = Math.ceil(this.totalEntries / this.batchSize);
-      let current = 0;
+      this.startTime = Date.now();
+      this.lastLoggedProgress = null;
 
       this.log.push(`🔁 Starting migration with batch size: ${this.batchSize}`);
 
-      // Trigger backend migration via REST API
-      fetch(`${swpfeSettings.restUrl}aem/entries/v1/trigger`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-WP-Nonce": swpfeSettings.nonce,
-        },
-        body: JSON.stringify({
-          batch_size: this.batchSize,
-        }),
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.success) {
-            this.log.push("🚀 Migration triggered successfully.");
+      localStorage.setItem("swpfe_migration_in_progress", "true");
+      localStorage.setItem("swpfe_batch_size", this.batchSize);
 
-            // Simulate progress (or you can replace this with polling logic)
-            const interval = setInterval(() => {
-              current++;
-              this.progress = Math.round((current / batches) * 100);
-              this.log.push(`✅ Batch ${current} migrated`);
-
-              if (current >= batches) {
-                clearInterval(interval);
-                this.migrating = false;
-                this.complete = true;
-                this.log.push("🎉 Migration complete");
-              }
-            }, 250);
-          } else {
-            this.migrating = false;
-            this.log.push(
-              `❌ Failed to start migration: ${
-                data.message || "Unknown error."
-              }`
-            );
+      try {
+        const triggerRes = await fetch(
+          `${swpfeSettings.restUrl}aem/entries/v1/trigger`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-WP-Nonce": swpfeSettings.nonce,
+            },
+            body: JSON.stringify({ batch_size: this.batchSize }),
           }
-        })
-        .catch((error) => {
+        );
+        const triggerData = await triggerRes.json();
+
+        if (!triggerData.success) {
           this.migrating = false;
-          this.log.push(`❌ Error: ${error.message}`);
-        });
+          localStorage.setItem("swpfe_migration_in_progress", "false");
+          this.log.push(
+            `❌ Failed to start migration: ${
+              triggerData.message || "Unknown error."
+            }`
+          );
+          return;
+        }
+
+        this.log.push("🚀 Migration triggered successfully.");
+
+        // Start polling progress every 2 seconds
+        this.pollInterval = setInterval(() => this.checkProgress(), 2000);
+      } catch (error) {
+        this.migrating = false;
+        localStorage.setItem("swpfe_migration_in_progress", "false");
+        this.log.push(`❌ Error starting migration: ${error.message}`);
+      }
+    },
+
+    async checkProgress() {
+      try {
+        const res = await fetch(
+          `${swpfeSettings.restUrl}aem/entries/v1/progress`,
+          {
+            headers: { "X-WP-Nonce": swpfeSettings.nonce },
+          }
+        );
+        const data = await res.json();
+
+        const migrated = data.migrated || 0;
+        const total = data.total || 1;
+        const progress = Math.floor((migrated / total) * 100);
+
+        this.migrated = migrated;
+        this.total = total;
+        this.progress = progress;
+
+        if (!this.startTime) this.startTime = Date.now();
+        const elapsedSec = (Date.now() - this.startTime) / 1000;
+        const rate = migrated / elapsedSec;
+        const remaining = total - migrated;
+        const estimatedSec = remaining / (rate || 1);
+        this.estimatedTime = this.formatTime(estimatedSec);
+
+        if (progress !== this.lastLoggedProgress) {
+          this.log.push(`📊 Progress: ${progress}% (${migrated} / ${total})`);
+          this.lastLoggedProgress = progress;
+        }
+
+        if (data.complete || progress >= 100) {
+          clearInterval(this.pollInterval);
+          this.pollInterval = null;
+          this.migrating = false;
+          this.complete = true;
+          this.progress = 100;
+          this.log.push("🎉 Migration complete!");
+          localStorage.setItem("swpfe_migration_in_progress", "false");
+          this.migrationInProgress = false;
+        }
+      } catch (error) {
+        this.log.push(`❌ Error checking progress: ${error.message}`);
+      }
+    },
+
+    formatTime(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins}m ${secs}s`;
+    },
+
+    stopMigration() {
+      if (this.pollInterval) {
+        clearInterval(this.pollInterval);
+        this.pollInterval = null;
+      }
+      this.migrating = false;
+      this.complete = false;
+      this.progress = 0;
+      this.log.push("🛑 Migration stopped.");
+      localStorage.setItem("swpfe_migration_in_progress", "false");
+      this.migrationInProgress = false;
+    },
+
+    // New method: Show migration progress UI when user clicks "See Progress"
+    seeProgress() {
+      this.migrating = true;
+      this.migrationInProgress = true;
+
+      // Start polling progress every 2 seconds
+      if (!this.pollInterval) {
+        this.pollInterval = setInterval(() => this.checkProgress(), 2000);
+      }
     },
   };
 }
