@@ -67,7 +67,6 @@
         </div>
     <?php endif; ?>
 
-
     <!-- Loop Over Forms -->
     <template x-for="form in forms" :key="form.form_id">
         <div x-data="formTable(form)" class="mb-10">
@@ -226,6 +225,18 @@
             <?php include __DIR__ . '/modal.php'; ?>
         </div>
     </template>
+
+    <!-- Before loading the forms, show a loading state -->
+    <div x-show="loading" class="flex items-center justify-center min-h-60">
+        <lottie-player
+            src="<?php echo esc_url(SWPFE_URL . 'assets/admin/lottie/loading.json'); ?>"
+            background="transparent"
+            speed="1"
+            class="w-auto h-auto"
+            loop
+            autoplay>
+        </lottie-player>
+    </div>
 
     <!-- If no forms available -->
     <?php include __DIR__ . '/empty-page.php'; ?>

@@ -1,3 +1,4 @@
+
 function formTable(form) {
   return {
     open: false,
@@ -600,8 +601,10 @@ function entriesApp() {
     searchQuery: "",
     onlyFavorites: false,
     setError: false,
+    loading: false,
 
     async fetchForms() {
+      this.loading = true;
       try {
         const res = await fetch(
           `${swpfeSettings.restUrl}aem/entries/v1/forms`,
@@ -614,8 +617,10 @@ function entriesApp() {
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data = await res.json();
         this.forms = data;
+        this.loading = false;
       } catch (error) {
         this.setError = true;
+        this.loading = false;
         console.error("Failed to fetch forms:", error);
       }
     },
@@ -987,6 +992,7 @@ function migrationHandler() {
     estimatedTime: "",
     startTime: null,
     lastLoggedProgress: null,
+    entryFetchStarted: false,
 
     // New flag to track ongoing migration even if not showing progress UI
     migrationInProgress: false,
@@ -996,30 +1002,34 @@ function migrationHandler() {
       const savedBatch = localStorage.getItem("swpfe_batch_size");
       if (savedBatch) this.batchSize = parseInt(savedBatch, 10);
 
-      // Fetch total entries count
-      fetch(
-        `${swpfeSettings.restUrl}aem/entries/v1/wpformsdb-source-entries-count`,
-        {
-          headers: { "X-WP-Nonce": swpfeSettings.nonce },
-        }
-      )
-        .then((res) => {
-          if (!res.ok) throw new Error("Failed to fetch entry counts");
-          return res.json();
-        })
-        .then((data) => {
-          this.totalEntries = data.reduce(
-            (sum, item) => sum + parseInt(item.entry_count),
-            0
-          );
-          this.log.push(
-            `📊 Found total ${this.totalEntries} entries to migrate`
-          );
-        })
-        .catch((err) => {
-          this.log.push(`⚠️ Error loading total entries: ${err.message}`);
-          this.totalEntries = 0;
-        });
+      // ✅ Prevent duplicate fetch
+      if (!this.entryFetchStarted) {
+        this.entryFetchStarted = true;
+
+        fetch(
+          `${swpfeSettings.restUrl}aem/entries/v1/wpformsdb-source-entries-count`,
+          {
+            headers: { "X-WP-Nonce": swpfeSettings.nonce },
+          }
+        )
+          .then((res) => {
+            if (!res.ok) throw new Error("Failed to fetch entry counts");
+            return res.json();
+          })
+          .then((data) => {
+            this.totalEntries = data.reduce(
+              (sum, item) => sum + parseInt(item.entry_count),
+              0
+            );
+            this.log.push(
+              `📊 Found total ${this.totalEntries} entries to migrate`
+            );
+          })
+          .catch((err) => {
+            this.log.push(`⚠️ Error loading total entries: ${err.message}`);
+            this.totalEntries = 0;
+          });
+      }
 
       // Check if migration was in progress before page reload
       const inProgress = localStorage.getItem("swpfe_migration_in_progress");
@@ -1109,7 +1119,7 @@ function migrationHandler() {
 
         if (!this.startTime) this.startTime = Date.now();
         const elapsedSec = (Date.now() - this.startTime) / 1000;
-        const rate = migrated / elapsedSec;
+        const rate = migrated / data.eta;
         const remaining = total - migrated;
         const estimatedSec = remaining / (rate || 1);
         this.estimatedTime = this.formatTime(estimatedSec);

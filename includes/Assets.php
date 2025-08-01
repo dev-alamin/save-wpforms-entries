@@ -128,5 +128,7 @@ class Assets {
             'perPage'  => get_option( 'swpfe_entries_per_page', 20 ),
             'ajax_url' => admin_url( 'admin-ajax.php' ),
         ] );
+
+        wp_enqueue_script( 'swpfe-alpine-morph', 'https://unpkg.com/@alpinejs/morph@3.x.x/dist/cdn.min.js', ['swpfe-alpine', 'swpfe-admin-js'], null, true );
     }
 }

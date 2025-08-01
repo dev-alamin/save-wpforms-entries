@@ -1,6 +1,6 @@
 <div
     x-show="setError && Object.keys(forms).length === 0"
-    class="flex flex-col items-center justify-center mt-20 space-y-6 text-gray-600">
+    class="flex flex-col items-center justify-center mt-20 space-y-6 text-gray-600 bg-indigo-50 rounded-lg">
 
     <lottie-player
         src="<?php echo esc_url( SWPFE_URL . 'assets/admin/lottie/empty-page.json' ); ?>"

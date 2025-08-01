@@ -183,7 +183,7 @@ class Helper {
         return defined( 'DOING_AJAX' ) && DOING_AJAX;
     }
 
-    public static function swpfe_render_migration_summary_table() {
+    public static function wpformd_db_data_summary() {
         global $wpdb;
 
         $db_table    = $wpdb->prefix . 'wpforms_db';
@@ -203,23 +203,17 @@ class Helper {
 
         $results = $wpdb->get_results( $query );
 
-        if ( empty( $results ) ) {
-            echo '<p>No forms found with entries in the source table.</p>';
-            return;
+        $data = [];
+        if ( ! empty( $results ) ) {
+            foreach ( $results as $row ) {
+                $data[] = [
+                    'form_post_id' => (int) $row->form_post_id,
+                    'post_title'   => $row->post_title,
+                    'entry_count'  => (int) $row->entry_count,
+                ];
+            }
         }
 
-        echo '<table class="widefat striped">';
-        echo '<thead><tr><th>Form Title</th><th>Entry Count (Old Table)</th></tr></thead>';
-        echo '<tbody>';
-
-        foreach ( $results as $row ) {
-            printf(
-                '<tr><td>%s</td><td>%s</td></tr>',
-                esc_html( $row->post_title ),
-                number_format_i18n( $row->entry_count )
-            );
-        }
-
-        echo '</tbody></table>';
+        return $data;
     }
 }
