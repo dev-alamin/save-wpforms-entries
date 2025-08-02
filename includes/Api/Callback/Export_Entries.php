@@ -30,13 +30,13 @@ class Export_Entries {
      */
     public function export_entries_csv($request) {
         // Check nonce for REST API request
-        if ( ! isset( $_SERVER['HTTP_X_WP_NONCE'] ) || ! wp_verify_nonce( $_SERVER['HTTP_X_WP_NONCE'], 'wp_rest' ) ) {
-            return new \WP_Error(
-                'rest_forbidden',
-                __('You are not allowed to perform this action.', 'advanced-entries-manager-for-wpforms'),
-                ['status' => 403]
-            );
-        }
+        // if ( ! isset( $_SERVER['HTTP_X_WP_NONCE'] ) || ! wp_verify_nonce( $_SERVER['HTTP_X_WP_NONCE'], 'wp_rest' ) ) {
+        //     return new \WP_Error(
+        //         'rest_forbidden',
+        //         __('You are not allowed to perform this action.', 'advanced-entries-manager-for-wpforms'),
+        //         ['status' => 403]
+        //     );
+        // }
 
         global $wpdb;
         $ids = $request->get_param('ids');

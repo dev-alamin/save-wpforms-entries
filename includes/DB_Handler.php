@@ -39,8 +39,7 @@ class DB_Handler
         global $wpdb;
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-        require_once SWPFE_PATH . 'includes/class-capabilities.php';
-
+        
         $table = self::table_name();
         $charset_collate = $wpdb->get_charset_collate();
 

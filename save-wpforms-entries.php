@@ -45,7 +45,6 @@ add_action( 'plugins_loaded', function() {
         error_log('[SWPFE MIGRATION TEST] swpfe_migrate_batch fired with args: ' . print_r($args, true));
     });
 
-
     if ( is_admin() ) {
         new App\AdvancedEntryManager\Admin\Admin();
     }
@@ -53,33 +52,3 @@ add_action( 'plugins_loaded', function() {
 
 // Activation Hook - Create DB table
 register_activation_hook( __FILE__, [ 'App\AdvancedEntryManager\DB_Handler', 'create_table' ] );
-
-// add_filter('rest_authentication_errors', function () {
-//     return new WP_Error(
-//         'rest_disabled',
-//         __('The REST API has been disabled.', 'your-text-domain'),
-//         array('status' => 403)
-//     );
-// });
-
-add_action('admin_notices', function () {
-
-    if ( ! current_user_can( 'manage_options' ) ) {
-        return;
-    }
-
-    $rest_enabled = apply_filters( 'rest_authentication_errors', null );
-
-    $check = wp_remote_get(rest_url('/aem/v1/forms'), [
-        'headers' => [
-            'X-WP-Nonce' => wp_create_nonce('wp_rest'),
-        ]
-    ]);
-
-    if ( is_wp_error( $rest_enabled ) ) {
-        echo '<div class="notice notice-error aem-notice"><p>';
-        esc_html_e('🚫 Your site is blocking REST API access required by Advanced Entries Manager. Please whitelist /wp-json/aem/entries/v1/* to ensure full functionality.', 'save-wpf-entries');
-        echo '</p></div>';
-    }
-});
-

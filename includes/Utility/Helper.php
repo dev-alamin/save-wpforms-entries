@@ -216,4 +216,26 @@ class Helper {
 
         return $data;
     }
+
+    /**
+     * Check if the WordPress REST API is enabled.
+     *
+     * @return bool True if REST API is accessible, false otherwise.
+     */
+    public static function is_rest_enabled() {
+        $response = wp_remote_get( site_url( '/wp-json/' ), [
+            'timeout' => 5,
+            'headers' => [
+                'Accept' => 'application/json',
+            ],
+        ] );
+
+        if ( is_wp_error( $response ) ) {
+            return false;
+        }
+
+        $code = wp_remote_retrieve_response_code( $response );
+
+        return ( $code >= 200 && $code < 300 );
+    }
 }
