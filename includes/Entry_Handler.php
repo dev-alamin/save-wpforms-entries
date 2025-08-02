@@ -60,6 +60,7 @@ class Entry_Handler {
 				$last  = $field['last'] ?? '';
 				$name  = trim( $first . ' ' . $last );
 			}
+            
 			if ( $field['type'] === 'email' ) {
 				$email = $field['value'];
 			}

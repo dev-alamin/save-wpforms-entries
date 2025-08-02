@@ -38,7 +38,7 @@ function formTable(form) {
       try {
         if (action === "export_csv") {
           const res = await fetch(
-            `${swpfeSettings.restUrl}aem/entries/v1/export`,
+            `${swpfeSettings.restUrl}aem/v1/export`,
             {
               method: "POST",
               headers: {
@@ -68,7 +68,7 @@ function formTable(form) {
         } else {
           // Handle other actions
           const res = await fetch(
-            `${swpfeSettings.restUrl}aem/entries/v1/bulk`,
+            `${swpfeSettings.restUrl}aem/v1/entries/bulk`,
             {
               method: "POST",
               headers: {
@@ -129,7 +129,7 @@ function formTable(form) {
         });
 
         const res = await fetch(
-          `${swpfeSettings.restUrl}aem/entries/v1/entries?${query}`,
+          `${swpfeSettings.restUrl}aem/v1/entries?${query}`,
           {
             headers: {
               "X-WP-Nonce": swpfeSettings.nonce,
@@ -143,6 +143,7 @@ function formTable(form) {
 
         this.entries = rawEntries.map((entry) => ({
           ...entry,
+          email: entry.email || "",
           is_favorite: Number(entry.is_favorite),
           synced_to_gsheet: Number(entry.synced_to_gsheet),
           exported_to_csv: Number(entry.exported_to_csv),
@@ -270,7 +271,7 @@ function formTable(form) {
 
       try {
         const res = await fetch(
-          `${swpfeSettings.restUrl}aem/entries/v1/update`,
+          `${swpfeSettings.restUrl}aem/v1/entries`,
           {
             method: "POST",
             headers: {
@@ -292,7 +293,7 @@ function formTable(form) {
 
       try {
         const response = await fetch(
-          `${swpfeSettings.restUrl}aem/entries/v1/delete`,
+          `${swpfeSettings.restUrl}aem/v1/entries`,
           {
             method: "DELETE",
             headers: {
@@ -377,7 +378,7 @@ function formTable(form) {
 
       try {
         const res = await fetch(
-          `${swpfeSettings.restUrl}aem/entries/v1/update`,
+          `${swpfeSettings.restUrl}aem/v1/entries`,
           {
             method: "POST",
             headers: {
@@ -607,7 +608,7 @@ function entriesApp() {
       this.loading = true;
       try {
         const res = await fetch(
-          `${swpfeSettings.restUrl}aem/entries/v1/forms`,
+          `${swpfeSettings.restUrl}aem/v1/forms`,
           {
             headers: {
               "X-WP-Nonce": swpfeSettings.nonce,
@@ -638,7 +639,7 @@ function entriesApp() {
 
       try {
         const res = await fetch(
-          `${swpfeSettings.restUrl}aem/entries/v1/entries?${query}`,
+          `${swpfeSettings.restUrl}aem/v1/entries?${query}`,
           {
             headers: {
               "X-WP-Nonce": swpfeSettings.nonce,
@@ -707,7 +708,7 @@ function formEntriesApp(formId, entryCount) {
 
       try {
         const res = await fetch(
-          `${swpfeSettings.restUrl}aem/entries/v1/entries?${queryParams}`,
+          `${swpfeSettings.restUrl}aem/v1/entries?${queryParams}`,
           {
             headers: {
               "X-WP-Nonce": swpfeSettings.nonce,
@@ -846,7 +847,7 @@ function exportSettings() {
     async fetchForms() {
       try {
         const res = await fetch(
-          `${swpfeSettings.restUrl}aem/entries/v1/forms`,
+          `${swpfeSettings.restUrl}aem/v1/forms`,
           {
             headers: {
               "X-WP-Nonce": swpfeSettings.nonce,
@@ -871,7 +872,7 @@ function exportSettings() {
       }
 
       const res = await fetch(
-        `${swpfeSettings.restUrl}aem/entries/v1/forms/${this.selectedFormId}/fields`,
+        `${swpfeSettings.restUrl}aem/v1/forms/${this.selectedFormId}/fields`,
         {
           headers: {
             "X-WP-Nonce": swpfeSettings.nonce,
@@ -924,7 +925,7 @@ function exportSettings() {
 
         const url = `${
           swpfeSettings.restUrl
-        }aem/entries/v1/export-csv?${params.toString()}`;
+        }aem/v1/entries/export-csv?${params.toString()}`;
 
         try {
           const res = await fetch(url, {
@@ -1007,7 +1008,7 @@ function migrationHandler() {
         this.entryFetchStarted = true;
 
         fetch(
-          `${swpfeSettings.restUrl}aem/entries/v1/wpformsdb-source-entries-count`,
+          `${swpfeSettings.restUrl}aem/v1/legacy-source/count`,
           {
             headers: { "X-WP-Nonce": swpfeSettings.nonce },
           }
@@ -1065,7 +1066,7 @@ function migrationHandler() {
 
       try {
         const triggerRes = await fetch(
-          `${swpfeSettings.restUrl}aem/entries/v1/trigger`,
+          `${swpfeSettings.restUrl}aem/v1/migration/trigger`,
           {
             method: "POST",
             headers: {
@@ -1102,7 +1103,7 @@ function migrationHandler() {
     async checkProgress() {
       try {
         const res = await fetch(
-          `${swpfeSettings.restUrl}aem/entries/v1/progress`,
+          `${swpfeSettings.restUrl}aem/v1/migration/progress`,
           {
             headers: { "X-WP-Nonce": swpfeSettings.nonce },
           }

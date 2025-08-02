@@ -120,6 +120,7 @@ class Get_Entries {
                 'form_title'  => get_the_title($row->form_id),
                 'entry'       => $entry_normalized,
                 'name'        => $row->name,
+                'email'       => $row->email,
                 'status'      => $row->status,
                 'date'        => $row->created_at,
                 'note'        => $row->note,

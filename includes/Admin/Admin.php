@@ -25,5 +25,6 @@ class Admin {
         new Assets();
         new Options();
         new Menu();
+        new Admin_Notice();
     }
 }

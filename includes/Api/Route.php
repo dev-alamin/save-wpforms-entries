@@ -94,7 +94,7 @@ class Route
      *
      * @var string
      */
-    private $namespace = 'aem/entries/v1';
+    private $namespace = 'aem/v1';
 
     /**
      * Constructor.
@@ -213,7 +213,7 @@ class Route
 
             // Route: POST /create - Create a new form entry
             [
-                'route' => '/create',
+                'route' => '/entries',
                 'data' => [
                     'methods'             => WP_REST_Server::CREATABLE,
                     'callback'            => [$this->create_entries, 'create_entries'],
@@ -306,7 +306,7 @@ class Route
 
             // Route: GET /single - Get a single form metadata (alias)
             [
-                'route' => '/single',
+                'route' => '/entries/(?P<id>\d+)',
                 'data'  => [
                     'methods'             => WP_REST_Server::READABLE,
                     'callback'            => [$this->get_forms, 'get_forms'],
@@ -322,16 +322,16 @@ class Route
                 'data' => [
                     'methods'             => WP_REST_Server::READABLE,
                     'callback'            => [$this->get_forms, 'get_forms'],
-                    // 'permission_callback' => function () {
-                    //     return current_user_can('manage_options') && is_user_logged_in();
-                    // },
-                    'permission_callback' => '__return_true',
+                    'permission_callback' => function () {
+                        return current_user_can('manage_options') && is_user_logged_in();
+                    },
+                    // 'permission_callback' => '__return_true',
                 ],
             ],
 
             // Route: POST/PATCH /update - Update an existing entry
             [
-                'route' => '/update',
+                'route' => '/entries/(?P<id>\d+)',
                 'data' => [
                     'methods'             => WP_REST_Server::EDITABLE,
                     'callback'            => [$this->update_entries, 'update_entries'],
@@ -446,7 +446,7 @@ class Route
 
             // Route: DELETE /delete - Delete a specific entry
             [
-                'route' => '/delete',
+                'route' => '/entries/(?P<id>\d+)',
                 'data'  => [
                     'methods'             => WP_REST_Server::DELETABLE,
                     'callback'            => [$this->delete_single_entry, 'delete_entry'],
@@ -501,7 +501,7 @@ class Route
             //     ],
             // ],
             [
-                'route' => '/bulk',
+                'route' => '/entries/bulk',
                 'data' => [
                     'methods'  => WP_REST_Server::EDITABLE,
                     'callback' => [$this->bulk_action, 'bulk_actions'],
@@ -571,7 +571,7 @@ class Route
                 ],
             ],
             [
-                'route' => '/export-csv',
+                'route' => '/entries/export-csv',
                 'data' => [
                     'methods'             => WP_REST_Server::READABLE,
                     'callback'            => [$this->export_entries, 'export_csv_callback'],
@@ -624,7 +624,7 @@ class Route
             ],
 
             [
-                'route' => '/wpformsdb-source-entries-count',
+                'route' => '/legacy-source/count',
                 'data' => [
                     'methods'             => WP_REST_Server::READABLE,
                     'callback'            => [$this->migrate, 'wpformsdb_data'],
@@ -635,7 +635,7 @@ class Route
                 ],
             ],
             [
-                'route' => '/trigger',
+                'route' => '/migration/trigger',
                 'data' => [
                     'methods' => WP_REST_Server::CREATABLE,
                     'callback' => function (\WP_REST_Request $request) {
@@ -649,45 +649,45 @@ class Route
                 ]
             ],
             [
-                'route' => '/progress',
+                'route' => '/migration/progress',
                 'data' => [
                     'methods'  => 'GET',
-'callback' => function () {
-    $total    = (int) Helper::get_option('migration_total_entries', 0);
-    $migrated = (int) Helper::get_option('migration_last_id', 0); // Or count rows if needed
+                    'callback' => function () {
+                        $total    = (int) Helper::get_option('migration_total_entries', 0);
+                        $migrated = (int) Helper::get_option('migration_last_id', 0); // Or count rows if needed
 
-    if ($total === 0) {
-        return rest_ensure_response([
-            'progress' => 100,
-            'complete' => true,
-            'migrated' => $migrated,
-            'total'    => $total,
-            'eta'      => null,
-        ]);
-    }
+                        if ($total === 0) {
+                            return rest_ensure_response([
+                                'progress' => 100,
+                                'complete' => true,
+                                'migrated' => $migrated,
+                                'total'    => $total,
+                                'eta'      => null,
+                            ]);
+                        }
 
-    $progress = ($migrated / $total) * 100;
-    $progress = min(100, round($progress, 2));
+                        $progress = ($migrated / $total) * 100;
+                        $progress = min(100, round($progress, 2));
 
-    $complete = (bool) Helper::get_option('migration_complete', false);
+                        $complete = (bool) Helper::get_option('migration_complete', false);
 
-    $start = (int) Helper::get_option('swpfe_migration_started_at', 0);
-    $eta   = null;
+                        $start = (int) Helper::get_option('swpfe_migration_started_at', 0);
+                        $eta   = null;
 
-    if ($start > 0 && $migrated > 0 && !$complete) {
-        $elapsed = time() - $start;
-        $eta = ( ( $total - $migrated ) / $migrated ) * $elapsed;
-        $eta = max(0, (int) $eta); // ensure it's not negative
-    }
+                        if ($start > 0 && $migrated > 0 && !$complete) {
+                            $elapsed = time() - $start;
+                            $eta = (($total - $migrated) / $migrated) * $elapsed;
+                            $eta = max(0, (int) $eta); // ensure it's not negative
+                        }
 
-    return rest_ensure_response([
-        'progress' => $progress,
-        'complete' => $complete,
-        'migrated' => $migrated,
-        'total'    => $total,
-        'eta'      => $eta,
-    ]);
-},
+                        return rest_ensure_response([
+                            'progress' => $progress,
+                            'complete' => $complete,
+                            'migrated' => $migrated,
+                            'total'    => $total,
+                            'eta'      => $eta,
+                        ]);
+                    },
 
                     // 'permission_callback' => function () {
                     //     return current_user_can('manage_options');

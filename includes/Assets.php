@@ -129,6 +129,17 @@ class Assets {
             'ajax_url' => admin_url( 'admin-ajax.php' ),
         ] );
 
-        wp_enqueue_script( 'swpfe-alpine-morph', 'https://unpkg.com/@alpinejs/morph@3.x.x/dist/cdn.min.js', ['swpfe-alpine', 'swpfe-admin-js'], null, true );
+        wp_localize_script(
+            'swpfe-admin-js',
+            'swpfeMigrationNotice',
+            array(
+                'title'       => __('Migrate from WPFormsDB', 'save-wpf-entries'),
+                'message'     => __('We found data in the legacy', 'save-wpf-entries') . ' <code>wpforms_db</code> ' . __('table. You can migrate all your entries into our advanced manager in just a few clicks.', 'save-wpf-entries'),
+                'start'       => __('Start Migration', 'save-wpf-entries'),
+                'dismissAlt'  => __('Dismiss', 'save-wpf-entries'),
+            )
+        );
+
+
     }
 }

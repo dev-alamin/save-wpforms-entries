@@ -110,7 +110,12 @@ class Migrate {
 
             $data_array = maybe_unserialize( $form_value );
             unset( $data_array['WPFormsDB_status'] );
-            $form_value = maybe_serialize( $data_array );
+
+            // Lowercase all keys and values
+            $data_array = array_map( 'strtolower', $data_array );
+            $data_array = array_change_key_case( $data_array, CASE_LOWER );
+
+            $email = isset( $data_array['email'] ) ? sanitize_email( $data_array['email'] ) : '';
 
             $form_date   = sanitize_text_field( $entry['form_date'] ?? current_time( 'mysql' ) );
 
@@ -119,11 +124,12 @@ class Migrate {
                 [
                     'form_id'     => $form_id,
                     'entry'       => $form_value,
+                    'email'       => $email,
                     'created_at'  => $form_date,  // <-- use created_at instead of submitted_at
                     'status'      => 'unread',
                     'is_favorite' => 0,
                 ],
-                [ '%d', '%s', '%s', '%s', '%d' ]
+                [ '%d', '%s', '%s', '%s', '%s', '%d' ]
             );
 
            if ( $result !== false ) {

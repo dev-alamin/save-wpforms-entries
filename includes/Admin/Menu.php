@@ -93,7 +93,7 @@ class Menu {
             65
         );
 
-        if ( Helper::is_wpformsdb_table_exists()  ) :
+        if ( Helper::is_wpformsdb_table_exists() && ! Helper::get_option( 'migration_complete' )  ) :
             add_submenu_page(
                 'swpfe-entries',
                 __('Migration', 'advanced-entries-manager-for-wpforms'),
