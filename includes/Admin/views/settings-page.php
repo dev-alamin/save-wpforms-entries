@@ -1,6 +1,9 @@
 <?php
-$access_token  = get_option('swpfe_google_access_token');
-$token_expires = get_option('swpfe_google_token_expires');
+
+use App\AdvancedEntryManager\Utility\Helper;
+
+$access_token  = Helper::get_option('google_access_token');
+$token_expires = Helper::get_option('google_token_expires');
 $now           = time();
 $expires_in    = $token_expires ? max(0, $token_expires - $now) : 0;
 
@@ -12,10 +15,10 @@ function seconds_to_human_readable($seconds)
     return ($h ? $h . 'h ' : '') . ($m ? $m . 'm' : esc_html__('less than a minute', 'advanced-entries-manager-for-wpforms'));
 }
 
-$per_page  = get_option('swpfe_entries_per_page', 20);
-$sheet_id  = get_option('swpfe_google_sheet_id');
-$auto_sync = get_option('swpfe_google_sheet_auto_sync', true);
-$sheet_tab = get_option('swpfe_google_sheet_tab', 'Sheet1');
+$per_page  = Helper::get_option('entries_per_page', 20);
+$sheet_id  = Helper::get_option('google_sheet_id');
+$auto_sync = Helper::get_option('google_sheet_auto_sync', true);
+$sheet_tab = Helper::get_option('google_sheet_tab', 'Sheet1');
 ?>
 
 <div x-data="toastHandler()" x-init="init()" x-show="visible"

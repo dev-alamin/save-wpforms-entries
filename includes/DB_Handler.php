@@ -59,6 +59,7 @@ class DB_Handler
             resent_at DATETIME DEFAULT NULL,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            retry_count INT DEFAULT 0;
             PRIMARY KEY (id),
             INDEX idx_form_id (form_id),
             INDEX idx_status (status),
