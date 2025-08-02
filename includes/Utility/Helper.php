@@ -5,7 +5,6 @@ namespace App\AdvancedEntryManager\Utility;
 use WP_Error;
 use WP_REST_Response;
 use App\AdvancedEntryManager\Utility\DB;
-use WP_List_Table;
 
 class Helper {
 
@@ -237,5 +236,63 @@ class Helper {
         $code = wp_remote_retrieve_response_code( $response );
 
         return ( $code >= 200 && $code < 300 );
+    }
+
+    /**
+	 * Queue Action Scheduler jobs in batches.
+	 *
+	 * @param string $hook_name The hook to trigger for each batch.
+	 * @param array  $args       Extra args to pass in each scheduled job.
+	 * @param int    $total      Total number of items to process.
+	 * @param int    $batch_size Items per batch.
+	 * @param int    $delay      Delay (in seconds) between each job.
+	 *
+	 * @return int Number of jobs queued.
+	 */
+    public static function queue_export_batches($form_id, $date_from, $date_to, $exclude_fields, $batch_size)
+    {
+        // Calculate total entries to export
+        global $wpdb;
+
+        $where_clauses = ['form_id = %d'];
+        $args = [$form_id];
+
+        if ($date_from) {
+            $where_clauses[] = 'created_at >= %s';
+            $args[] = $date_from;
+        }
+
+        if ($date_to) {
+            $where_clauses[] = 'created_at <= %s';
+            $args[] = $date_to;
+        }
+
+        $where_sql = 'WHERE ' . implode(' AND ', $where_clauses);
+
+        $count_sql = $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}swpfe_entries {$where_sql}",
+            ...$args
+        );
+
+        $total_entries = (int) $wpdb->get_var($count_sql);
+
+        $batches = (int) ceil($total_entries / $batch_size);
+
+        for ($i = 0; $i < $batches; $i++) {
+            // Schedule each batch with Action Scheduler
+            $args = [
+                'form_id'        => $form_id,
+                'date_from'      => $date_from,
+                'date_to'        => $date_to,
+                'exclude_fields' => $exclude_fields,
+                'batch_size'     => $batch_size,
+                'batch_number'   => $i + 1,
+                'offset'         => $i * $batch_size,
+            ];
+
+            if (! as_next_scheduled_action('swpfe_export_csv_batch', [$args])) {
+                as_schedule_single_action(time() + ($i * 15), 'swpfe_export_csv_batch', [$args], 'swpfe_export_csv_group');
+            }
+        }
     }
 }

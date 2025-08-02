@@ -543,10 +543,10 @@ class Route
                 ],
             ],
             [
-                'route' => '/export',
+                'route' => '/export/bulk',
                 'data' => [
                     'methods' => WP_REST_Server::CREATABLE,
-                    'callback' => [$this->export_entries, 'export_entries_csv'],
+                    'callback' => [$this->export_entries, 'export_entries_csv_bulk'],
                     // 'permission_callback' => function () {
                     //     return current_user_can('manage_options');
                     // },
@@ -571,10 +571,10 @@ class Route
                 ],
             ],
             [
-                'route' => '/entries/export-csv',
+                'route' => '/entries/export/full',
                 'data' => [
                     'methods'             => WP_REST_Server::READABLE,
-                    'callback'            => [$this->export_entries, 'export_csv_callback'],
+                    'callback'            => [$this->export_entries, 'export_csv_full'],
                     // 'permission_callback' => function() {
                     //     return current_user_can( 'manage_options' ); // adjust capability
                     // },
@@ -601,11 +601,11 @@ class Route
                             },
                             'sanitize_callback' => 'sanitize_text_field',
                         ],
-                        'limit' => [
+                        'batch_size' => [
                             'required' => false,
                             'default' => 100,
                             'validate_callback' => function ($param) {
-                                return is_numeric($param) && intval($param) >= 10 && intval($param) <= 50000;
+                                return is_numeric($param) && intval($param) >= 100 && intval($param) <= 5000;
                             },
                             'sanitize_callback' => 'absint',
                         ],
@@ -652,43 +652,7 @@ class Route
                 'route' => '/migration/progress',
                 'data' => [
                     'methods'  => 'GET',
-                    'callback' => function () {
-                        $total    = (int) Helper::get_option('migration_total_entries', 0);
-                        $migrated = (int) Helper::get_option('migration_last_id', 0); // Or count rows if needed
-
-                        if ($total === 0) {
-                            return rest_ensure_response([
-                                'progress' => 100,
-                                'complete' => true,
-                                'migrated' => $migrated,
-                                'total'    => $total,
-                                'eta'      => null,
-                            ]);
-                        }
-
-                        $progress = ($migrated / $total) * 100;
-                        $progress = min(100, round($progress, 2));
-
-                        $complete = (bool) Helper::get_option('migration_complete', false);
-
-                        $start = (int) Helper::get_option('swpfe_migration_started_at', 0);
-                        $eta   = null;
-
-                        if ($start > 0 && $migrated > 0 && !$complete) {
-                            $elapsed = time() - $start;
-                            $eta = (($total - $migrated) / $migrated) * $elapsed;
-                            $eta = max(0, (int) $eta); // ensure it's not negative
-                        }
-
-                        return rest_ensure_response([
-                            'progress' => $progress,
-                            'complete' => $complete,
-                            'migrated' => $migrated,
-                            'total'    => $total,
-                            'eta'      => $eta,
-                        ]);
-                    },
-
+                    'callback' => [ $this->migrate, 'get_migration_progress' ],
                     // 'permission_callback' => function () {
                     //     return current_user_can('manage_options');
                     // },

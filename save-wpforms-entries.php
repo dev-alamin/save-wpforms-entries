@@ -41,10 +41,6 @@ add_action( 'plugins_loaded', function() {
     new App\AdvancedEntryManager\Entry_Handler();
     new App\AdvancedEntryManager\Scheduler\Actions\Migrate_Batch();
 
-    add_action('swpfe_migrate_batch', function($args){
-        error_log('[SWPFE MIGRATION TEST] swpfe_migrate_batch fired with args: ' . print_r($args, true));
-    });
-
     if ( is_admin() ) {
         new App\AdvancedEntryManager\Admin\Admin();
     }

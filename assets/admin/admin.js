@@ -38,7 +38,7 @@ function formTable(form) {
       try {
         if (action === "export_csv") {
           const res = await fetch(
-            `${swpfeSettings.restUrl}aem/v1/export`,
+            `${swpfeSettings.restUrl}aem/v1/export/bulk`,
             {
               method: "POST",
               headers: {
@@ -890,9 +890,7 @@ function exportSettings() {
     },
     async exportAllBatches() {
       if (!this.selectedFormId) {
-        alert(
-          '<?php echo esc_js("Please select a form before exporting."); ?>'
-        );
+        alert( "Please select a form before exporting." );
         return;
       }
 
@@ -901,16 +899,18 @@ function exportSettings() {
 
       const dateFromEl = document.getElementById("swpfe_export_date_from");
       const dateToEl = document.getElementById("swpfe_export_date_to");
-      const limitEl = document.getElementById("swpfe_export_limit");
+      const batch_size = document.getElementById("swpfe_export_limit");
+      
 
       if (dateFromEl && dateFromEl.value) {
         params.append("date_from", dateFromEl.value);
       }
+
       if (dateToEl && dateToEl.value) {
         params.append("date_to", dateToEl.value);
       }
 
-      const limit = limitEl && limitEl.value ? parseInt(limitEl.value) : 100;
+      const limit = batch_size && batch_size.value ? parseInt(batch_size.value) : 500;
       params.append("limit", limit);
 
       if (this.excludedFields.length > 0) {
@@ -925,7 +925,7 @@ function exportSettings() {
 
         const url = `${
           swpfeSettings.restUrl
-        }aem/v1/entries/export-csv?${params.toString()}`;
+        }aem/v1/entries/export/full?${params.toString()}`;
 
         try {
           const res = await fetch(url, {

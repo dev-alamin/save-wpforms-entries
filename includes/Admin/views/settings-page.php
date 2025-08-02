@@ -71,7 +71,7 @@ $sheet_tab = get_option('swpfe_google_sheet_tab', 'Sheet1');
                         <path d="M480-480ZM202-65l-56-57 118-118h-90v-80h226v226h-80v-89L202-65Zm278-15v-80h240v-440H520v-200H240v400h-80v-400q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H480Z"/>
                     </svg>
                 </span>
-                <?php esc_html_e( 'Advanced Export (PRO)', 'advanced-entries-manager-for-wpforms' ); ?>
+                <?php esc_html_e( 'Advanced Export', 'advanced-entries-manager-for-wpforms' ); ?>
             </button>
 
             <button
@@ -95,7 +95,7 @@ $sheet_tab = get_option('swpfe_google_sheet_tab', 'Sheet1');
                 <?php include __DIR__ . '/tab/google-connection.php'; ?>
             </div>
 
-            <div x-show="tab === 'csv'" class="opacity-50">
+            <div x-show="tab === 'csv'">
                 <?php include __DIR__ . '/tab/csv-export.php'; ?>
             </div>
 

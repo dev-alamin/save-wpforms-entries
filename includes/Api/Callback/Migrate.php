@@ -7,7 +7,9 @@ use WP_REST_Response;
 use WP_Error;
 use App\AdvancedEntryManager\Utility\Helper;
 use App\AdvancedEntryManager\Utility\DB;
-class Migrate {
+
+class Migrate
+{
 
     const SOURCE_TABLE       = 'wpforms_db';
     const TARGET_TABLE       = 'swpfe_entries';
@@ -22,38 +24,39 @@ class Migrate {
      *
      * @return array|WP_Error
      */
-    public function trigger_migration() {
-        if ( ! class_exists( 'ActionScheduler' ) ) {
-            return new WP_Error( 'missing_scheduler', __( 'Action Scheduler not available', 'save-wpf-entries' ) );
+    public function trigger_migration()
+    {
+        if (! class_exists('ActionScheduler')) {
+            return new WP_Error('missing_scheduler', __('Action Scheduler not available', 'save-wpf-entries'));
         }
 
         // Prevent triggering if migration already running and not complete
-        if ( Helper::get_option( 'swpfe_migration_started_at' ) && ! Helper::get_option( self::OPTION_COMPLETE ) ) {
-            return new WP_Error( 'migration_already_running', __( 'Migration is already in progress.', 'save-wpf-entries' ) );
+        if (Helper::get_option('swpfe_migration_started_at') && ! Helper::get_option(self::OPTION_COMPLETE)) {
+            return new WP_Error('migration_already_running', __('Migration is already in progress.', 'save-wpf-entries'));
         }
 
         // Now safe to reset progress and start fresh
-        Helper::update_option( self::OPTION_LAST_ID, 0 );
-        Helper::delete_option( self::OPTION_COMPLETE );
+        Helper::update_option(self::OPTION_LAST_ID, 0);
+        Helper::delete_option(self::OPTION_COMPLETE);
 
-        if ( ! Helper::get_option('swpfe_migration_started_at') ) {
+        if (! Helper::get_option('swpfe_migration_started_at')) {
             Helper::update_option('swpfe_migration_started_at', time());
         }
 
         // Clear any pending/reserved duplicate actions
-        as_unschedule_all_actions( self::ACTION_HOOK, [], self::SCHEDULE_GROUP );
+        as_unschedule_all_actions(self::ACTION_HOOK, [], self::SCHEDULE_GROUP);
 
         // Schedule the first batch
         as_schedule_single_action(
             time(),
             self::ACTION_HOOK,
-            [ 'batch_size' => self::BATCH_SIZE ],
+            ['batch_size' => self::BATCH_SIZE],
             self::SCHEDULE_GROUP
         );
 
         return rest_ensure_response([
             'success' => true,
-            'message' => __( 'Migration started in background.', 'save-wpf-entries' ),
+            'message' => __('Migration started in background.', 'save-wpf-entries'),
             'code'    => 'swpfe_migration_started',
         ]);
     }
@@ -64,20 +67,21 @@ class Migrate {
      * @param int $batch_size
      * @return void
      */
-    public function migrate_from_wpformsdb_plugin( int $batch_size = self::BATCH_SIZE ): void {
-         error_log('[SWPFE MIGRATION] migrate_from_wpformsdb_plugin called, batch size: ' . $batch_size);
+    public function migrate_from_wpformsdb_plugin(int $batch_size = self::BATCH_SIZE): void
+    {
+        error_log('[SWPFE MIGRATION] migrate_from_wpformsdb_plugin called, batch size: ' . $batch_size);
         global $wpdb;
 
-        $last_id = absint( Helper::get_option( self::OPTION_LAST_ID, 0 ) );
+        $last_id = absint(Helper::get_option(self::OPTION_LAST_ID, 0));
         $source_table = $wpdb->prefix . self::SOURCE_TABLE;
         $target_table = $wpdb->prefix . self::TARGET_TABLE;
 
-       if ( ! self::table_exists( $source_table ) ) {
+        if (! self::table_exists($source_table)) {
             error_log('[SWPFE ERROR] Source table missing: ' . $source_table);
             return;
         }
 
-        if ( ! self::table_exists( $target_table ) ) {
+        if (! self::table_exists($target_table)) {
             error_log('[SWPFE ERROR] Target table missing: ' . $target_table);
             return;
         }
@@ -92,32 +96,32 @@ class Migrate {
             ARRAY_A
         );
 
-            $total_entries = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$source_table}" );
+        $total_entries = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$source_table}");
 
-            // Save total entries count to option for progress tracking
-            Helper::update_option( 'migration_total_entries', $total_entries );
+        // Save total entries count to option for progress tracking
+        Helper::update_option('migration_total_entries', $total_entries);
 
-        if ( empty( $entries ) ) {
-            Helper::update_option( self::OPTION_COMPLETE, true );
+        if (empty($entries)) {
+            Helper::update_option(self::OPTION_COMPLETE, true);
             return;
         }
 
         $new_last_id = $last_id;
 
-        foreach ( $entries as $entry ) {
-            $form_id     = absint( $entry['form_post_id'] ?? 0 );
-            $form_value  =$entry['form_value'] ?? '';
+        foreach ($entries as $entry) {
+            $form_id     = absint($entry['form_post_id'] ?? 0);
+            $form_value  = $entry['form_value'] ?? '';
 
-            $data_array = maybe_unserialize( $form_value );
-            unset( $data_array['WPFormsDB_status'] );
+            $data_array = maybe_unserialize($form_value);
+            unset($data_array['WPFormsDB_status']);
 
             // Lowercase all keys and values
-            $data_array = array_map( 'strtolower', $data_array );
-            $data_array = array_change_key_case( $data_array, CASE_LOWER );
+            $data_array = array_map('strtolower', $data_array);
+            $data_array = array_change_key_case($data_array, CASE_LOWER);
 
-            $email = isset( $data_array['email'] ) ? sanitize_email( $data_array['email'] ) : '';
+            $email = isset($data_array['email']) ? sanitize_email($data_array['email']) : '';
 
-            $form_date   = sanitize_text_field( $entry['form_date'] ?? current_time( 'mysql' ) );
+            $form_date   = sanitize_text_field($entry['form_date'] ?? current_time('mysql'));
 
             $result = $wpdb->insert(
                 $target_table,
@@ -129,36 +133,36 @@ class Migrate {
                     'status'      => 'unread',
                     'is_favorite' => 0,
                 ],
-                [ '%d', '%s', '%s', '%s', '%s', '%d' ]
+                ['%d', '%s', '%s', '%s', '%s', '%d']
             );
 
-           if ( $result !== false ) {
-                $new_last_id = max( $new_last_id, intval( $entry['form_id'] ) );
+            if ($result !== false) {
+                $new_last_id = max($new_last_id, intval($entry['form_id']));
             }
-
         }
 
-        Helper::update_option( self::OPTION_LAST_ID, $new_last_id );
+        Helper::update_option(self::OPTION_LAST_ID, $new_last_id);
 
-        if ( count( $entries ) === $batch_size ) {
+        if (count($entries) === $batch_size) {
             as_schedule_single_action(
                 time() + 5,
                 self::ACTION_HOOK,
-                [ 'batch_size' => $batch_size ],
+                ['batch_size' => $batch_size],
                 self::SCHEDULE_GROUP
             );
         } else {
-            Helper::update_option( self::OPTION_COMPLETE, true );
+            Helper::update_option(self::OPTION_COMPLETE, true);
         }
     }
 
-    public function wpformsdb_data(WP_REST_Request $request) {
+    public function wpformsdb_data(WP_REST_Request $request)
+    {
         global $wpdb;
 
         $table = $wpdb->prefix . 'wpforms_db';
 
         // Safety: check if table exists
-        if ( $wpdb->get_var( $wpdb->prepare("SHOW TABLES LIKE %s", $table) ) !== $table ) {
+        if ($wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table)) !== $table) {
             return new WP_Error('table_missing', 'Source table does not exist', ['status' => 404]);
         }
 
@@ -174,12 +178,51 @@ class Migrate {
         return rest_ensure_response($results);
     }
 
-    public static function table_exists( $table_name ) {
+    public static function table_exists($table_name)
+    {
         global $wpdb;
-        $table_name_like = str_replace( '_', '\\_', $table_name ); // Escape underscores
+        $table_name_like = str_replace('_', '\\_', $table_name); // Escape underscores
         $result = $wpdb->get_var(
-            $wpdb->prepare( "SHOW TABLES LIKE %s", $table_name_like )
+            $wpdb->prepare("SHOW TABLES LIKE %s", $table_name_like)
         );
-        return ! empty( $result );
+        return ! empty($result);
+    }
+
+    public function get_migration_progress()
+    {
+        $total    = (int) Helper::get_option('migration_total_entries', 0);
+        $migrated = (int) Helper::get_option('migration_last_id', 0); // Or count rows if needed
+
+        if ($total === 0) {
+            return rest_ensure_response([
+                'progress' => 100,
+                'complete' => true,
+                'migrated' => $migrated,
+                'total'    => $total,
+                'eta'      => null,
+            ]);
+        }
+
+        $progress = ($migrated / $total) * 100;
+        $progress = min(100, round($progress, 2));
+
+        $complete = (bool) Helper::get_option('migration_complete', false);
+
+        $start = (int) Helper::get_option('swpfe_migration_started_at', 0);
+        $eta   = null;
+
+        if ($start > 0 && $migrated > 0 && !$complete) {
+            $elapsed = time() - $start;
+            $eta = (($total - $migrated) / $migrated) * $elapsed;
+            $eta = max(0, (int) $eta); // ensure it's not negative
+        }
+
+        return rest_ensure_response([
+            'progress' => $progress,
+            'complete' => $complete,
+            'migrated' => $migrated,
+            'total'    => $total,
+            'eta'      => $eta,
+        ]);
     }
 }

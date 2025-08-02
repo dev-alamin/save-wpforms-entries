@@ -6,13 +6,15 @@ use App\AdvancedEntryManager\Api\Route;
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
+use App\AdvancedEntryManager\Utility\Helper;
 
 /**
  * Class Export_Entries
  *
  * Handles the retrieval of forms from the custom database table.
  */
-class Export_Entries {
+class Export_Entries
+{
     /**
      * Export selected WPForms entries as a CSV file download.
      *
@@ -28,15 +30,16 @@ class Export_Entries {
      * 
      * @throws void Sends CSV headers and exits script after output.
      */
-    public function export_entries_csv($request) {
+    public function export_entries_csv_bulk($request)
+    {
         // Check nonce for REST API request
-        // if ( ! isset( $_SERVER['HTTP_X_WP_NONCE'] ) || ! wp_verify_nonce( $_SERVER['HTTP_X_WP_NONCE'], 'wp_rest' ) ) {
-        //     return new \WP_Error(
-        //         'rest_forbidden',
-        //         __('You are not allowed to perform this action.', 'advanced-entries-manager-for-wpforms'),
-        //         ['status' => 403]
-        //     );
-        // }
+        if (! isset($_SERVER['HTTP_X_WP_NONCE']) || ! wp_verify_nonce($_SERVER['HTTP_X_WP_NONCE'], 'wp_rest')) {
+            return new \WP_Error(
+                'rest_forbidden',
+                __('You are not allowed to perform this action.', 'advanced-entries-manager-for-wpforms'),
+                ['status' => 403]
+            );
+        }
 
         global $wpdb;
         $ids = $request->get_param('ids');
@@ -91,101 +94,143 @@ class Export_Entries {
         exit; // Stop execution to prevent extra output
     }
 
-    public function export_csv_callback( WP_REST_Request $request ) {
+   public function export_csv_full(WP_REST_Request $request)
+    {
+        if (! isset($_SERVER['HTTP_X_WP_NONCE']) || ! wp_verify_nonce($_SERVER['HTTP_X_WP_NONCE'], 'wp_rest')) {
+            return new WP_Error(
+                'rest_forbidden',
+                __('You are not allowed to perform this action.', 'advanced-entries-manager-for-wpforms'),
+                ['status' => 403]
+            );
+        }
+
         global $wpdb;
 
-        $last_id      = absint( $request->get_param('last_id') ?? 0 );  // for keyset pagination
-        $limit        = absint( $request->get_param('limit') ?? 100 );
-        $form_id      = absint( $request->get_param('form_id') ?? 0 );
-        $date_from    = sanitize_text_field( $request->get_param('date_from') ?? '' );
-        $date_to      = sanitize_text_field( $request->get_param('date_to') ?? '' );
+        // === 1. Sanitize & validate inputs ===
+        $last_id        = absint($request->get_param('last_id') ?? 0);
+        $batch_size     = absint($request->get_param('batch_size') ?? 500);
+        $form_id        = absint($request->get_param('form_id') ?? 0);
+        $date_from      = sanitize_text_field($request->get_param('date_from') ?? '');
+        $date_to        = sanitize_text_field($request->get_param('date_to') ?? '');
         $exclude_fields = $request->get_param('exclude_fields');
         $exclude_fields = is_string($exclude_fields) ? explode(',', $exclude_fields) : (array) $exclude_fields;
 
-        if ( ! $form_id ) {
-            return new WP_Error('missing_form_id', 'Form ID is required', ['status' => 400]);
+        if (! $form_id) {
+            return new WP_Error(
+                'missing_form_id',
+                __('Form ID is required.', 'advanced-entries-manager-for-wpforms'),
+                ['status' => 400]
+            );
         }
 
-        // Build WHERE clause with keyset pagination (use id > last_id)
-        $where_clauses = [ 'form_id = %d' ];
-        $args = [ $form_id ];
+        // === 2. Build WHERE clauses (keyset pagination) ===
+        $where_clauses = ['form_id = %d'];
+        $args = [$form_id];
 
-        if ( $date_from ) {
+        if ($date_from) {
             $where_clauses[] = 'created_at >= %s';
             $args[] = $date_from;
         }
-        if ( $date_to ) {
+
+        if ($date_to) {
             $where_clauses[] = 'created_at <= %s';
             $args[] = $date_to;
         }
-        if ( $last_id ) {
+
+        if ($last_id) {
             $where_clauses[] = 'id > %d';
             $args[] = $last_id;
         }
 
         $where_sql = 'WHERE ' . implode(' AND ', $where_clauses);
 
-        $sql = $wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}swpfe_entries {$where_sql} ORDER BY id ASC LIMIT %d",
-            ...array_merge( $args, [ $limit ] )
+        // === 3. Count total entries matching criteria ===
+        $count_sql = $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}swpfe_entries {$where_sql}",
+            ...$args
         );
 
-        $results = $wpdb->get_results( $sql );
+        $total_entries = (int) $wpdb->get_var($count_sql);
 
-        if ( empty( $results ) ) {
+        // === 4. If large dataset, queue batches with Action Scheduler ===
+        // if ($total_entries > 5000) {
+        //     Helper::queue_export_batches($form_id, $date_from, $date_to, $exclude_fields, $batch_size);
+        //     return rest_ensure_response([
+        //         'message'       => __('Export queued for asynchronous processing.', 'advanced-entries-manager-for-wpforms'),
+        //         'total_entries' => $total_entries,
+        //         'batch_size'    => $batch_size,
+        //     ]);
+        // }
+
+        // === 5. Prepare and run query for current batch ===
+        $sql = $wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}swpfe_entries {$where_sql} ORDER BY id ASC LIMIT %d",
+            ...array_merge($args, [$batch_size])
+        );
+
+        $results = $wpdb->get_results($sql);
+
+        if (empty($results)) {
             error_log('[AEM Export] No results found for export. SQL: ' . $sql);
-            wp_send_json_error(['message' => 'No entries found to export.'], 404);
+            wp_send_json_error(
+                ['message' => __('No entries found to export.', 'advanced-entries-manager-for-wpforms')],
+                404
+            );
         }
 
-        $csv_data = [];
+        // === 6. Prepare CSV data ===
+        $csv_data   = [];
         $csv_header = [];
 
-        foreach ( $results as $row ) {
-            $entry_data = json_decode( $row->entry, true );
-
-            $entry_row = [
-                'id'              => $row->id,
-                'form_id'         => $row->form_id,
-                'created_at'      => $row->created_at,
-                'status'          => $row->status,
-                'is_favorite'     => $row->is_favorite,
-                'note'            => $row->note,
-                'exported_to_csv' => $row->exported_to_csv,
-                'synced_to_gsheet'=> $row->synced_to_gsheet,
-                'printed_at'      => $row->printed_at,
-                'is_spam'         => $row->is_spam,
-                'resent_at'       => $row->resent_at,
-                'updated_at'      => $row->updated_at,
-            ];
-
-            if ( is_array( $entry_data ) ) {
-                $entry_row = array_merge( $entry_row, $entry_data );
+        foreach ($results as $row) {
+            $entry_data = maybe_unserialize($row->entry, true);
+            if (is_string($entry_data)) {
+                $entry_data = maybe_unserialize($entry_data, true);
             }
 
-            // Filter out excluded fields if any
-            if ( !empty($exclude_fields) ) {
+            if (! is_array($entry_data)) {
+                error_log("Unserialization failed for row ID: {$row->id}, raw entry: {$row->entry}");
+            }
+
+            $entry_row = [
+                'id'               => $row->id,
+                'form_id'          => $row->form_id,
+                'created_at'       => $row->created_at,
+                'status'           => $row->status,
+                'is_favorite'      => $row->is_favorite,
+                'note'             => $row->note,
+                'synced_to_gsheet' => $row->synced_to_gsheet,
+                'printed_at'       => $row->printed_at,
+                'is_spam'          => $row->is_spam,
+                'resent_at'        => $row->resent_at,
+                'updated_at'       => $row->updated_at,
+            ];
+
+            if (is_array($entry_data)) {
+                $entry_row = array_merge($entry_row, $entry_data);
+            }
+
+            if (! empty($exclude_fields)) {
                 foreach ($exclude_fields as $exclude) {
                     unset($entry_row[$exclude]);
                 }
             }
 
-            // Build header from keys of first row
-            if ( empty( $csv_header ) ) {
-                $csv_header = array_keys( $entry_row );
+            if (empty($csv_header)) {
+                $csv_header = array_keys($entry_row);
             }
 
             $csv_data[] = $entry_row;
         }
 
-        // Set headers for CSV download
+        // === 7. Output CSV ===
         header('Content-Type: text/csv');
         header('Content-Disposition: attachment; filename="exported_entries.csv"');
 
         $fh = fopen('php://output', 'w');
         fputcsv($fh, $csv_header);
 
-        foreach ( $csv_data as $row ) {
-            // Ensure columns in same order as header
+        foreach ($csv_data as $row) {
             $line = [];
             foreach ($csv_header as $col) {
                 $line[] = $row[$col] ?? '';

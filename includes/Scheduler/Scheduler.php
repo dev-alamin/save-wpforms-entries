@@ -1,0 +1,63 @@
+<?php
+
+namespace App\AdvancedEntryManager\Scheduler;
+
+class Scheduler
+{
+    /**
+     * Schedule batch export jobs via Action Scheduler.
+     *
+     * @param string $hook Hook name to trigger.
+     * @param array $args Arguments for the job callback.
+     * @param int $total Total items to process.
+     * @param int $batch_size Size of each batch.
+     * @param int $delay Delay seconds between batches.
+     * @return void
+     */
+    public static function queue_export_batches($form_id, $date_from, $date_to, $exclude_fields, $batch_size)
+    {
+        // Calculate total entries to export
+        global $wpdb;
+
+        $where_clauses = ['form_id = %d'];
+        $args = [$form_id];
+
+        if ($date_from) {
+            $where_clauses[] = 'created_at >= %s';
+            $args[] = $date_from;
+        }
+
+        if ($date_to) {
+            $where_clauses[] = 'created_at <= %s';
+            $args[] = $date_to;
+        }
+
+        $where_sql = 'WHERE ' . implode(' AND ', $where_clauses);
+
+        $count_sql = $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}swpfe_entries {$where_sql}",
+            ...$args
+        );
+
+        $total_entries = (int) $wpdb->get_var($count_sql);
+
+        $batches = (int) ceil($total_entries / $batch_size);
+
+        for ($i = 0; $i < $batches; $i++) {
+            // Schedule each batch with Action Scheduler
+            $args = [
+                'form_id'        => $form_id,
+                'date_from'      => $date_from,
+                'date_to'        => $date_to,
+                'exclude_fields' => $exclude_fields,
+                'batch_size'     => $batch_size,
+                'batch_number'   => $i + 1,
+                'offset'         => $i * $batch_size,
+            ];
+
+            if (! as_next_scheduled_action('swpfe_export_csv_batch', [$args])) {
+                as_schedule_single_action(time() + ($i * 15), 'swpfe_export_csv_batch', [$args], 'swpfe_export_csv_group');
+            }
+        }
+    }
+}

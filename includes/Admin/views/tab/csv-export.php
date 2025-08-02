@@ -40,8 +40,8 @@
             <?php esc_html_e('Max Entries per Batch', 'advanced-entries-manager-for-wpforms'); ?>
         </label>
         <input type="number" name="swpfe_export_limit" id="swpfe_export_limit"
-            value="<?php echo esc_attr(get_option('swpfe_export_limit', 100)); ?>"
-            min="10" max="1000"
+            value="<?php echo esc_attr(get_option('swpfe_export_limit', 500)); ?>"
+            min="10" max="5000"
             class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm">
         <p class="text-xs text-gray-500 mt-1">
             <?php esc_html_e('Used to process large exports in chunks. Default is 100.', 'advanced-entries-manager-for-wpforms'); ?>
