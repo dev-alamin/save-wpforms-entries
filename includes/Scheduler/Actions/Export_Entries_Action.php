@@ -1,48 +1,33 @@
 <?php
 
 namespace App\AdvancedEntryManager\Scheduler\Actions;
-
-use App\AdvancedEntryManager\Scheduler\Scheduler;
+use App\AdvancedEntryManager\Api\Callback\Export_Entries;
 
 class Export_Entries_Action {
 
+    protected $export_entries;
+
     public function __construct() {
-        add_action('swpfe_export_csv_batch', [$this, 'schedule_export'], 10, 5);
+        $this->export_entries = new Export_Entries();
+
+        // In Export_Entries_Action::__construct()
+        add_action(Export_Entries::BATCH_PROCESSING_HOOK, [$this->export_entries, 'process_export_batch'], 10, 1);
+
+        add_action(Export_Entries::FINALIZE_HOOK, [$this->export_entries, 'finalize_export_file'], 10, 1);
+
+        add_action('swpfe_daily_cleanup', [ $this, 'swpfe_clean_old_exports' ]);
+
+        if ( ! wp_next_scheduled( 'swpfe_daily_cleanup' ) ) {
+            wp_schedule_event( time(), 'daily', 'swpfe_daily_cleanup' );
+        }
     }
 
-    /**
-     * Schedule export entries action.
-     *
-     * @param int    $form_id        The ID of the form to export entries from.
-     * @param string $date_from      Optional start date for filtering entries.
-     * @param string $date_to        Optional end date for filtering entries.
-     * @param array  $exclude_fields Fields to exclude from the export.
-     * @param int    $batch_size     Number of entries to process in each batch.
-     */
-    public static function schedule_export($form_id, $date_from = '', $date_to = '', $exclude_fields = [], $batch_size = 500) {
-        if (empty($form_id) || !is_numeric($form_id)) {
-            error_log('[AEM][Export_Entries_Action] Invalid form ID provided for export.');
-            return;
-        }
-
-        if (!is_array($exclude_fields)) {
-            $exclude_fields = [];
-        }
-
-        error_log(sprintf(
-            '[AEM][Export_Entries_Action] Queuing export for form_id: %d | From: %s | To: %s | Excluded Fields: %s | Batch Size: %d',
-            $form_id,
-            $date_from ?: 'N/A',
-            $date_to ?: 'N/A',
-            implode(', ', $exclude_fields),
-            $batch_size
-        ));
-
-        try {
-            Scheduler::queue_export_batches($form_id, $date_from, $date_to, $exclude_fields, $batch_size);
-            error_log("[AEM][Export_Entries_Action] Export queue triggered successfully for form_id: $form_id");
-        } catch (\Exception $e) {
-            error_log('[AEM][Export_Entries_Action][Error] ' . $e->getMessage());
+    public function swpfe_clean_old_exports() {
+        $dir = wp_upload_dir()['basedir'] . '/swpfe_exports';
+        foreach (glob($dir . '/*.csv') as $file) {
+            if (filemtime($file) < strtotime('-2 days')) {
+                unlink($file);
+            }
         }
     }
 }

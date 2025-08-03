@@ -40,6 +40,11 @@ add_action( 'plugins_loaded', function() {
     new App\AdvancedEntryManager\Api\Route();
     new App\AdvancedEntryManager\Entry_Handler();
     new App\AdvancedEntryManager\Scheduler\Actions\Migrate_Batch();
+    new App\AdvancedEntryManager\Scheduler\Actions\Export_Entries_Action();
+
+    add_action( 'swfe_process_export_batch', function( $args ) {
+        error_log( '[AEM] Processing export batch: ' . print_r( $args, true ) );
+    });
 
     if ( is_admin() ) {
         new App\AdvancedEntryManager\Admin\Admin();

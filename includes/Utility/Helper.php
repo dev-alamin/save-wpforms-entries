@@ -11,6 +11,47 @@ class Helper {
     const OPTION_PREFIX = 'swpfe_';
 
     /**
+     * Set AEM Transient
+     * 
+     * @param string $key
+     * @param mixed $value
+     */
+    public static function set_transient( string $key, $value ): void {
+        set_transient( self::OPTION_PREFIX . $key, $value, HOUR_IN_SECONDS );
+    }
+
+    /**
+     * Get AEM Transient
+     * 
+     * @param string $key
+     * @return mixed
+     */
+    public static function get_transient( string $key ) {
+        return get_transient( self::OPTION_PREFIX . $key );
+    }
+
+    /**
+     * Delete AEM Transient
+     * 
+     * @param string $key
+     */
+    public static function delete_transient( string $key ): void {
+        delete_transient( self::OPTION_PREFIX . $key );
+    }
+
+    /**
+     * Set AEM Error Log
+     * 
+     * @param mixed $data
+     */
+    public static function set_error_log( $data ): void {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            $output = is_scalar( $data ) ? $data : print_r( $data, true );
+            error_log( "[AEM] " . $output );
+        }
+    }
+
+    /**
      * Check if the WPFormsDB table exists.
      *
      * @return bool
@@ -236,64 +277,6 @@ class Helper {
         $code = wp_remote_retrieve_response_code( $response );
 
         return ( $code >= 200 && $code < 300 );
-    }
-
-    /**
-	 * Queue Action Scheduler jobs in batches.
-	 *
-	 * @param string $hook_name The hook to trigger for each batch.
-	 * @param array  $args       Extra args to pass in each scheduled job.
-	 * @param int    $total      Total number of items to process.
-	 * @param int    $batch_size Items per batch.
-	 * @param int    $delay      Delay (in seconds) between each job.
-	 *
-	 * @return int Number of jobs queued.
-	 */
-    public static function queue_export_batches($form_id, $date_from, $date_to, $exclude_fields, $batch_size)
-    {
-        // Calculate total entries to export
-        global $wpdb;
-
-        $where_clauses = ['form_id = %d'];
-        $args = [$form_id];
-
-        if ($date_from) {
-            $where_clauses[] = 'created_at >= %s';
-            $args[] = $date_from;
-        }
-
-        if ($date_to) {
-            $where_clauses[] = 'created_at <= %s';
-            $args[] = $date_to;
-        }
-
-        $where_sql = 'WHERE ' . implode(' AND ', $where_clauses);
-
-        $count_sql = $wpdb->prepare(
-            "SELECT COUNT(*) FROM {$wpdb->prefix}swpfe_entries {$where_sql}",
-            ...$args
-        );
-
-        $total_entries = (int) $wpdb->get_var($count_sql);
-
-        $batches = (int) ceil($total_entries / $batch_size);
-
-        for ($i = 0; $i < $batches; $i++) {
-            // Schedule each batch with Action Scheduler
-            $args = [
-                'form_id'        => $form_id,
-                'date_from'      => $date_from,
-                'date_to'        => $date_to,
-                'exclude_fields' => $exclude_fields,
-                'batch_size'     => $batch_size,
-                'batch_number'   => $i + 1,
-                'offset'         => $i * $batch_size,
-            ];
-
-            if (! as_next_scheduled_action('swpfe_export_csv_batch', [$args])) {
-                as_schedule_single_action(time() + ($i * 15), 'swpfe_export_csv_batch', [$args], 'swpfe_export_csv_group');
-            }
-        }
     }
 
     public static function get_access_token() {

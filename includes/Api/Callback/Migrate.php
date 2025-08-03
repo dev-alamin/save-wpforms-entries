@@ -10,14 +10,14 @@ use App\AdvancedEntryManager\Utility\DB;
 
 class Migrate
 {
-
-    const SOURCE_TABLE       = 'wpforms_db';
-    const TARGET_TABLE       = 'swpfe_entries';
-    const OPTION_LAST_ID     = 'migration_last_id';
-    const OPTION_COMPLETE    = 'migration_complete';
+    const AEM_PREFIX         = 'swpfe_';
+    const SOURCE_TABLE       = self::AEM_PREFIX . 'wpforms_db';
+    const TARGET_TABLE       = self::AEM_PREFIX . 'swpfe_entries';
+    const OPTION_LAST_ID     = self::AEM_PREFIX . 'migration_last_id';
+    const OPTION_COMPLETE    = self::AEM_PREFIX . 'migration_complete';
     const BATCH_SIZE         = 500;
-    const ACTION_HOOK        = 'swpfe_migrate_batch';
-    const SCHEDULE_GROUP     = 'swpfe_migration';
+    const ACTION_HOOK        = self::AEM_PREFIX . 'swpfe_migrate_batch';
+    const SCHEDULE_GROUP     = self::AEM_PREFIX . 'swpfe_migration';
 
     /**
      * Trigger the migration process.
@@ -27,12 +27,12 @@ class Migrate
     public function trigger_migration()
     {
         if (! class_exists('ActionScheduler')) {
-            return new WP_Error('missing_scheduler', __('Action Scheduler not available', 'save-wpf-entries'));
+            return new WP_Error('missing_scheduler', __('Action Scheduler not available', 'advanced-entries-manager-for-wpforms'));
         }
 
         // Prevent triggering if migration already running and not complete
         if (Helper::get_option('swpfe_migration_started_at') && ! Helper::get_option(self::OPTION_COMPLETE)) {
-            return new WP_Error('migration_already_running', __('Migration is already in progress.', 'save-wpf-entries'));
+            return new WP_Error('migration_already_running', __('Migration is already in progress.', 'advanced-entries-manager-for-wpforms'));
         }
 
         // Now safe to reset progress and start fresh
@@ -56,7 +56,7 @@ class Migrate
 
         return rest_ensure_response([
             'success' => true,
-            'message' => __('Migration started in background.', 'save-wpf-entries'),
+            'message' => __('Migration started in background.', 'advanced-entries-manager-for-wpforms'),
             'code'    => 'swpfe_migration_started',
         ]);
     }
@@ -76,12 +76,12 @@ class Migrate
         $source_table = $wpdb->prefix . self::SOURCE_TABLE;
         $target_table = $wpdb->prefix . self::TARGET_TABLE;
 
-        if (! self::table_exists($source_table)) {
+        if (! Helper::is_wpformsdb_table_exists($source_table)) {
             error_log('[SWPFE ERROR] Source table missing: ' . $source_table);
             return;
         }
 
-        if (! self::table_exists($target_table)) {
+        if (! Helper::is_wpformsdb_table_exists($target_table)) {
             error_log('[SWPFE ERROR] Target table missing: ' . $target_table);
             return;
         }
@@ -176,16 +176,6 @@ class Migrate
         ", ARRAY_A);
 
         return rest_ensure_response($results);
-    }
-
-    public static function table_exists($table_name)
-    {
-        global $wpdb;
-        $table_name_like = str_replace('_', '\\_', $table_name); // Escape underscores
-        $result = $wpdb->get_var(
-            $wpdb->prepare("SHOW TABLES LIKE %s", $table_name_like)
-        );
-        return ! empty($result);
     }
 
     public function get_migration_progress()

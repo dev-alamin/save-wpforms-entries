@@ -831,150 +831,240 @@ function settingsForm() {
     },
   };
 }
-
 function exportSettings() {
   return {
+    // Reactive State
     forms: [],
     selectedFormId: "",
     fields: [],
     excludedFields: [],
+    dateFrom: "",
+    dateTo: "",
+    batchSize: 5000, // Default value from PHP
+    isExporting: false,
+    exportJobId: null,
+    exportProgress: 0,
+    exportInterval: null,
+    processedCount: 0, // <--- Add this
+    totalEntries: 0, // <--- Add this
+    isExportComplete: false,
+    
+    // UI State
+    showProgressModal: false,
+    errorMessage: '',
 
     init() {
       console.log("Alpine exportSettings initialized");
       this.fetchForms();
+      
+      // Check for a saved job on page load
+      const savedJobId = localStorage.getItem('swpfe_export_job_id');
+      if (savedJobId) {
+        this.exportJobId = savedJobId;
+        this.isExporting = true;
+        this.startPolling();
+        // Automatically show the modal on reload
+        // this.showProgressModal = true; 
+        console.log(`Resuming export job: ${this.exportJobId}`);
+      }
     },
 
+    // Fetches forms from the REST API
     async fetchForms() {
       try {
         const res = await fetch(
-          `${swpfeSettings.restUrl}aem/v1/forms`,
-          {
-            headers: {
-              "X-WP-Nonce": swpfeSettings.nonce,
-            },
+          `${swpfeSettings.restUrl}aem/v1/forms`, {
+            headers: { "X-WP-Nonce": swpfeSettings.nonce },
           }
         );
         const data = await res.json();
-        console.log("Fetched forms:", data);
-        this.forms = data; // ✅ because your endpoint returns an array, not { forms: [...] }
+        this.forms = data;
       } catch (e) {
         console.error("Error fetching forms:", e);
       }
     },
 
+    // Fetches form fields when a form is selected
     async fetchFormFields() {
-      console.log("Fetching fields for form", this.selectedFormId); // ✅ Add this
-
       if (!this.selectedFormId) {
         this.fields = [];
         this.excludedFields = [];
         return;
       }
-
-      const res = await fetch(
-        `${swpfeSettings.restUrl}aem/v1/forms/${this.selectedFormId}/fields`,
-        {
-          headers: {
-            "X-WP-Nonce": swpfeSettings.nonce,
-          },
-        }
-      );
-      const data = await res.json();
-      console.log("Fetched fields:", data); // ✅ Add this
-
-      this.fields = data.fields;
-      this.excludedFields = [];
+      
+      this.errorMessage = ''; // Clear previous errors
+      try {
+        const res = await fetch(
+          `${swpfeSettings.restUrl}aem/v1/forms/${this.selectedFormId}/fields`, {
+            headers: { "X-WP-Nonce": swpfeSettings.nonce },
+          }
+        );
+        const data = await res.json();
+        this.fields = data.fields;
+        this.excludedFields = [];
+      } catch (e) {
+        console.error("Error fetching form fields:", e);
+        this.errorMessage = "Failed to fetch form fields. Please try again.";
+      }
     },
-    getIncludedFields() {
-      return this.fields.filter((f) => !this.excludedFields.includes(f));
-    },
-    async exportAllBatches() {
+    
+    // Initiates the async export job
+    async exportAllBatchesAsync() {
       if (!this.selectedFormId) {
-        alert( "Please select a form before exporting." );
+        this.errorMessage = "Please select a form before exporting.";
         return;
       }
-
-      const params = new URLSearchParams();
-      params.append("form_id", this.selectedFormId);
-
-      const dateFromEl = document.getElementById("swpfe_export_date_from");
-      const dateToEl = document.getElementById("swpfe_export_date_to");
-      const batch_size = document.getElementById("swpfe_export_limit");
       
+      this.errorMessage = ''; // Clear previous errors
+      this.isExporting = true;
+      this.exportProgress = 0;
+      this.exportJobId = null;
 
-      if (dateFromEl && dateFromEl.value) {
-        params.append("date_from", dateFromEl.value);
-      }
+      const exportData = {
+        form_id: this.selectedFormId,
+        date_from: this.dateFrom,
+        date_to: this.dateTo,
+        batch_size: this.batchSize,
+        exclude_fields: this.excludedFields,
+      };
 
-      if (dateToEl && dateToEl.value) {
-        params.append("date_to", dateToEl.value);
-      }
-
-      const limit = batch_size && batch_size.value ? parseInt(batch_size.value) : 500;
-      params.append("limit", limit);
-
-      if (this.excludedFields.length > 0) {
-        params.append("exclude_fields", this.excludedFields.join(","));
-      }
-
-      let offset = 0;
-      let allCsv = "";
-
-      while (true) {
-        params.set("offset", offset);
-
-        const url = `${
-          swpfeSettings.restUrl
-        }aem/v1/entries/export/full?${params.toString()}`;
-
-        try {
-          const res = await fetch(url, {
-            headers: { "X-WP-Nonce": swpfeSettings.nonce },
-          });
-
-          if (!res.ok) {
-            throw new Error("Network response was not OK");
+      try {
+        const res = await fetch(
+          `${swpfeSettings.restUrl}aem/v1/export/start`, {
+            method: "POST",
+            headers: {
+              "X-WP-Nonce": swpfeSettings.nonce,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(exportData),
           }
+        );
 
-          const batchCsv = await res.text();
-
-          if (offset === 0) {
-            // Keep headers for first batch
-            allCsv += batchCsv;
-          } else {
-            // Remove header line from subsequent batches before appending
-            const lines = batchCsv.split("\n");
-            lines.shift(); // Remove header
-            allCsv += "\n" + lines.join("\n");
-          }
-
-          // If the batch is smaller than limit, no more data
-          if (
-            batchCsv.trim() === "" ||
-            batchCsv.split("\n").length - 1 < limit
-          ) {
-            break;
-          }
-
-          offset += limit;
-        } catch (error) {
-          console.error("Export error:", error);
-          alert('<?php echo esc_js("Failed to export CSV."); ?>');
-          return;
+        const result = await res.json();
+        if (res.ok && result.success) {
+            localStorage.setItem('swpfe_export_job_id', this.exportJobId);
+          this.exportJobId = result.job_id;
+          this.startPolling();
+        } else {
+          throw new Error(result.message || "Failed to queue export job.");
         }
+      } catch (e) {
+        console.error("Export start error:", e);
+        this.errorMessage = e.message;
+        this.resetExportState();
       }
-
-      // Trigger CSV download
-      const blob = new Blob([allCsv], { type: "text/csv" });
-      const downloadUrl = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = downloadUrl;
-      a.download = `wpforms_export_${this.selectedFormId}_${Date.now()}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(downloadUrl);
     },
+
+    // Starts the polling for job progress
+    // In the startPolling() method from the previous response
+startPolling() {
+  if (this.exportInterval) clearInterval(this.exportInterval);
+
+  this.exportInterval = setInterval(async () => {
+    try {
+      const res = await fetch(
+        `${swpfeSettings.restUrl}aem/v1/export/progress?job_id=${encodeURIComponent(this.exportJobId)}`, {
+          headers: { "X-WP-Nonce": swpfeSettings.nonce },
+        }
+      );
+      const result = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(result.message || "Failed to fetch export progress.");
+      }
+      
+      this.exportProgress = result.progress;
+      this.processedCount = result.processed; // <--- Add this
+      this.totalEntries = result.total;       // <--- Add this
+      this.isExporting = true;
+      
+      if (result.status === "complete") {
+        // localStorage.removeItem('swpfe_export_job_id');
+        this.isExportComplete = true;
+        this.handleDownload(result.file_url);
+        this.resetExportState();
+        this.errorMessage = "Export complete! Your download should start shortly.";
+        this.showProgressModal = false; // <--- Close modal on completion
+      }
+      
+      if (result.status === "failed") {
+        throw new Error(result.message || "Export job failed.");
+      }
+      
+    } catch (e) {
+      console.error("Progress polling failed:", e);
+      this.errorMessage = e.message;
+      this.resetExportState();
+      this.showProgressModal = false; // <--- Close modal on failure
+    }
+  }, 3000); // Poll every 3 seconds
+},
+
+    // Handles the file download
+    handleDownload(fileUrl) {
+      if (!fileUrl) {
+        console.error('Download URL not provided.');
+        this.errorMessage = 'Download link not found.';
+        return;
+      }
+      
+      const downloadUrl = `${swpfeSettings.restUrl}aem/v1/export/download?job_id=${encodeURIComponent(this.exportJobId)}`;
+      window.location.href = downloadUrl;
+    },
+
+    // Resets the state variables after a job is complete or fails
+    resetExportState() {
+      if (this.exportInterval) {
+        clearInterval(this.exportInterval);
+        this.exportInterval = null;
+      }
+      this.isExporting = false;
+      this.exportJobId = null;
+      this.exportProgress = 0;
+      localStorage.removeItem('swpfe_export_job_id');
+    },
+
+    // Show progress button handler
+    showExportProgress() {
+      // Instead of an alert, we now set the state to true to open the modal
+      this.showProgressModal = true;
+    },
+    
+    // Close modal handler
+    closeProgressModal() {
+      this.showProgressModal = false;
+    },
+    // In your exportSettings() method
+async deleteExportFile() {
+  if (!confirm('Are you sure you want to delete the export file? This action cannot be undone.')) {
+    return;
+  }
+  
+  this.errorMessage = '';
+  try {
+    const res = await fetch(
+      `${swpfeSettings.restUrl}aem/v1/export/delete?job_id=${encodeURIComponent(this.exportJobId)}`, {
+        method: "POST",
+        headers: {
+          "X-WP-Nonce": swpfeSettings.nonce,
+        },
+      }
+    );
+    
+    const result = await res.json();
+    
+    if (res.ok && result.success) {
+      alert(result.message);
+      this.isExportComplete = false;
+      this.resetExportState();
+    } else {
+      throw new Error(result.message || 'Failed to delete the file.');
+    }
+  } catch (e) {
+    console.error("Delete file error:", e);
+    this.errorMessage = e.message;
+  }
+}
   };
 }
 

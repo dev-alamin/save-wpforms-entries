@@ -10,19 +10,15 @@ class DB {
      * @param string $table_suffix The suffix of the table name (without prefix).
      * @return bool
      */
-    public static function table_exists( string $table_suffix ): bool {
+    public static function table_exists( string $table_name ): bool {
         global $wpdb;
 
-        $full_table = $wpdb->prefix . $table_suffix;
-
-        $exists = $wpdb->get_var(
-            $wpdb->prepare(
-                'SHOW TABLES LIKE %s',
-                $full_table
-            )
+        $table_name_like = str_replace('_', '\\_', $table_name); // Escape underscores
+        $result = $wpdb->get_var(
+            $wpdb->prepare("SHOW TABLES LIKE %s", $table_name_like)
         );
-
-        return $exists === $full_table;
+        
+        return ! empty($result);
     }
 
     /**
