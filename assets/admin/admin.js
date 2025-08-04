@@ -269,14 +269,19 @@ function formTable(form) {
       };
 
       try {
-        const res = await fetch(`${swpfeSettings.restUrl}aem/v1/entries/${payload.id}?form_id=${encodeURIComponent(payload.form_id)}`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-WP-Nonce": swpfeSettings.nonce,
-        },
-        body: JSON.stringify(payload),
-        });
+        const res = await fetch(
+          `${swpfeSettings.restUrl}aem/v1/entries/${
+            payload.id
+          }?form_id=${encodeURIComponent(payload.form_id)}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-WP-Nonce": swpfeSettings.nonce,
+            },
+            body: JSON.stringify(payload),
+          }
+        );
 
         const data = await res.json();
       } catch (error) {
@@ -818,6 +823,7 @@ function settingsForm() {
     },
   };
 }
+
 function exportSettings() {
   return {
     // Reactive State
@@ -827,18 +833,20 @@ function exportSettings() {
     excludedFields: [],
     dateFrom: "",
     dateTo: "",
-    batchSize: 5000, // Default value from PHP
+    batchSize: 5000,
     isExporting: false,
     exportJobId: null,
     exportProgress: 0,
     exportInterval: null,
-    processedCount: 0, // <--- Add this
-    totalEntries: 0, // <--- Add this
+    processedCount: 0,
+    totalEntries: 0,
     isExportComplete: false,
 
     // UI State
     showProgressModal: false,
     errorMessage: "",
+
+    queuedJobs: [],
 
     init() {
       console.log("Alpine exportSettings initialized");
@@ -846,15 +854,56 @@ function exportSettings() {
 
       // Check for a saved job on page load
       const savedJobId = localStorage.getItem("swpfe_export_job_id");
-      if (savedJobId) {
+        if (savedJobId) {
         this.exportJobId = savedJobId;
-        this.isExporting = true;
-        this.startPolling();
-        // Automatically show the modal on reload
-        // this.showProgressModal = true;
-        console.log(`Resuming export job: ${this.exportJobId}`);
-      }
+
+        // Check status before deciding to resume
+        fetch(`${swpfeSettings.restUrl}aem/v1/export/progress?job_id=${encodeURIComponent(savedJobId)}`, {
+            headers: { "X-WP-Nonce": swpfeSettings.nonce },
+        })
+            .then((res) => res.json())
+            .then((result) => {
+            if (result.status === "in_progress") {
+                this.isExporting = true;
+                this.startPolling();
+                console.log(`Resuming export job: ${this.exportJobId}`);
+            } else if (result.status === "complete") {
+                this.isExportComplete = true;
+                this.exportProgress = 100;
+                this.totalEntries = result.total;
+                this.processedCount = result.processed;
+                this.exportJobId = savedJobId;
+                // Don't auto-download again!
+                console.log("Export job was already completed. No polling resumed.");
+            } else {
+                // Invalid or failed job, clean up
+                this.resetExportState();
+                console.log("Old export job is no longer active. Cleaned up.");
+            }
+            })
+            .catch((err) => {
+            console.error("Failed to check export job status on init:", err);
+            this.resetExportState(); // fallback clean
+            });
+        }
+
     },
+    async fetchQueuedJobs() {
+  try {
+    const res = await fetch(`${swpfeSettings.restUrl}aem/v1/export/queued`, {
+      headers: { "X-WP-Nonce": swpfeSettings.nonce },
+    });
+    const result = await res.json();
+    if (res.ok) {
+      this.queuedJobs = result.jobs || [];
+    } else {
+      console.error("Failed to fetch queued jobs:", result.message);
+    }
+  } catch (err) {
+    console.error("Fetch queued jobs error:", err);
+  }
+},
+
 
     // Fetches forms from the REST API
     async fetchForms() {
@@ -877,7 +926,7 @@ function exportSettings() {
         return;
       }
 
-      this.errorMessage = ""; // Clear previous errors
+      this.errorMessage = "";
       try {
         const res = await fetch(
           `${swpfeSettings.restUrl}aem/v1/forms/${this.selectedFormId}/fields`,
@@ -900,8 +949,12 @@ function exportSettings() {
         this.errorMessage = "Please select a form before exporting.";
         return;
       }
+      
+      // CHANGED: Reset state from any previous completed job before starting a new one.
+      this.resetExportState();
+      this.isExportComplete = false;
 
-      this.errorMessage = ""; // Clear previous errors
+      this.errorMessage = "";
       this.isExporting = true;
       this.exportProgress = 0;
       this.exportJobId = null;
@@ -926,8 +979,9 @@ function exportSettings() {
 
         const result = await res.json();
         if (res.ok && result.success) {
-          localStorage.setItem("swpfe_export_job_id", this.exportJobId);
           this.exportJobId = result.job_id;
+          // CHANGED: Set localStorage item *after* receiving the job_id.
+          localStorage.setItem("swpfe_export_job_id", this.exportJobId);
           this.startPolling();
         } else {
           throw new Error(result.message || "Failed to queue export job.");
@@ -935,12 +989,11 @@ function exportSettings() {
       } catch (e) {
         console.error("Export start error:", e);
         this.errorMessage = e.message;
-        this.resetExportState();
+        this.resetExportState(); // Reset only on failure
       }
     },
 
     // Starts the polling for job progress
-    // In the startPolling() method from the previous response
     startPolling() {
       if (this.exportInterval) clearInterval(this.exportInterval);
 
@@ -965,18 +1018,27 @@ function exportSettings() {
           }
 
           this.exportProgress = result.progress;
-          this.processedCount = result.processed; // <--- Add this
-          this.totalEntries = result.total; // <--- Add this
-          this.isExporting = true;
+          this.processedCount = result.processed;
+          this.totalEntries = result.total;
+          
+          if (result.status !== "complete" && result.status !== "failed") {
+              this.isExporting = true;
+          }
 
           if (result.status === "complete") {
-            // localStorage.removeItem('swpfe_export_job_id');
+            // CHANGED: Major logic change here. Do not reset the full state.
+            // Just stop polling and set the completion flags.
+            // The exportJobId is intentionally kept to allow re-download/delete.
+            clearInterval(this.exportInterval);
+            this.exportInterval = null;
+            this.isExporting = false;
             this.isExportComplete = true;
-            this.handleDownload(result.file_url);
-            this.resetExportState();
-            this.errorMessage =
-              "Export complete! Your download should start shortly.";
-            this.showProgressModal = false; // <--- Close modal on completion
+            this.exportProgress = 100; // Ensure it shows 100%
+
+            this.handleDownload(result.file_url); // Trigger the download
+            
+            this.errorMessage = "Export complete! Your download should start shortly.";
+            this.showProgressModal = false; // Close modal on completion
           }
 
           if (result.status === "failed") {
@@ -985,27 +1047,27 @@ function exportSettings() {
         } catch (e) {
           console.error("Progress polling failed:", e);
           this.errorMessage = e.message;
-          this.resetExportState();
-          this.showProgressModal = false; // <--- Close modal on failure
+          this.resetExportState(); // Full reset is correct for a failure
+          this.showProgressModal = false;
         }
       }, 3000); // Poll every 3 seconds
     },
 
     // Handles the file download
     handleDownload(fileUrl) {
-      if (!fileUrl) {
-        console.error("Download URL not provided.");
-        this.errorMessage = "Download link not found.";
+      if (!this.exportJobId) {
+        console.error("No export job ID found for download.");
+        this.errorMessage = "Cannot download file: Export Job ID is missing.";
         return;
       }
-
+      // This implementation is fine. It uses a dedicated endpoint which is good practice.
       const downloadUrl = `${
         swpfeSettings.restUrl
       }aem/v1/export/download?job_id=${encodeURIComponent(this.exportJobId)}`;
-      window.location.href = downloadUrl;
+      window.open(downloadUrl);
     },
 
-    // Resets the state variables after a job is complete or fails
+    // Resets the state variables. Called on new export, on failure, or after deletion.
     resetExportState() {
       if (this.exportInterval) {
         clearInterval(this.exportInterval);
@@ -1014,20 +1076,20 @@ function exportSettings() {
       this.isExporting = false;
       this.exportJobId = null;
       this.exportProgress = 0;
+      this.processedCount = 0;
+      this.totalEntries = 0;
+      // Note: isExportComplete is NOT reset here. It's handled separately.
       localStorage.removeItem("swpfe_export_job_id");
     },
 
-    // Show progress button handler
     showExportProgress() {
-      // Instead of an alert, we now set the state to true to open the modal
       this.showProgressModal = true;
     },
 
-    // Close modal handler
     closeProgressModal() {
       this.showProgressModal = false;
     },
-    // In your exportSettings() method
+
     async deleteExportFile() {
       if (
         !confirm(
@@ -1056,7 +1118,8 @@ function exportSettings() {
         if (res.ok && result.success) {
           alert(result.message);
           this.isExportComplete = false;
-          this.resetExportState();
+          // This is a correct place to call resetExportState.
+          this.resetExportState(); 
         } else {
           throw new Error(result.message || "Failed to delete the file.");
         }

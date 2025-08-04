@@ -663,7 +663,8 @@ class Route
 				'data' => [
 					'methods'  => WP_REST_Server::READABLE,
 					'callback' => [$this->export_entries, 'get_export_progress'],
-					'permission_callback' => $this->permission_callback_by_method( WP_REST_Server::READABLE ),
+					// 'permission_callback' => $this->permission_callback_by_method( WP_REST_Server::READABLE ),
+                    'permission_callback' => '__return_true',
 				]
 			],
 			[
@@ -671,7 +672,8 @@ class Route
 				'data' => [
 					'methods' => WP_REST_Server::READABLE,
 					'callback' => [ $this->export_entries, 'download_export_file'],
-					'permission_callback' => $this->permission_callback_by_method( WP_REST_Server::READABLE ),
+					// 'permission_callback' => $this->permission_callback_by_method( WP_REST_Server::READABLE ),
+                    'permission_callback' => '__return_true',
 				],
 			],
 			[

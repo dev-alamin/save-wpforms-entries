@@ -152,7 +152,6 @@ class Export_Entries
         $job_state = Helper::get_transient($transient_key);
 
         if (false === $job_state || $job_state['status'] === 'complete') {
-            // Job is already done or transient expired, so we stop.
             return;
         }
         
@@ -161,7 +160,7 @@ class Export_Entries
         Helper::set_transient($transient_key, $job_state, DAY_IN_SECONDS);
 
         global $wpdb;
-        $target_table = Helper::get_table_name(); // e.g., 'aemfw_entries_manager'
+        $target_table = Helper::get_table_name();
 
         // Build query to fetch the current batch
         $query_args = [];
@@ -186,24 +185,41 @@ class Export_Entries
         );
         $entries = $wpdb->get_results($entries_query, ARRAY_A);
 
-        if (!empty($entries)) {
-            $this->write_batch_to_csv($job_id, $job_state['page'], $entries, $job_state['filters']['exclude_fields']);
-            $job_state['processed_count'] += count($entries);
+        if (empty($entries)) {
+            // No entries found for this page, means we are done.
+            // This can happen if the total entries is an exact multiple of the batch size.
+            as_schedule_single_action(
+                time() + 5,
+                self::FINALIZE_HOOK,
+                ['job_id' => $job_id],
+                self::SCHEDULE_GROUP
+            );
+            return;
         }
 
-        // Check if there are more entries to process
+        // Process the entries and update the count
+        $this->write_batch_to_csv($job_id, $job_state['page'], $entries, $job_state['filters']['exclude_fields']);
+        $job_state['processed_count'] += count($entries);
+
+        // Check if there might be more entries
         if (count($entries) === $job_state['batch_size']) {
             // Schedule the next batch
             $job_state['page']++;
-            Helper::set_transient($transient_key, $job_state, DAY_IN_SECONDS);
+            
+            // Save state before scheduling the next job
+            Helper::set_transient($transient_key, $job_state, DAY_IN_SECONDS); 
+            
             as_schedule_single_action(
-                time() + 5, // 5-second delay to avoid server strain
+                time() + 5,
                 self::BATCH_PROCESSING_HOOK,
                 ['job_id' => $job_id],
                 self::SCHEDULE_GROUP
             );
         } else {
-            // This was the last batch, schedule the finalization job.
+            // This was the last batch. Save the final state.
+            Helper::set_transient($transient_key, $job_state, DAY_IN_SECONDS); 
+            
+            // Now schedule the finalization job.
             as_schedule_single_action(
                 time() + 5,
                 self::FINALIZE_HOOK,
