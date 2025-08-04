@@ -11,10 +11,6 @@
 namespace App\AdvancedEntryManager\Core;
 
 class Capabilities {
-    public function __construct()
-    {
-        add_action( 'admin_init', [ $this, 'add_cap' ] );
-    }
     /**
      * Adds custom WPForms entry management capabilities to the administrator role.
      *
@@ -35,16 +31,45 @@ class Capabilities {
         }
 
         $capabilities = [
-            'can_create_wpf_entries',
-            'can_edit_wpf_entries',
-            'can_delete_wpf_entries',
-            'can_view_wpf_entries',
-            'can_manage_wpf_entries',
+            'can_create_aemfw_entries',
+            'can_edit_aemfw_entries',
+            'can_delete_aemfw_entries',
+            'can_view_aemfw_entries',
+            'can_manage_aemfw_entries',
         ];
 
         foreach( $capabilities as $cap ) {
             if( ! $role->has_cap( $cap ) ) {
                 $role->add_cap( $cap );
+            }
+        }
+    }
+
+    /**
+     * Removes custom capabilities from the 'administrator' role.
+     *
+     * This method is called when the plugin is deactivated to clean up capabilities.
+     *
+     * @return void
+     */
+    public function remove_cap() {
+        $role = get_role( 'administrator' );
+
+        if( ! $role ) {
+            return;
+        }
+
+        $capabilities = [
+            'can_create_aemfw_entries',
+            'can_edit_aemfw_entries',
+            'can_delete_aemfw_entries',
+            'can_view_aemfw_entries',
+            'can_manage_aemfw_entries',
+        ];
+
+        foreach( $capabilities as $cap ) {
+            if( $role->has_cap( $cap ) ) {
+                $role->remove_cap( $cap );
             }
         }
     }

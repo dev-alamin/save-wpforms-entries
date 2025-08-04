@@ -17,7 +17,7 @@ class Admin_Notice
 
         add_action('admin_notices', [$this, 'rest_disabled_notice']);
 
-        add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), [ $this, 'plugin_action_links' ] );
+        add_filter( 'plugin_action_links_' . AEMFW_PLUGIN_BASE, [ $this, 'plugin_action_links' ] );
     }
 
     /**

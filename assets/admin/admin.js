@@ -269,13 +269,13 @@ function formTable(form) {
       };
 
       try {
-        const res = await fetch(`${swpfeSettings.restUrl}aem/v1/entries`, {
-          method: "POST",
-          headers: {
+        const res = await fetch(`${swpfeSettings.restUrl}aem/v1/entries/${payload.id}?form_id=${encodeURIComponent(payload.form_id)}`, {
+        method: "POST",
+        headers: {
             "Content-Type": "application/json",
             "X-WP-Nonce": swpfeSettings.nonce,
-          },
-          body: JSON.stringify(payload),
+        },
+        body: JSON.stringify(payload),
         });
 
         const data = await res.json();
@@ -1097,7 +1097,7 @@ function migrationHandler() {
       if (!this.entryFetchStarted) {
         this.entryFetchStarted = true;
 
-        fetch(`${swpfeSettings.restUrl}aem/v1/legacy-source/count`, {
+        fetch(`${swpfeSettings.restUrl}aem/v1/legacy/source/count`, {
           headers: { "X-WP-Nonce": swpfeSettings.nonce },
         })
           .then((res) => {

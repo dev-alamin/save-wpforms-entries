@@ -1,14 +1,33 @@
 <?php
+
 namespace App\AdvancedEntryManager;
 
 defined( 'ABSPATH' ) || exit;
 
 use App\AdvancedEntryManager\Core\DB_Schema;
 use App\AdvancedEntryManager\Api\Route;
-use App\AdvancedEntryManager\Core\Entry_Handler;
-use App\AdvancedEntryManager\Scheduler\Actions\Migrate_Batch;
+use App\AdvancedEntryManager\Core\Submit_Entry;
+use App\AdvancedEntryManager\Scheduler\Actions\Migrate_Batch_Action;
 use App\AdvancedEntryManager\Scheduler\Actions\Export_Entries_Action;
 use App\AdvancedEntryManager\Admin\Admin;
+
+// Import All Routes' Callback Classes
+use App\AdvancedEntryManager\Api\Callback\Bulk_Action;
+use App\AdvancedEntryManager\Api\Callback\Get_Entries;
+use App\AdvancedEntryManager\Api\Callback\Get_Forms;
+use App\AdvancedEntryManager\Api\Callback\Update_Entries;
+use App\AdvancedEntryManager\Api\Callback\Create_Entries;
+use App\AdvancedEntryManager\Api\Callback\Export_Entries;
+use App\AdvancedEntryManager\Api\Callback\Delete_Single_Entry;
+use App\AdvancedEntryManager\Api\Callback\Migrate;
+
+// Import All Core Classes
+use App\AdvancedEntryManager\Assets;
+use App\AdvancedEntryManager\Admin\Options;
+use App\AdvancedEntryManager\Admin\Menu;
+use App\AdvancedEntryManager\Core\Capabilities;
+use App\AdvancedEntryManager\Admin\Admin_Notice;
+
 
 /**
  * Bootstrap Plugin for the Advanced Entries Manager plugin.
@@ -43,8 +62,13 @@ class Plugin
 
         register_activation_hook(__FILE__, function () {
             DB_Schema::create_table();
+
+            (new Capabilities())->add_cap();
         });
 
+        register_deactivation_hook(__FILE__, function () {
+            (new Capabilities())->remove_cap();
+        });
     }
 
     /**
@@ -86,29 +110,43 @@ class Plugin
          * Route class will handle API endpoints along with loading callback for the plugin.
          * It registers routes for managing entries, exporting data, and other functionalities.
          */
-        new Route();
+        new Route(
+            new Bulk_Action(),
+            new Get_Entries(),
+            new Get_Forms(),
+            new Update_Entries(),
+            new Create_Entries(),
+            new Export_Entries(),
+            new Delete_Single_Entry(),
+            new Migrate()
+        );
 
         /**
-         * Entry_Handler class will manage the entries to save from WPFORMS submission to our table.
+         * Submit_Entry class will manage the entries to save from WPFORMS submission to our table.
          * It usage respective hooks to catch the data.
          */
-        new Entry_Handler();
+        new Submit_Entry();
 
         /**
          * Scheduler Actions for batch processing and exporting entries.
          * Migrate_Batch handles the migration of entries in batches.
          * Export_Entries_Action handles the export of entries to CSV or other formats.
          */
-        new Migrate_Batch();
+        new Migrate_Batch_Action( new Migrate() );
 
         /**
          * Action Scheduler for exporting entries.
          */
-        new Export_Entries_Action();
+        new Export_Entries_Action( new Export_Entries() );
 
         // If in admin area, load the Admin class for managing entries and settings
         if ( is_admin() ) {
-            new Admin();
+            new Admin(
+                new Assets(),
+                new Options(),
+                new Menu(),
+                new Admin_Notice(),
+            );
         }
     }
 }

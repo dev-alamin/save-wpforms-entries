@@ -30,8 +30,6 @@ class Menu {
 
             wp_send_json_success(['message' => 'Saved']);
         });
-
-
     }
 
     public function register_settings(){

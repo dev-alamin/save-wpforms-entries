@@ -1,6 +1,6 @@
 <?php
 /**
- * Entry_Handler Class
+ * Submit_Entry Class
  *
  * Captures and saves WPForms form entries into a custom database table
  * for further processing, display, or external integration.
@@ -17,15 +17,26 @@
 
 namespace App\AdvancedEntryManager\Core;
 
-use App\AdvancedEntryManager\DB_Handler;
 use App\AdvancedEntryManager\Utility\Helper;
 
-class Entry_Handler {
+/**
+ * Class Submit_Entry
+ *
+ * Handles saving WPForms entries to a custom database table.
+ */
+class Submit_Entry {
 	public function __construct() {
 		add_action( 'wpforms_process_entry_save', [ $this, 'save_entry' ], 10, 3 );
 		add_action( 'wpforms_process_complete', [ $this, 'update_meta_fields' ], 10, 4 );
 	}
 
+    /**
+     * Save the entry data into the custom table.
+     *
+     * @param array $fields The fields submitted in the form.
+     * @param array $entry The entry data from WPForms.
+     * @param int $form_id The ID of the form being submitted.
+     */
 	public function save_entry( $fields, $entry, $form_id ) {
 		global $wpdb;
 

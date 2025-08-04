@@ -9,9 +9,9 @@ use App\AdvancedEntryManager\Api\Callback\Get_Forms;
 use App\AdvancedEntryManager\Api\Callback\Update_Entries;
 use App\AdvancedEntryManager\Api\Callback\Create_Entries;
 use App\AdvancedEntryManager\Api\Callback\Export_Entries;
-use App\AdvancedEntryManager\Api\Callback\Get_Form_Fields;
 use App\AdvancedEntryManager\Api\Callback\Delete_Single_Entry;
 use App\AdvancedEntryManager\Api\Callback\Migrate;
+
 use App\AdvancedEntryManager\Utility\Helper;
 
 /**
@@ -40,48 +40,49 @@ class Route
 	 * @var Bulk_Action
 	 */
 	protected $bulk_action;
+
 	/**
 	 * Callback instances for handling various API routes.
 	 *
 	 * @var Get_Entries
 	 */
 	protected $get_entries;
+
 	/**
 	 * Callback instances for handling various API routes.
 	 *
 	 * @var Get_Forms
 	 */
 	protected $get_forms;
+
 	/**
 	 * Callback instances for handling various API routes.
 	 *
 	 * @var Update_Entries
 	 */
 	protected $update_entries;
+
 	/**
 	 * Callback instances for handling various API routes.
 	 *
 	 * @var Create_Entries
 	 */
 	protected $create_entries;
+
 	/**
 	 * Callback instances for handling various API routes.
 	 *
 	 * @var Export_Entries
 	 */
 	protected $export_entries;
-	/**
-	 * Callback instances for handling various API routes.
-	 *
-	 * @var Get_Form_Fields
-	 */
-	protected $get_form_fields;
+
 	/**
 	 * Callback instances for handling various API routes.
 	 *
 	 * @var Delete_Single_Entry
 	 */
 	protected $delete_single_entry;
+
 	/**
 	 * Callback instances for handling migration from WPFormsDB plugin.
 	 *
@@ -101,36 +102,52 @@ class Route
 	 *
 	 * Registers the REST API routes on initialization.
 	 */
-	public function __construct()
+	public function __construct(
+        Bulk_Action $bulk_action,
+        Get_Entries $get_entries,
+        Get_Forms $get_forms,
+        Update_Entries $update_entries,
+        Create_Entries $create_entries,
+        Export_Entries $export_entries,
+        Delete_Single_Entry $delete_single_entry,
+        Migrate $migrate
+    )
 	{
-		add_action('rest_api_init', [$this, 'register_route']);
+		add_action('rest_api_init', [$this, 'register_routes']);
 
-		$this->bulk_action         = new Bulk_Action();
-		$this->get_entries         = new Get_Entries();
-		$this->get_forms           = new Get_Forms();
-		$this->update_entries      = new Update_Entries();
-		$this->create_entries      = new Create_Entries();
-		$this->export_entries      = new Export_Entries();
-		$this->get_form_fields     = new Get_Form_Fields();
-		$this->delete_single_entry = new Delete_Single_Entry();
-		$this->migrate             = new Migrate();
+		$this->bulk_action         = $bulk_action;
+		$this->get_entries         = $get_entries;
+		$this->get_forms           = $get_forms;
+		$this->update_entries      = $update_entries;
+		$this->create_entries      = $create_entries;
+		$this->export_entries      = $export_entries;
+		$this->delete_single_entry = $delete_single_entry;
+		$this->migrate             = $migrate;
 	}
 
 	/**
 	 * Registers all REST API routes for the Save WPForms Entries plugin.
 	 * 
 	 * This method defines routes for managing form entries, including:
-	 * - Fetching entries with filters and pagination
-	 * - Creating new entries
-	 * - Fetching single entry
-	 * - Retrieving form metadata
-	 * - Updating existing entries
-	 * - Deleting entries
-	 * - Checking for new entries
-	 * - Performing bulk actions on entries
-	 * - Exporting entries to CSV
-	 * - Retrieving form fields
-	 * - Exporting entries to CSV with various filters
+	 * 
+	 * - Fetching entries with filters and pagination       (/entries)
+	 * - Creating new entries                               (/entries)
+	 * - Fetching single entry                              (/entries/(?P<id>\d+))
+	 * - Retrieving form metadata                           (/forms)
+	 * - Updating existing entries                          (/entries/(?P<id>\d+))
+	 * - Deleting entries                                   (/entries/(?P<id>\d+))
+	 * - Performing bulk actions on entries                 (/entries/bulk)
+	 * - Exporting entries to CSV                           (/export/bulk)
+	 * - Retrieving form fields                             (/forms/(?P<form_id>\d+)/fields)
+	 * - Exporting full dataset                             (/entries/export/full)
+	 * - Migrating data from WPFormsDB plugin               (/legacy/source/count)
+	 * - Starting data migration                            (/migration/trigger)
+	 * - Checking migration progress                        (/migration/progress)
+	 * - Starting export jobs                               (/export/start)
+	 * - Downloading export files                           (/download-csv)
+	 * - Monitoring export progress                         (/export/progress)
+	 * - Downloading export result                          (/export/download)
+	 * - Deleting export files                              (/export/delete)
 	 * 
 	 * Each route uses proper permission callbacks ensuring only authorized users
 	 * (typically admins with 'manage_options') can perform operations.
@@ -140,7 +157,7 @@ class Route
 	 * 
 	 * @return void
 	 */
-	public function register_route()
+	private function get_all_routes()
 	{
 		$data = [
 			// Route: GET /entries - List entries with filtering and pagination
@@ -149,10 +166,7 @@ class Route
 				'data' => [
 					'methods'  => WP_REST_Server::READABLE,
 					'callback' => [$this->get_entries, 'get_entries'],
-					// 'permission_callback' => function () {
-					//     return current_user_can('manage_options') && is_user_logged_in();
-					// },
-					'validation_callback' => '__return_true',
+					'permission_callback' => $this->permission_callback_by_method( WP_REST_Server::READABLE ),
 					'args' => [
 						'per_page' => [
 							'description'       => __('Number of entries per page.', 'advanced-entries-manager-for-wpforms'),
@@ -217,9 +231,7 @@ class Route
 				'data' => [
 					'methods'             => WP_REST_Server::CREATABLE,
 					'callback'            => [$this->create_entries, 'create_entries'],
-					'permission_callback' => function () {
-						return current_user_can('manage_options') && is_user_logged_in();
-					},
+					'permission_callback' => $this->permission_callback_by_method( WP_REST_Server::CREATABLE ),
 					'args' => [
 						'form_id' => [
 							'description'       => __('Form ID for the entry.', 'advanced-entries-manager-for-wpforms'),
@@ -310,9 +322,7 @@ class Route
 				'data'  => [
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => [$this->get_forms, 'get_forms'],
-					'permission_callback' => function () {
-						return current_user_can('manage_options') && is_user_logged_in();
-					},
+					'permission_callback' => $this->permission_callback_by_method( WP_REST_Server::READABLE),
 				],
 			],
 
@@ -322,10 +332,7 @@ class Route
 				'data' => [
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => [$this->get_forms, 'get_forms'],
-					'permission_callback' => function () {
-						return current_user_can('manage_options') && is_user_logged_in();
-					},
-					// 'permission_callback' => '__return_true',
+					'permission_callback' => $this->permission_callback_by_method(WP_REST_Server::READABLE),
 				],
 			],
 
@@ -334,10 +341,8 @@ class Route
 				'route' => '/entries/(?P<id>\d+)',
 				'data' => [
 					'methods'             => WP_REST_Server::EDITABLE,
-					'callback'            => [$this->update_entries, 'update_entries'],
-					'permission_callback' => function () {
-						return current_user_can('manage_options') && is_user_logged_in();
-					},
+					'callback'            => [$this->update_entries, 'update_entry'],
+					'permission_callback' => $this->permission_callback_by_method( WP_REST_Server::EDITABLE ),
 					'args' => [
 						'id' => [
 							'description'       => __('Entry ID to update.', 'advanced-entries-manager-for-wpforms'),
@@ -450,9 +455,7 @@ class Route
 				'data'  => [
 					'methods'             => WP_REST_Server::DELETABLE,
 					'callback'            => [$this->delete_single_entry, 'delete_entry'],
-					'permission_callback' => function () {
-						return current_user_can('manage_options') && is_user_logged_in();
-					},
+					'permission_callback' => $this->permission_callback_by_method( WP_REST_Server::DELETABLE ),
 					'args' => [
 						'id' => [
 							'required'          => true,
@@ -471,44 +474,13 @@ class Route
 					],
 				],
 			],
-			// [
-			//     'route' => '/entries/check-new',
-			//     'data' => [
-			//         'methods' => WP_REST_Server::READABLE,
-			//         'callback' => [$this, 'check_new'],
-			//         'permission_callback' => function () {
-			//             return current_user_can('manage_options') && is_user_logged_in();
-			//         },
-			//         // 'permission_callback' => '__return_true',
-			//         'args' => [
-			//             'form_id' => [
-			//                 'required' => true,
-			//                 'type'     => 'integer',
-			//                 'sanitize_callback' => 'absint',
-			//                 'validate_callback' => function ($param) {
-			//                     return $param > 0;
-			//                 },
-			//             ],
-			//             'last_seen_id' => [
-			//                 'required' => true,
-			//                 'type'     => 'integer',
-			//                 'sanitize_callback' => 'absint',
-			//                 'validate_callback' => function ($param) {
-			//                     return $param > 0;
-			//                 },
-			//             ],
-			//         ],
-			//     ],
-			// ],
+            // Route for bulk actions
 			[
 				'route' => '/entries/bulk',
 				'data' => [
 					'methods'  => WP_REST_Server::EDITABLE,
 					'callback' => [$this->bulk_action, 'bulk_actions'],
-					// 'permission_callback' => function () {
-					//     return current_user_can('manage_options') && is_user_logged_in();
-					// },
-					'permission_callback' => '__return_true',
+					'permission_callback' => $this->permission_callback_by_method( WP_REST_Server::EDITABLE ),
 					'args' => [
 						'ids' => [
 							'required' => true,
@@ -546,11 +518,8 @@ class Route
 				'route' => '/export/bulk',
 				'data' => [
 					'methods' => WP_REST_Server::CREATABLE,
-					'callback' => [$this->export_entries, 'export_entries_csv_bulk'],
-					// 'permission_callback' => function () {
-					//     return current_user_can('manage_options');
-					// },
-					'permission_callback' => '__return_true',
+					'callback' => [$this->bulk_action, 'export_entries_csv_bulk'],
+					'permission_callback' => $this->permission_callback_by_method( WP_REST_Server::CREATABLE ),
 					'args' => [
 						'ids' => [
 							'required' => true,
@@ -563,11 +532,8 @@ class Route
 				'route' => '/forms/(?P<form_id>\d+)/fields',
 				'data' => [
 					'methods'  => WP_REST_Server::READABLE,
-					'callback' => [$this->get_form_fields, 'get_form_fields'],
-					// 'permission_callback' => function () {
-					//     return current_user_can('manage_options');
-					// },
-					'permission_callback' => '__return_true',
+					'callback' => [$this->get_forms, 'get_form_fields'],
+					'permission_callback' => $this->permission_callback_by_method( WP_REST_Server::READABLE ),
 				],
 			],
 			[
@@ -575,10 +541,7 @@ class Route
 				'data' => [
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => [$this->export_entries, 'export_csv_full_now'],
-					// 'permission_callback' => function() {
-					//     return current_user_can( 'manage_options' ); // adjust capability
-					// },
-					'permission_callback' => '__return_true',
+					'permission_callback' => $this->permission_callback_by_method( WP_REST_Server::READABLE ),
 					'args' => [
 						'form_id' => [
 							'required' => true,
@@ -624,14 +587,11 @@ class Route
 			],
 
 			[
-				'route' => '/legacy-source/count',
+				'route' => '/legacy/source/count',
 				'data' => [
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => [$this->migrate, 'wpformsdb_data'],
-					// 'permission_callback' => function () {
-					//     return current_user_can('manage_options') && is_user_logged_in();
-					// },
-					'permission_callback' => '__return_true',
+					'permission_callback' => $this->permission_callback_by_method( WP_REST_Server::READABLE ),
 				],
 			],
 			[
@@ -642,10 +602,7 @@ class Route
 						$migrate = new \App\AdvancedEntryManager\Api\Callback\Migrate();
 						return $migrate->trigger_migration();
 					},
-					// 'permission_callback' => function() {
-					//     return current_user_can( 'manage_options' );
-					// },
-					'permission_callback' => '__return_true',
+					'permission_callback' => $this->permission_callback_by_method( WP_REST_Server::CREATABLE ),
 				]
 			],
 			[
@@ -653,21 +610,15 @@ class Route
 				'data' => [
 					'methods'  => WP_REST_Server::READABLE,
 					'callback' => [$this->migrate, 'get_migration_progress'],
-					// 'permission_callback' => function () {
-					//     return current_user_can('manage_options');
-					// },
-					'permission_callback' => '__return_true',
+					'permission_callback' => $this->permission_callback_by_method( WP_REST_Server::READABLE ),
 				],
 			],
 			[
 				'route' => '/export/start',
 				'data' => [
-					'methods'             => 'POST',
+					'methods'             => WP_REST_Server::CREATABLE,
 					'callback'            => [$this->export_entries, 'start_export_job'],
-					// 'permission_callback' => function () {
-					// 	return current_user_can('manage_options');
-					// },
-					'permission_callback' => '__return_true',
+					'permission_callback' => $this->permission_callback_by_method( WP_REST_Server::CREATABLE ),
 					'args'                => [
 						'form_id' => [
 							'required' => true,
@@ -698,7 +649,7 @@ class Route
 				'data' => [
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => [$this->export_entries, 'download_csv_file'],
-					'permission_callback' => '__return_true',
+					'permission_callback' => $this->permission_callback_by_method( WP_REST_Server::READABLE ),
 					'args'                => [
 						'job_id' => [
 							'required' => true,
@@ -712,10 +663,7 @@ class Route
 				'data' => [
 					'methods'  => WP_REST_Server::READABLE,
 					'callback' => [$this->export_entries, 'get_export_progress'],
-					// 'permission_callback' => function () {
-					// 	return current_user_can('manage_options'); // Adjust permission as needed
-					// },
-					'permission_callback' => '__return_true',
+					'permission_callback' => $this->permission_callback_by_method( WP_REST_Server::READABLE ),
 				]
 			],
 			[
@@ -723,10 +671,7 @@ class Route
 				'data' => [
 					'methods' => WP_REST_Server::READABLE,
 					'callback' => [ $this->export_entries, 'download_export_file'],
-					// 'permission_callback' => function () {
-					//     return current_user_can('manage_options');
-					// },
-					'permission_callback' => '__return_true',
+					'permission_callback' => $this->permission_callback_by_method( WP_REST_Server::READABLE ),
 				],
 			],
 			[
@@ -734,16 +679,61 @@ class Route
 				'data' => [
 					'methods' => WP_REST_Server::CREATABLE,
 					'callback' => [ $this->export_entries, 'delete_export_file'],
-					'permission_callback' => function () {
-						return current_user_can('manage_options');
-					},
+					'permission_callback' => $this->permission_callback_by_method( WP_REST_Server::READABLE ),
 				]
 			]
 		];
 
-		// Register each route
-		foreach ($data as $item) {
+        /**
+         * Filter to allow other plugins to add custom routes.
+         * 
+         * This filter can be used to extend the existing routes
+         * or to add new routes for custom functionality.
+         */
+        $data = apply_filters('aemfw_api_routes', $data);
+
+		return $data;
+	}
+
+    /**
+     * Registers all REST API routes defined in this class.
+     * 
+     * This method iterates through the routes defined in get_all_routes()
+     * and registers each route with WordPress's REST API.
+     * 
+     * @return void
+     */
+    public function register_routes()
+    {
+
+        $data = $this->get_all_routes();
+
+        foreach ((array)$data as $item) {
 			register_rest_route($this->namespace, $item['route'], $item['data']);
 		}
-	}
+    }
+
+    /**
+     * Permission callback for the REST API routes.
+     * 
+     * This method checks the current user's capabilities
+     * based on the requested method of the route.
+     * 
+     * @return bool True if the user has permission, false otherwise.
+     */
+    private function permission_callback_by_method(string $method)
+    {
+        $map = [
+            WP_REST_Server::CREATABLE => 'can_create_aemfw_entries',
+            WP_REST_Server::EDITABLE  => 'can_edit_aemfw_entries',
+            WP_REST_Server::DELETABLE => 'can_delete_aemfw_entries',
+            WP_REST_Server::READABLE  => 'can_view_aemfw_entries',
+        ];
+
+        $capability = $map[$method] ?? 'can_manage_aemfw_entries';
+
+        return function () use ($capability) {
+            return current_user_can($capability) && is_user_logged_in();
+        };
+    }
 }

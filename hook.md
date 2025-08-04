@@ -133,4 +133,25 @@ $rows = apply_filters('swpfe_check_new_entries', $rows, $form_id, $last_id, $req
     * @param string $sql The SQL query to create the entries table.
     * @return string Modified SQL query.
     */
-$sql = apply_filters('aemfw_create_entries_table_sql', $sql);
+$sql = apply_filters( 'aemfw_create_entries_table_sql', $sql );
+
+### Capabilities
+
+The following custom capabilities are available for managing entries:
+
+- `can_create_aemfw_entries` — Allows creating new entries.
+- `can_edit_aemfw_entries` — Allows editing existing entries.
+- `can_delete_aemfw_entries` — Allows deleting entries.
+- `can_view_aemfw_entries` — Allows viewing entries.
+- `can_manage_aemfw_entries` — Allows managing all entry-related actions.
+
+Assign these capabilities to user roles as needed to control access.
+
+### aemfw_api_routes
+/**
+    * Filter to allow other plugins to add custom routes.
+    * 
+    * This filter can be used to extend the existing routes
+    * or to add new routes for custom functionality.
+    */
+$data = apply_filters('aemfw_api_routes', $data);

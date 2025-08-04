@@ -86,6 +86,14 @@ if( ! defined( 'AEMFW_TABLE_NAME' ) ) {
     define( 'AEMFW_TABLE_NAME', 'aemfw_entries_manager' );
 }
 
+/**
+ * Define the plugin base path for use in various functionalities.
+ * 
+ * This is used to ensure that the plugin's base path is consistent across the plugin.
+ * It is also used in the plugin's main file to ensure that the plugin is loaded correctly
+ */
+define( 'AEMFW_PLUGIN_BASE', plugin_basename( __FILE__ ) );
+
 use App\AdvancedEntryManager\Plugin;
 
 /**
@@ -99,3 +107,20 @@ function aemfw_init() {
 
 // Kick-off the plugin initialization
 aemfw_init();
+
+// Print all capabilities of the current user for debugging purposes
+// if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+//     add_action( 'admin_init', function() {
+//         $current_user = wp_get_current_user();
+//         if ( $current_user ) {
+//             echo '<pre>';
+//             echo 'Current User Capabilities:';
+//             print_r( $current_user->allcaps );
+//             echo '</pre>';
+//         } else {
+//             echo '<pre>';
+//             echo 'No current user found.';
+//             echo '</pre>';
+//         }
+//     } );
+// }

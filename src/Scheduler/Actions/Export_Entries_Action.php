@@ -7,8 +7,8 @@ class Export_Entries_Action {
 
     protected $export_entries;
 
-    public function __construct() {
-        $this->export_entries = new Export_Entries();
+    public function __construct( Export_Entries $export_entries ) {
+        $this->export_entries = $export_entries;
 
         // In Export_Entries_Action::__construct()
         add_action(Export_Entries::BATCH_PROCESSING_HOOK, [$this->export_entries, 'process_export_batch'], 10, 1);

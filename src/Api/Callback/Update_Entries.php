@@ -22,7 +22,7 @@ class Update_Entries {
      * @param WP_REST_Request $request The REST request object.
      * @return WP_REST_Response
      */
-    public function update_entries(WP_REST_Request $request)
+    public function update_entry(WP_REST_Request $request)
     {
         global $wpdb;
         $table = Helper::get_table_name();
