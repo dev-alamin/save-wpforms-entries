@@ -33,3 +33,14 @@ body.wpforms-entries_page_swpfe-migration  {
 [x-cloak] {
     display: none !important;
 }
+
+@media (max-width: 639px) {
+  .hide-on-mobile {
+    display: none !important;
+  }
+}
+@media (min-width: 640px) {
+  .hide-on-mobile {
+    display: block !important;
+  }
+}

@@ -37,49 +37,51 @@
 
     <!-- Migration Prompt -->
     <?php
+
     use App\AdvancedEntryManager\Utility\Helper;
-    if ( Helper::table_exists( '' ) && ! Helper::get_option( 'migration_complete' ) ) : ?>
-    <div
-        x-data="{ showMigrationNotice: true }"
-        x-show="showMigrationNotice"
-        x-transition
-        class="mb-6 border border-yellow-400 bg-yellow-50 text-yellow-800 rounded-lg p-4 shadow-sm">
 
-        <div class="flex items-center justify-between gap-4">
-            <div class="flex-1">
-                <h2 class="text-lg font-semibold mb-1 flex items-center gap-2">
-                    <!-- Material Icon: inventory -->
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-yellow-700" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M20 2H4C2.9 2 2 2.9 2 4v4c0 1.1.9 2 2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 8H4V4h16v6z"/>
-                    </svg>
-                    <span x-text="swpfeMigrationNotice.title"></span>
-                </h2>
-                <p class="text-sm" x-html="swpfeMigrationNotice.message"></p>
-            </div>
+    if (Helper::table_exists('') && ! Helper::get_option('migration_complete')) : ?>
+        <div
+            x-data="{ showMigrationNotice: true }"
+            x-show="showMigrationNotice"
+            x-transition
+            class="mb-6 border border-yellow-400 bg-yellow-50 text-yellow-800 rounded-lg p-4 shadow-sm">
 
-            <div class="flex gap-2">
-                <button
-                    @click="window.location.href = '<?php echo esc_url(admin_url('admin.php?page=swpfe-migration')); ?>'"
-                    class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md transition">
-                    <!-- Material Icon: rocket_launch -->
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M20 2c-2 0-3.94.79-5.38 2.21l-1.44 1.44 4.24 4.24 1.44-1.44C21.21 8.94 22 7 22 5c0-1.1-.9-2-2-2zm-8.49 4.91l-7.07 7.07c-.28.28-.49.63-.61 1.01l-1.82 5.55c-.18.56.37 1.1.93.93l5.55-1.82c.38-.12.73-.33 1.01-.61l7.07-7.07-4.06-4.06zM5 20h4v2H5v-2z"/>
-                    </svg>
-                    <span x-text="swpfeMigrationNotice.start"></span>
-                </button>
+            <div class="flex items-center justify-between gap-4">
+                <div class="flex-1">
+                    <h2 class="text-lg font-semibold mb-1 flex items-center gap-2">
+                        <!-- Material Icon: inventory -->
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-yellow-700" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 2H4C2.9 2 2 2.9 2 4v4c0 1.1.9 2 2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 8H4V4h16v6z" />
+                        </svg>
+                        <span x-text="swpfeMigrationNotice.title"></span>
+                    </h2>
+                    <p class="text-sm" x-html="swpfeMigrationNotice.message"></p>
+                </div>
 
-                <button
-                    @click="showMigrationNotice = false"
-                    class="text-sm text-gray-600 hover:text-gray-900 transition"
-                    :aria-label="swpfeMigrationNotice.dismissAlt">
-                    <!-- Material Icon: close -->
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-                    </svg>
-                </button>
+                <div class="flex gap-2">
+                    <button
+                        @click="window.location.href = '<?php echo esc_url(admin_url('admin.php?page=swpfe-migration')); ?>'"
+                        class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md transition">
+                        <!-- Material Icon: rocket_launch -->
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M20 2c-2 0-3.94.79-5.38 2.21l-1.44 1.44 4.24 4.24 1.44-1.44C21.21 8.94 22 7 22 5c0-1.1-.9-2-2-2zm-8.49 4.91l-7.07 7.07c-.28.28-.49.63-.61 1.01l-1.82 5.55c-.18.56.37 1.1.93.93l5.55-1.82c.38-.12.73-.33 1.01-.61l7.07-7.07-4.06-4.06zM5 20h4v2H5v-2z" />
+                        </svg>
+                        <span x-text="swpfeMigrationNotice.start"></span>
+                    </button>
+
+                    <button
+                        @click="showMigrationNotice = false"
+                        class="text-sm text-gray-600 hover:text-gray-900 transition"
+                        :aria-label="swpfeMigrationNotice.dismissAlt">
+                        <!-- Material Icon: close -->
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                        </svg>
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
 
     <?php endif; ?>
 
@@ -90,15 +92,15 @@
             <!-- Clickable Form Header -->
             <div
                 @click="toggleOpen()"
-                class="cursor-pointer bg-gradient-to-r from-indigo-50 via-purple-100 to-pink-50 px-6 rounded-xl shadow border border-gray-300 flex items-center justify-between hover:shadow-lg transition duration-200 group"
+                class="cursor-pointer bg-gradient-to-r from-indigo-50 via-purple-100 to-pink-50 px-4 sm:px-4 sm:py-4 rounded-xl shadow border border-gray-300 flex flex-col sm:flex-row items-start sm:items-center justify-between hover:shadow-lg transition duration-200 group"
                 role="button"
                 tabindex="0"
                 @keydown.enter.prevent="toggleOpen()"
                 aria-expanded="false"
                 :aria-expanded="open.toString()"
                 :aria-controls="'entries-table-' + form.form_id">
-                <div class="flex items-center gap-4">
-                    <div class="shrink-0 bg-indigo-100 text-indigo-600 rounded-xl p-2" aria-hidden="true">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
+                    <div class="shrink-0 bg-indigo-100 text-indigo-600 rounded-xl p-2 mb-2 hide-on-mobile" aria-hidden="true">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                             <path stroke-linecap="round" stroke-linejoin="round"
                                 d="M9 17v-2a4 4 0 014-4h7M9 17a4 4 0 01-4-4V7a4 4 0 014-4h11a4 4 0 014 4v6a4 4 0 01-4 4H9z" />
@@ -106,8 +108,8 @@
                     </div>
 
                     <div>
-                        <h2 class="text-2xl font-semibold text-gray-800" x-text="form.form_title"></h2>
-                        <p class="text-sm text-gray-600 font-medium">
+                        <h2 class="text-xl sm:text-2xl font-semibold text-gray-800" x-text="form.form_title"></h2>
+                        <p class="text-xs sm:text-sm text-gray-600 font-medium">
                             🆔 <strong><?php esc_html_e('Form ID:', 'advanced-entries-manager-for-wpforms'); ?></strong> <span x-text="form.form_id"></span> &nbsp; | &nbsp;
                             📌 <strong><?php esc_html_e('Total Entries:', 'advanced-entries-manager-for-wpforms'); ?></strong>
                             <span
@@ -120,7 +122,7 @@
                     </div>
                 </div>
 
-                <div class="text-sm font-medium flex items-center gap-1 px-2 py-1 rounded-md text-indigo-700 transition cursor-pointer select-none">
+                <div class="text-sm font-medium flex items-center gap-1 px-2 py-1 rounded-md text-indigo-700 transition cursor-pointer select-none mb-4 sm:mb-0 sm:mt-0 w-full sm:w-auto justify-center sm:justify-start">
                     <span x-show="!open" class="group-hover:underline" aria-hidden="true">
                         <?php esc_html_e('Click to view entries', 'advanced-entries-manager-for-wpforms'); ?>
                     </span>
@@ -140,6 +142,7 @@
                 </div>
             </div>
 
+
             <!-- Entries Table -->
             <div
                 x-show="open"
@@ -148,26 +151,23 @@
                 :id="'entries-table-' + form.form_id"
                 role="region"
                 aria-live="polite"
-                aria-label="<?php esc_attr_e('Entries table for form', 'advanced-entries-manager-for-wpforms'); ?>">
-                <div class="bg-white shadow-md rounded-xl overflow-hidden border border-gray-200">
+                aria-label="<?php esc_attr_e('Entries table for form', 'advanced-entries-manager-for-wpforms'); ?>"
+                class="overflow-x-auto">
+                <div class="bg-white shadow-md rounded-xl overflow-hidden border border-gray-200 min-w-[600px]">
                     <?php include __DIR__ . '/table/filter-section.php'; ?>
 
                     <!-- Header Row -->
                     <div
-                        class="items-center px-6 py-3 bg-gray-100 border-b border-gray-300 text-sm font-semibold text-gray-700 uppercase tracking-wide"
+                        class="items-center px-4 py-3 bg-gray-100 border-b border-gray-300 text-sm font-semibold text-gray-700 uppercase tracking-wide"
                         style="display: grid; grid-template-columns: 50px 1fr 150px 150px 250px;"
                         role="row">
 
                         <div role="columnheader">
-                            <!-- <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1f1f1f">
-                                    <path d="M240-360h280l80-80H240v80Zm0-160h240v-80H240v80Zm-80-160v400h280l-80 80H80v-560h800v120h-80v-40H160Zm756 212q5 5 5 11t-5 11l-36 36-70-70 36-36q5-5 11-5t11 5l48 48ZM520-120v-70l266-266 70 70-266 266h-70ZM160-680v400-400Z"/>
-                                </svg> -->
                             <input
                                 type="checkbox"
                                 id="bulk_action_main"
                                 @change="toggleSelectAll($event)"
                                 class="cursor-pointer" />
-
                         </div>
 
                         <div role="columnheader"><?php esc_html_e('Email', 'advanced-entries-manager-for-wpforms'); ?></div>
@@ -191,8 +191,8 @@
                                     bgClasses[i % bgClasses.length],
                                     entry.status === 'unread' ? 'font-bold' : 'font-normal',
                                     entry.is_spam == 1 ? 'bg-red-50 opacity-50' : '',
-                                    ]"
-                                class="grid items-center px-6 text-sm text-gray-800 border-b border-gray-100 hover:bg-gray-50"
+                                ]"
+                                class="grid items-center px-4 text-sm text-gray-800 border-b border-gray-100 hover:bg-gray-50"
                                 style="grid-template-columns: 50px 1fr 150px 150px 250px;"
                                 role="row">
                                 <input
@@ -202,10 +202,9 @@
                                     @click="handleCheckbox($event, entry.id)"
                                     class="cursor-pointer" />
 
-
-                                <div class="py-4 cursor-pointer" title="<?php echo esc_attr__('Click for details', 'advanced-entries-manager-for-wpforms'); ?>" @click="showEntry(i)" x-text="entry.email || '-'"></div>
-                                <div class="py-4 text-center" x-text="timeAgo(entry.date)" :title="entry.date"></div>
-                                <div class="py-4 text-center">
+                                <div class="py-3 cursor-pointer truncate" title="<?php echo esc_attr__('Click for details', 'advanced-entries-manager-for-wpforms'); ?>" @click="showEntry(i)" x-text="entry.email || '-'"></div>
+                                <div class="py-3 text-center whitespace-nowrap" x-text="timeAgo(entry.date)" :title="entry.date"></div>
+                                <div class="py-3 text-center">
                                     <span
                                         class="inline-block px-3 py-1 rounded-full text-xs font-semibold"
                                         :class="entry.status === 'unread' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'"
@@ -236,6 +235,7 @@
                     <?php include __DIR__ . '/table/pagination.php'; ?>
                 </div>
             </div>
+
             <!-- Entries Table -->
             <!-- Entry Modal -->
             <?php include __DIR__ . '/modal.php'; ?>
@@ -256,5 +256,25 @@
 
     <!-- If no forms available -->
     <?php include __DIR__ . '/empty-page.php'; ?>
+
+    <!-- Powered by Message  -->
+    <div class="mt-8 border-t border-slate-300 pt-4 text-center text-gray-500 text-sm select-none flex items-center justify-center gap-2">
+        <svg
+            class="w-5 h-5 text-indigo-500"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+            focusable="false">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+        <span>
+            Powered by <a href="https://entriesmanager.com/" target="_blank" rel="noopener noreferrer" class="font-semibold text-indigo-600 hover:text-indigo-700 transition">Advanced Entries Manager</a>
+        </span>
+    </div>
+    <!-- Powered by message ends -->
+
 </div>
 <?php do_action('swpfe_after_entries_ui'); ?>
