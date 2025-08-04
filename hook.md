@@ -124,3 +124,13 @@ return apply_filters('swpfe_get_entries_response', $response, $request);
     * @param WP_REST_Request $request The original REST request.
     */
 $rows = apply_filters('swpfe_check_new_entries', $rows, $form_id, $last_id, $request);
+
+### aemfw_create_entries_table_sql
+/**
+    * Filter the SQL query for creating the entries table.
+    * 
+    * This allows developers to modify the SQL query before it is executed.
+    * @param string $sql The SQL query to create the entries table.
+    * @return string Modified SQL query.
+    */
+$sql = apply_filters('aemfw_create_entries_table_sql', $sql);

@@ -1,4 +1,3 @@
-
 function formTable(form) {
   return {
     open: false,
@@ -270,17 +269,14 @@ function formTable(form) {
       };
 
       try {
-        const res = await fetch(
-          `${swpfeSettings.restUrl}aem/v1/entries`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-WP-Nonce": swpfeSettings.nonce,
-            },
-            body: JSON.stringify(payload),
-          }
-        );
+        const res = await fetch(`${swpfeSettings.restUrl}aem/v1/entries`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-WP-Nonce": swpfeSettings.nonce,
+          },
+          body: JSON.stringify(payload),
+        });
 
         const data = await res.json();
       } catch (error) {
@@ -292,20 +288,17 @@ function formTable(form) {
       if (!this.selectedEntry) return;
 
       try {
-        const response = await fetch(
-          `${swpfeSettings.restUrl}aem/v1/entries`,
-          {
-            method: "DELETE",
-            headers: {
-              "Content-Type": "application/json",
-              "X-WP-Nonce": swpfeSettings.nonce,
-            },
-            body: JSON.stringify({
-              id: this.selectedEntry.id,
-              form_id: this.selectedEntry.form_id,
-            }),
-          }
-        );
+        const response = await fetch(`${swpfeSettings.restUrl}aem/v1/entries`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            "X-WP-Nonce": swpfeSettings.nonce,
+          },
+          body: JSON.stringify({
+            id: this.selectedEntry.id,
+            form_id: this.selectedEntry.form_id,
+          }),
+        });
 
         const data = await response.json();
 
@@ -377,17 +370,14 @@ function formTable(form) {
       };
 
       try {
-        const res = await fetch(
-          `${swpfeSettings.restUrl}aem/v1/entries`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-WP-Nonce": swpfeSettings.nonce,
-            },
-            body: JSON.stringify(payload),
-          }
-        );
+        const res = await fetch(`${swpfeSettings.restUrl}aem/v1/entries`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-WP-Nonce": swpfeSettings.nonce,
+          },
+          body: JSON.stringify(payload),
+        });
 
         const data = await res.json();
 
@@ -607,14 +597,11 @@ function entriesApp() {
     async fetchForms() {
       this.loading = true;
       try {
-        const res = await fetch(
-          `${swpfeSettings.restUrl}aem/v1/forms`,
-          {
-            headers: {
-              "X-WP-Nonce": swpfeSettings.nonce,
-            },
-          }
-        );
+        const res = await fetch(`${swpfeSettings.restUrl}aem/v1/forms`, {
+          headers: {
+            "X-WP-Nonce": swpfeSettings.nonce,
+          },
+        });
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data = await res.json();
         this.forms = data;
@@ -848,23 +835,23 @@ function exportSettings() {
     processedCount: 0, // <--- Add this
     totalEntries: 0, // <--- Add this
     isExportComplete: false,
-    
+
     // UI State
     showProgressModal: false,
-    errorMessage: '',
+    errorMessage: "",
 
     init() {
       console.log("Alpine exportSettings initialized");
       this.fetchForms();
-      
+
       // Check for a saved job on page load
-      const savedJobId = localStorage.getItem('swpfe_export_job_id');
+      const savedJobId = localStorage.getItem("swpfe_export_job_id");
       if (savedJobId) {
         this.exportJobId = savedJobId;
         this.isExporting = true;
         this.startPolling();
         // Automatically show the modal on reload
-        // this.showProgressModal = true; 
+        // this.showProgressModal = true;
         console.log(`Resuming export job: ${this.exportJobId}`);
       }
     },
@@ -872,11 +859,9 @@ function exportSettings() {
     // Fetches forms from the REST API
     async fetchForms() {
       try {
-        const res = await fetch(
-          `${swpfeSettings.restUrl}aem/v1/forms`, {
-            headers: { "X-WP-Nonce": swpfeSettings.nonce },
-          }
-        );
+        const res = await fetch(`${swpfeSettings.restUrl}aem/v1/forms`, {
+          headers: { "X-WP-Nonce": swpfeSettings.nonce },
+        });
         const data = await res.json();
         this.forms = data;
       } catch (e) {
@@ -891,11 +876,12 @@ function exportSettings() {
         this.excludedFields = [];
         return;
       }
-      
-      this.errorMessage = ''; // Clear previous errors
+
+      this.errorMessage = ""; // Clear previous errors
       try {
         const res = await fetch(
-          `${swpfeSettings.restUrl}aem/v1/forms/${this.selectedFormId}/fields`, {
+          `${swpfeSettings.restUrl}aem/v1/forms/${this.selectedFormId}/fields`,
+          {
             headers: { "X-WP-Nonce": swpfeSettings.nonce },
           }
         );
@@ -907,15 +893,15 @@ function exportSettings() {
         this.errorMessage = "Failed to fetch form fields. Please try again.";
       }
     },
-    
+
     // Initiates the async export job
     async exportAllBatchesAsync() {
       if (!this.selectedFormId) {
         this.errorMessage = "Please select a form before exporting.";
         return;
       }
-      
-      this.errorMessage = ''; // Clear previous errors
+
+      this.errorMessage = ""; // Clear previous errors
       this.isExporting = true;
       this.exportProgress = 0;
       this.exportJobId = null;
@@ -929,20 +915,18 @@ function exportSettings() {
       };
 
       try {
-        const res = await fetch(
-          `${swpfeSettings.restUrl}aem/v1/export/start`, {
-            method: "POST",
-            headers: {
-              "X-WP-Nonce": swpfeSettings.nonce,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(exportData),
-          }
-        );
+        const res = await fetch(`${swpfeSettings.restUrl}aem/v1/export/start`, {
+          method: "POST",
+          headers: {
+            "X-WP-Nonce": swpfeSettings.nonce,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(exportData),
+        });
 
         const result = await res.json();
         if (res.ok && result.success) {
-            localStorage.setItem('swpfe_export_job_id', this.exportJobId);
+          localStorage.setItem("swpfe_export_job_id", this.exportJobId);
           this.exportJobId = result.job_id;
           this.startPolling();
         } else {
@@ -957,58 +941,67 @@ function exportSettings() {
 
     // Starts the polling for job progress
     // In the startPolling() method from the previous response
-startPolling() {
-  if (this.exportInterval) clearInterval(this.exportInterval);
+    startPolling() {
+      if (this.exportInterval) clearInterval(this.exportInterval);
 
-  this.exportInterval = setInterval(async () => {
-    try {
-      const res = await fetch(
-        `${swpfeSettings.restUrl}aem/v1/export/progress?job_id=${encodeURIComponent(this.exportJobId)}`, {
-          headers: { "X-WP-Nonce": swpfeSettings.nonce },
+      this.exportInterval = setInterval(async () => {
+        try {
+          const res = await fetch(
+            `${
+              swpfeSettings.restUrl
+            }aem/v1/export/progress?job_id=${encodeURIComponent(
+              this.exportJobId
+            )}`,
+            {
+              headers: { "X-WP-Nonce": swpfeSettings.nonce },
+            }
+          );
+          const result = await res.json();
+
+          if (!res.ok) {
+            throw new Error(
+              result.message || "Failed to fetch export progress."
+            );
+          }
+
+          this.exportProgress = result.progress;
+          this.processedCount = result.processed; // <--- Add this
+          this.totalEntries = result.total; // <--- Add this
+          this.isExporting = true;
+
+          if (result.status === "complete") {
+            // localStorage.removeItem('swpfe_export_job_id');
+            this.isExportComplete = true;
+            this.handleDownload(result.file_url);
+            this.resetExportState();
+            this.errorMessage =
+              "Export complete! Your download should start shortly.";
+            this.showProgressModal = false; // <--- Close modal on completion
+          }
+
+          if (result.status === "failed") {
+            throw new Error(result.message || "Export job failed.");
+          }
+        } catch (e) {
+          console.error("Progress polling failed:", e);
+          this.errorMessage = e.message;
+          this.resetExportState();
+          this.showProgressModal = false; // <--- Close modal on failure
         }
-      );
-      const result = await res.json();
-      
-      if (!res.ok) {
-        throw new Error(result.message || "Failed to fetch export progress.");
-      }
-      
-      this.exportProgress = result.progress;
-      this.processedCount = result.processed; // <--- Add this
-      this.totalEntries = result.total;       // <--- Add this
-      this.isExporting = true;
-      
-      if (result.status === "complete") {
-        // localStorage.removeItem('swpfe_export_job_id');
-        this.isExportComplete = true;
-        this.handleDownload(result.file_url);
-        this.resetExportState();
-        this.errorMessage = "Export complete! Your download should start shortly.";
-        this.showProgressModal = false; // <--- Close modal on completion
-      }
-      
-      if (result.status === "failed") {
-        throw new Error(result.message || "Export job failed.");
-      }
-      
-    } catch (e) {
-      console.error("Progress polling failed:", e);
-      this.errorMessage = e.message;
-      this.resetExportState();
-      this.showProgressModal = false; // <--- Close modal on failure
-    }
-  }, 3000); // Poll every 3 seconds
-},
+      }, 3000); // Poll every 3 seconds
+    },
 
     // Handles the file download
     handleDownload(fileUrl) {
       if (!fileUrl) {
-        console.error('Download URL not provided.');
-        this.errorMessage = 'Download link not found.';
+        console.error("Download URL not provided.");
+        this.errorMessage = "Download link not found.";
         return;
       }
-      
-      const downloadUrl = `${swpfeSettings.restUrl}aem/v1/export/download?job_id=${encodeURIComponent(this.exportJobId)}`;
+
+      const downloadUrl = `${
+        swpfeSettings.restUrl
+      }aem/v1/export/download?job_id=${encodeURIComponent(this.exportJobId)}`;
       window.location.href = downloadUrl;
     },
 
@@ -1021,7 +1014,7 @@ startPolling() {
       this.isExporting = false;
       this.exportJobId = null;
       this.exportProgress = 0;
-      localStorage.removeItem('swpfe_export_job_id');
+      localStorage.removeItem("swpfe_export_job_id");
     },
 
     // Show progress button handler
@@ -1029,42 +1022,49 @@ startPolling() {
       // Instead of an alert, we now set the state to true to open the modal
       this.showProgressModal = true;
     },
-    
+
     // Close modal handler
     closeProgressModal() {
       this.showProgressModal = false;
     },
     // In your exportSettings() method
-async deleteExportFile() {
-  if (!confirm('Are you sure you want to delete the export file? This action cannot be undone.')) {
-    return;
-  }
-  
-  this.errorMessage = '';
-  try {
-    const res = await fetch(
-      `${swpfeSettings.restUrl}aem/v1/export/delete?job_id=${encodeURIComponent(this.exportJobId)}`, {
-        method: "POST",
-        headers: {
-          "X-WP-Nonce": swpfeSettings.nonce,
-        },
+    async deleteExportFile() {
+      if (
+        !confirm(
+          "Are you sure you want to delete the export file? This action cannot be undone."
+        )
+      ) {
+        return;
       }
-    );
-    
-    const result = await res.json();
-    
-    if (res.ok && result.success) {
-      alert(result.message);
-      this.isExportComplete = false;
-      this.resetExportState();
-    } else {
-      throw new Error(result.message || 'Failed to delete the file.');
-    }
-  } catch (e) {
-    console.error("Delete file error:", e);
-    this.errorMessage = e.message;
-  }
-}
+
+      this.errorMessage = "";
+      try {
+        const res = await fetch(
+          `${
+            swpfeSettings.restUrl
+          }aem/v1/export/delete?job_id=${encodeURIComponent(this.exportJobId)}`,
+          {
+            method: "POST",
+            headers: {
+              "X-WP-Nonce": swpfeSettings.nonce,
+            },
+          }
+        );
+
+        const result = await res.json();
+
+        if (res.ok && result.success) {
+          alert(result.message);
+          this.isExportComplete = false;
+          this.resetExportState();
+        } else {
+          throw new Error(result.message || "Failed to delete the file.");
+        }
+      } catch (e) {
+        console.error("Delete file error:", e);
+        this.errorMessage = e.message;
+      }
+    },
   };
 }
 
@@ -1097,12 +1097,9 @@ function migrationHandler() {
       if (!this.entryFetchStarted) {
         this.entryFetchStarted = true;
 
-        fetch(
-          `${swpfeSettings.restUrl}aem/v1/legacy-source/count`,
-          {
-            headers: { "X-WP-Nonce": swpfeSettings.nonce },
-          }
-        )
+        fetch(`${swpfeSettings.restUrl}aem/v1/legacy-source/count`, {
+          headers: { "X-WP-Nonce": swpfeSettings.nonce },
+        })
           .then((res) => {
             if (!res.ok) throw new Error("Failed to fetch entry counts");
             return res.json();
