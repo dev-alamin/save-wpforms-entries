@@ -845,8 +845,8 @@ function exportSettings() {
     // UI State
     showProgressModal: false,
     errorMessage: "",
-
-    queuedJobs: [],
+    isOntheGoExport: false,
+    formTitle: "",
 
     init() {
       console.log("Alpine exportSettings initialized");
@@ -854,56 +854,15 @@ function exportSettings() {
 
       // Check for a saved job on page load
       const savedJobId = localStorage.getItem("swpfe_export_job_id");
-        if (savedJobId) {
+      if (savedJobId) {
         this.exportJobId = savedJobId;
-
-        // Check status before deciding to resume
-        fetch(`${swpfeSettings.restUrl}aem/v1/export/progress?job_id=${encodeURIComponent(savedJobId)}`, {
-            headers: { "X-WP-Nonce": swpfeSettings.nonce },
-        })
-            .then((res) => res.json())
-            .then((result) => {
-            if (result.status === "in_progress") {
-                this.isExporting = true;
-                this.startPolling();
-                console.log(`Resuming export job: ${this.exportJobId}`);
-            } else if (result.status === "complete") {
-                this.isExportComplete = true;
-                this.exportProgress = 100;
-                this.totalEntries = result.total;
-                this.processedCount = result.processed;
-                this.exportJobId = savedJobId;
-                // Don't auto-download again!
-                console.log("Export job was already completed. No polling resumed.");
-            } else {
-                // Invalid or failed job, clean up
-                this.resetExportState();
-                console.log("Old export job is no longer active. Cleaned up.");
-            }
-            })
-            .catch((err) => {
-            console.error("Failed to check export job status on init:", err);
-            this.resetExportState(); // fallback clean
-            });
-        }
-
+        this.isExporting = true;
+        this.startPolling();
+        // CHANGED: Automatically show the modal on reload for better UX.
+        // this.showProgressModal = true;
+        console.log(`Resuming export job: ${this.exportJobId}`);
+      }
     },
-    async fetchQueuedJobs() {
-  try {
-    const res = await fetch(`${swpfeSettings.restUrl}aem/v1/export/queued`, {
-      headers: { "X-WP-Nonce": swpfeSettings.nonce },
-    });
-    const result = await res.json();
-    if (res.ok) {
-      this.queuedJobs = result.jobs || [];
-    } else {
-      console.error("Failed to fetch queued jobs:", result.message);
-    }
-  } catch (err) {
-    console.error("Fetch queued jobs error:", err);
-  }
-},
-
 
     // Fetches forms from the REST API
     async fetchForms() {
@@ -949,7 +908,7 @@ function exportSettings() {
         this.errorMessage = "Please select a form before exporting.";
         return;
       }
-      
+
       // CHANGED: Reset state from any previous completed job before starting a new one.
       this.resetExportState();
       this.isExportComplete = false;
@@ -977,19 +936,44 @@ function exportSettings() {
           body: JSON.stringify(exportData),
         });
 
+        const contentType = res.headers.get("content-type");
+
+        if (contentType.includes("text/csv")) {
+          const text = await res.text();
+          this.isOntheGoExport = true;
+
+          if (text.startsWith("id,") && text.includes("\n")) {
+            const blob = new Blob([text], { type: "text/csv" });
+            const url = window.URL.createObjectURL(blob);
+
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `aem-entries-${this.formTitle}-${Date.now()}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+            this.exportProgress = 100;
+            this.isExportComplete = true;
+            return; // Done: no polling needed
+          } else {
+            throw new Error("Invalid CSV content.");
+          }
+        }
+
         const result = await res.json();
+
         if (res.ok && result.success) {
           this.exportJobId = result.job_id;
-          // CHANGED: Set localStorage item *after* receiving the job_id.
           localStorage.setItem("swpfe_export_job_id", this.exportJobId);
           this.startPolling();
         } else {
-          throw new Error(result.message || "Failed to queue export job.");
+          throw new Error(result.message || "Failed to start export.");
         }
       } catch (e) {
         console.error("Export start error:", e);
         this.errorMessage = e.message;
-        this.resetExportState(); // Reset only on failure
+        this.resetExportState();
       }
     },
 
@@ -1020,9 +1004,9 @@ function exportSettings() {
           this.exportProgress = result.progress;
           this.processedCount = result.processed;
           this.totalEntries = result.total;
-          
+
           if (result.status !== "complete" && result.status !== "failed") {
-              this.isExporting = true;
+            this.isExporting = true;
           }
 
           if (result.status === "complete") {
@@ -1036,8 +1020,9 @@ function exportSettings() {
             this.exportProgress = 100; // Ensure it shows 100%
 
             this.handleDownload(result.file_url); // Trigger the download
-            
-            this.errorMessage = "Export complete! Your download should start shortly.";
+
+            this.errorMessage =
+              "Export complete! Your download should start shortly.";
             this.showProgressModal = false; // Close modal on completion
           }
 
@@ -1064,7 +1049,7 @@ function exportSettings() {
       const downloadUrl = `${
         swpfeSettings.restUrl
       }aem/v1/export/download?job_id=${encodeURIComponent(this.exportJobId)}`;
-      window.open(downloadUrl);
+      window.open(downloadUrl, "_blank");
     },
 
     // Resets the state variables. Called on new export, on failure, or after deletion.
@@ -1119,7 +1104,7 @@ function exportSettings() {
           alert(result.message);
           this.isExportComplete = false;
           // This is a correct place to call resetExportState.
-          this.resetExportState(); 
+          this.resetExportState();
         } else {
           throw new Error(result.message || "Failed to delete the file.");
         }

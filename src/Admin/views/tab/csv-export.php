@@ -70,13 +70,18 @@
         <button
             type="button"
             class="w-full md:w-auto px-6 py-2 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700 transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 !important"
-            :disabled="!selectedFormId || isExporting"
+            :disabled="(!selectedFormId || isExporting) && !isOntheGoExport"
             @click="exportAllBatchesAsync">
-            <template x-if="!isExporting">
+            <template x-if="isOntheGoExport">
+                <span>
+                    <?php esc_html_e( 'Start Exporting', 'advanced-entries-manager-for-wpforms' ); ?>
+                </span>
+            </template>
+            <template x-if="!isExporting && !isOntheGoExport">
                 <span><?php esc_html_e('Start Exporting', 'advanced-entries-manager-for-wpforms'); ?></span>
             </template>
 
-            <template x-if="isExporting">
+            <template x-if="isExporting && !isOntheGoExport">
                 <span>Exporting... <span x-text="exportProgress.toFixed(1) + '%'"></span></span>
             </template>
         </button>
@@ -84,7 +89,7 @@
         <button
             type="button"
             class="w-full md:w-auto px-6 py-2 font-semibold rounded-md transition focus:outline-none focus:ring-2 focus:ring-offset-2"
-            x-show="isExporting || isExportComplete"
+            x-show="(isExporting || isExportComplete) && !isOntheGoExport"
             @click="isExportComplete ? handleDownload() : showExportProgress()"
             :class="{
             'border border-indigo-600 text-indigo-600 hover:bg-indigo-100 focus:ring-indigo-500': !isExportComplete,
@@ -96,49 +101,11 @@
         <button
             type="button"
             class="w-full md:w-auto px-6 py-2 border border-red-600 text-red-600 font-semibold rounded-md hover:bg-red-100 transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-            x-show="isExportComplete"
+            x-show="isExportComplete && !isOntheGoExport"
             @click="deleteExportFile">
             <?php esc_html_e('Delete Export File', 'advanced-entries-manager-for-wpforms'); ?>
         </button>
     </div>
-
-
-<!-- NEW: Queued/Completed Export Jobs -->
-<div class="mt-8">
-  <h3 class="text-lg font-semibold text-gray-700 mb-2">Queued Exports</h3>
-  
-  <template x-if="queuedJobs.length > 0">
-    <div class="space-y-3">
-      <template x-for="job in queuedJobs" :key="job.job_id">
-        <div class="flex items-center justify-between border p-4 rounded-md bg-gray-50">
-          <div>
-            <div class="font-medium text-gray-800" x-text="'🧾 Form: ' + job.form_name + ' (ID: ' + job.form_id + ')'"></div>
-            <div class="text-sm text-gray-500" x-text="'Status: ' + job.status + (job.progress ? ' | Progress: ' + job.progress + '%' : '')"></div>
-          </div>
-          <div class="flex gap-2">
-            <button
-              type="button"
-              class="px-4 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
-              :disabled="job.status !== 'complete'"
-              @click="handleDownload(job.job_id)">
-              Download
-            </button>
-            <button
-              type="button"
-              class="px-4 py-1 bg-red-100 text-red-600 text-sm rounded hover:bg-red-200"
-              @click="deleteExportFile(job.job_id)">
-              Delete
-            </button>
-          </div>
-        </div>
-      </template>
-    </div>
-  </template>
-
-  <template x-if="queuedJobs.length === 0">
-    <div class="text-gray-500 text-sm">No queued exports found.</div>
-  </template>
-</div>
 
     <div
         x-show="showProgressModal"

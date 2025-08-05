@@ -124,3 +124,43 @@ aemfw_init();
 //         }
 //     } );
 // }
+
+/**
+ * A debugging utility to unschedule all pending export jobs.
+ *
+ * To use: visit a URL like yoursite.com/wp-admin/?stop_export_jobs=true
+ *
+ * @return void
+ */
+function stop_all_export_jobs_for_debug() {
+    // Check for a specific GET parameter and ensure the user is an admin
+    if (isset($_GET['stop_export_jobs']) && current_user_can('manage_options')) {
+        
+        // Use a static hook and group names to match your implementation
+        $batch_hook = 'aemfw_process_export_batch'; // Replace with your actual hook name
+        $finalize_hook = 'aemfw_finalize_export_file'; // Replace with your actual hook name
+        $group = 'aemfw_exports'; // Replace with your actual group name
+
+        // Unschedule all pending batch processing actions
+        $count_batch = as_unschedule_all_actions($batch_hook, [], $group);
+
+        // Unschedule all pending finalization actions
+        $count_finalize = as_unschedule_all_actions($finalize_hook, [], $group);
+        
+        $message = sprintf(
+            'Action Scheduler Debug: Stopped %d batch jobs and %d finalization jobs.',
+            $count_batch,
+            $count_finalize
+        );
+        
+        // Print a confirmation message for debugging
+        add_action('admin_notices', function() use ($message) {
+            echo '<div class="notice notice-success is-dismissible"><p>' . esc_html($message) . '</p></div>';
+        });
+
+        // Optional: Also delete any job transients for a clean slate
+        // Note: This would require looping through all transients to find them,
+        // so it's often easier to do manually or with a dedicated tool.
+    }
+}
+add_action('admin_init', 'stop_all_export_jobs_for_debug');
