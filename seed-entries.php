@@ -2,11 +2,11 @@
 // Run this file using: wp eval-file seed.php --allow-root
 global $wpdb;
 
-$table   = $wpdb->prefix . 'swpfe_entries';
-$form_id = 2;
-$batch   = 1000;
-$total   = 2000000;
-$status  = ['read', 'unread'];
+$table        = $wpdb->prefix . 'swpfe_entries';
+$form_id      = 2;
+$batch_size   = 500;
+$total        = 50000;
+$status_options = ['read', 'unread'];
 
 // Sample UK/US realistic names and emails
 $names = [
@@ -39,25 +39,25 @@ for ($i = 0; $i < $total; $i += $batch_size) {
 
     for ($j = 0; $j < $batch_size; $j++) {
         $status = $status_options[array_rand($status_options)];
-        $name = $names[array_rand($names)];
+        $name   = $names[array_rand($names)];
         
-        // Unique email by adding batch and row numbers
-        $email = $emails[array_rand($emails)];
-        $email = explode('@', $email_base);
+        // Generate unique email
+        $email_base = $emails[array_rand($emails)];
+        $email_parts = explode('@', $email_base);
         $email = $email_parts[0] . "+{$i}_{$j}@" . $email_parts[1];
 
         $comment = $comments[array_rand($comments)];
 
         $entry_data = maybe_serialize([
-            'Name' => $name,
-            'Email' => $email,
-            'Comment Or Message' => $comment,
+            'Name'                 => $name,
+            'Email'                => $email,
+            'Comment Or Message'   => $comment,
         ]);
 
-        $created_at = date('Y-m-d H:i:s', strtotime("-" . rand(0, 365) . " days"));
-        $printed_at = date('Y-m-d H:i:s', strtotime("-" . rand(0, 365) . " days"));
-        $resent_at = null; // leave NULL
-        $note = null;
+        $created_at  = date('Y-m-d H:i:s', strtotime("-" . rand(0, 365) . " days"));
+        $printed_at  = date('Y-m-d H:i:s', strtotime("-" . rand(0, 365) . " days"));
+        $resent_at   = null;
+        $note        = null;
 
         // Maintain DB column order
         $values[] = $form_id;
@@ -67,8 +67,8 @@ for ($i = 0; $i < $total; $i += $batch_size) {
         $values[] = $status;
         $values[] = $created_at;
         $values[] = rand(0, 1); // is_favorite
-        $values[] = 0; // exported_to_csv
-        $values[] = 0; // synced_to_gsheet
+        $values[] = 0;          // exported_to_csv
+        $values[] = 0;          // synced_to_gsheet
         $values[] = $printed_at;
         $values[] = $resent_at;
         $values[] = $note;

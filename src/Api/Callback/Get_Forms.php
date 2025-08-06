@@ -98,12 +98,15 @@ class Get_Forms {
             ARRAY_A
         );
 
+        $allowed_fields = ['id', 'form_id', 'email', 'note', 'created_at', 'status', 'is_favorite'];
         $fields = [];
 
         foreach ( $rows as $row ) {
-            // Step 1: Add all top-level DB columns
-            foreach ( array_keys( $row ) as $column ) {
-                $fields[ $column ] = true;
+            // Step 1: Add only allowed top-level DB columns
+            foreach ( $allowed_fields as $column ) {
+                if ( array_key_exists( $column, $row ) ) {
+                    $fields[ $column ] = true;
+                }
             }
 
             // Step 2: Merge in keys from deserialized 'entry'

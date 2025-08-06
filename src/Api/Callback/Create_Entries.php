@@ -31,7 +31,7 @@ class Create_Entries {
         $table = Helper::get_table_name(); // e.g., 'aemfw_entries_manager'
 
         // Temp off
-        return rest_ensure_response( ['success' => false, 'message' => __('This endpoint is temporarily disabled.', 'advanced-entries-manager-for-wpforms')] );
+        // return rest_ensure_response( ['success' => false, 'message' => __('This endpoint is temporarily disabled.', 'advanced-entries-manager-for-wpforms')] );
 
         // Get parameters from JSON body
         $params = $request->get_json_params();

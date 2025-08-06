@@ -137,6 +137,7 @@ class Export_Entries
             'started_at'      => time(),
             'file_path'       => null,
             'file_url'        => null,
+            'header'          => [],
         ];
         Helper::set_transient(self::JOB_TRANSIENT_PREFIX . $job_id, $job_state, DAY_IN_SECONDS);
 
@@ -221,9 +222,30 @@ class Export_Entries
             return;
         }
 
-        // Process the entries and write them to the temporary CSV file.
-        // The `$job_state['page']` variable is used here to create a unique filename.
-        $this->write_batch_to_csv($job_id, $job_state['page'], $entries, $job_state['filters']['exclude_fields']);
+        // The header is now built and stored only once.
+        if ($job_state['page'] === 1) {
+            $header = [];
+            $first_entry_data = !empty($entries[0]['entry']) ? maybe_unserialize($entries[0]['entry']) : [];
+            if (is_array($first_entry_data)) {
+                $header = $this->flatten_array_keys($first_entry_data);
+            }
+
+            $default_columns = ['id', 'form_id', 'email', 'note', 'created_at', 'status', 'is_favorite'];
+            $header = array_merge($default_columns, $header);
+            $header = array_diff($header, $job_state['filters']['exclude_fields']);
+            
+            // Sort the header for consistent output
+            // sort($header);
+
+            // Store the final header in the job state for all future batches.
+            $job_state['header'] = $header;
+        }
+
+        // Now, always get the header from the job state.
+        $header = $job_state['header'];
+
+        // Process and write the batch to the CSV file.
+        $this->write_batch_to_csv($job_id, $job_state['page'], $entries, $header);
         
         $job_state['processed_count'] += count($entries);
         
@@ -231,10 +253,7 @@ class Export_Entries
         $last_entry = end($entries);
         $job_state['last_id'] = $last_entry['id'];
 
-        // <<<<<<<<<<<<<<<<<<<<<<<< FIX IS HERE >>>>>>>>>>>>>>>>>>>>>>>>>
-        // Increment the page counter for the next batch's unique filename.
         $job_state['page']++;
-        // <<<<<<<<<<<<<<<<<<<<<<<< END FIX >>>>>>>>>>>>>>>>>>>>>>>>>
 
         // Check if there are more entries left to process.
         if ($job_state['processed_count'] < $job_state['total_entries']) {
@@ -286,17 +305,24 @@ class Export_Entries
         $header_written = false;
 
         foreach ($batch_files as $index => $batch_file) {
+
             $batch_handle = fopen($batch_file, 'r');
+
             if ($batch_handle) {
+
                 if ($header_written) {
                     fgetcsv($batch_handle); // Skip header of subsequent files
                 }
+
                 while (($data = fgetcsv($batch_handle)) !== false) {
                     fputcsv($final_file_handle, $data);
                 }
+
                 fclose($batch_handle);
                 $header_written = true;
+
             }
+
             // Delete the temporary batch file after processing
             unlink($batch_file);
         }
@@ -354,13 +380,15 @@ class Export_Entries
     /**
      * Writes a set of entries to a temporary CSV file for a specific batch.
      *
+     * This optimized version only writes the header for the first batch and
+     * streamlines the data processing for each entry.
+     *
      * @param string $job_id The main job ID.
      * @param int $page The current batch number.
      * @param array $entries The entry data to write.
-     * @param array $exclude_fields A list of field keys to exclude from the CSV.
      * @return void
      */
-    private function write_batch_to_csv(string $job_id, int $page, array $entries, array $exclude_fields): void
+    private function write_batch_to_csv(string $job_id, int $page, array $entries, array $header): void
     {
         $upload_dir = $this->get_temp_dir();
         if (is_wp_error($upload_dir)) {
@@ -370,49 +398,80 @@ class Export_Entries
         $file_path = $upload_dir['path'] . '/' . $job_id . '_batch_' . $page . '.csv';
         $file_handle = fopen($file_path, 'w');
 
-        $header = [];
-        $first_entry_data = !empty($entries[0]['entry']) ? maybe_unserialize($entries[0]['entry']) : [];
-        if (is_array($first_entry_data)) {
-            $header = array_keys($first_entry_data);
+        // Write the header only for the first batch. The header array is now passed directly.
+        if ($page === 1) {
+            fputcsv($file_handle, $header);
         }
-
-        // Add default columns and filter out excluded ones
-        $default_columns = ['id', 'form_id', 'email', 'created_at', 'status', 'is_favorite'];
-        $header = array_merge($default_columns, $header);
-        $header = array_diff($header, $exclude_fields);
-
-        fputcsv($file_handle, $header);
-
+        
         foreach ($entries as $entry) {
-            $row = [];
             $entry_data = !empty($entry['entry']) ? maybe_unserialize($entry['entry']) : [];
+            $flat_entry_data = $this->flatten_entry_data($entry_data);
 
-            // Flatten nested field data (e.g., name field with first/last)
-            $flat_entry_data = [];
-            if (is_array($entry_data)) {
-                foreach ($entry_data as $key => $value) {
-                    if (is_array($value)) {
-                        foreach ($value as $sub_key => $sub_value) {
-                            $flat_entry_data[$key . '_' . $sub_key] = $sub_value;
-                        }
-                    } else {
-                        $flat_entry_data[$key] = $value;
-                    }
-                }
-            }
+            $row = [];
+            // Add default columns
+            $row['id']          = $entry['id'];
+            $row['form_id']     = $entry['form_id'];
+            $row['email']       = $entry['email'];
+            $row['note']        = $entry['note'];
+            $row['created_at']  = $entry['created_at'];
+            $row['status']      = $entry['status'];
+            $row['is_favorite'] = $entry['is_favorite'];
 
+            // Merge dynamic data
+            $row = array_merge($row, $flat_entry_data);
+
+            // Build the final row using the provided header
+            $final_row = [];
             foreach ($header as $col) {
-                if (isset($entry[$col])) {
-                    $row[$col] = $entry[$col];
-                } elseif (isset($flat_entry_data[$col])) {
-                    $row[$col] = $flat_entry_data[$col];
-                } else {
-                    $row[$col] = '';
-                }
+                $final_row[] = $row[$col] ?? '';
             }
-            fputcsv($file_handle, $row);
+            
+            fputcsv($file_handle, $final_row);
         }
+
         fclose($file_handle);
+    }
+
+    /**
+     * A helper function to flatten nested array keys for a consistent header.
+     *
+     * @param array $data
+     * @return array
+     */
+    private function flatten_array_keys(array $data): array
+    {
+        $keys = [];
+        foreach ($data as $key => $value) {
+            if (is_array($value)) {
+                foreach ($value as $sub_key => $sub_value) {
+                    $keys[] = $key . '_' . $sub_key;
+                }
+            } else {
+                $keys[] = $key;
+            }
+        }
+        return $keys;
+    }
+
+    /**
+     * A helper function to flatten entry data.
+     *
+     * @param array $entry_data
+     * @return array
+     */
+    private function flatten_entry_data(array $entry_data): array
+    {
+        $flat_data = [];
+        foreach ($entry_data as $key => $value) {
+            if (is_array($value)) {
+                foreach ($value as $sub_key => $sub_value) {
+                    $flat_data[$key . '_' . $sub_key] = $sub_value;
+                }
+            } else {
+                $flat_data[$key] = $value;
+            }
+        }
+        return $flat_data;
     }
 
     /**

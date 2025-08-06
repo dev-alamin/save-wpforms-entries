@@ -375,7 +375,9 @@ function formTable(form) {
       };
 
       try {
-        const res = await fetch(`${swpfeSettings.restUrl}aem/v1/entries`, {
+        const res = await fetch(`${swpfeSettings.restUrl}aem/v1/entries/${
+            payload.id
+          }?form_id=${encodeURIComponent(payload.form_id)}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -917,6 +919,9 @@ function exportSettings() {
       this.isExporting = true;
       this.exportProgress = 0;
       this.exportJobId = null;
+      this.dateFrom = document.getElementById("swpfe_export_date_from").value;
+      this.dateTo = document.getElementById("swpfe_export_date_to").value;
+
 
       const exportData = {
         form_id: this.selectedFormId,
