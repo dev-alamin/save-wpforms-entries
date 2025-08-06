@@ -127,7 +127,7 @@ class Export_Entries
             'total_entries'   => $total_entries,
             'processed_count' => 0,
             'last_id'         => 0,
-            'batch_size'      => absint($request->get_param('batch_size') ?? 5000),
+            'batch_size'      => 5000,
             'page'            => 1,
             'filters'         => [
                 'date_from'      => $date_from,

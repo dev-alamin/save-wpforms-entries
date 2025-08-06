@@ -835,7 +835,6 @@ function exportSettings() {
     excludedFields: [],
     dateFrom: "",
     dateTo: "",
-    batchSize: 5000,
     isExporting: false,
     exportJobId: null,
     exportProgress: 0,
@@ -927,7 +926,6 @@ function exportSettings() {
         form_id: this.selectedFormId,
         date_from: this.dateFrom,
         date_to: this.dateTo,
-        batch_size: this.batchSize,
         exclude_fields: this.excludedFields,
       };
 

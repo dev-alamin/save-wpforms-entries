@@ -536,55 +536,6 @@ class Route
 					'permission_callback' => $this->permission_callback_by_method( WP_REST_Server::READABLE ),
 				],
 			],
-			[
-				'route' => '/entries/export/full',
-				'data' => [
-					'methods'             => WP_REST_Server::READABLE,
-					'callback'            => [$this->export_entries, 'export_csv_full_now'],
-					'permission_callback' => $this->permission_callback_by_method( WP_REST_Server::READABLE ),
-					'args' => [
-						'form_id' => [
-							'required' => true,
-							'validate_callback' => function ($param) {
-								return is_numeric($param) && intval($param) > 0;
-							},
-							'sanitize_callback' => 'absint',
-						],
-						'date_from' => [
-							'required' => false,
-							'validate_callback' => function ($param) {
-								return empty($param) || preg_match('/^\d{4}-\d{2}-\d{2}$/', $param);
-							},
-							'sanitize_callback' => 'sanitize_text_field',
-						],
-						'date_to' => [
-							'required' => false,
-							'validate_callback' => function ($param) {
-								return empty($param) || preg_match('/^\d{4}-\d{2}-\d{2}$/', $param);
-							},
-							'sanitize_callback' => 'sanitize_text_field',
-						],
-						'batch_size' => [
-							'required' => false,
-							'default' => 500,
-							'validate_callback' => function ($param) {
-								return is_numeric($param) && intval($param) >= 100 && intval($param) <= 5000;
-							},
-							'sanitize_callback' => 'absint',
-						],
-						'exclude_fields' => [
-							'required' => false,
-							'validate_callback' => function ($param) {
-								// Comma separated string, allow empty or string only
-								return is_string($param);
-							},
-							'sanitize_callback' => function ($param) {
-								return sanitize_text_field($param);
-							},
-						],
-					],
-				]
-			],
 
 			[
 				'route' => '/legacy/source/count',
@@ -622,10 +573,6 @@ class Route
 					'args'                => [
 						'form_id' => [
 							'required' => true,
-							'type'     => 'integer',
-						],
-						'batch_size' => [
-							'required' => false,
 							'type'     => 'integer',
 						],
 						'date_from' => [
