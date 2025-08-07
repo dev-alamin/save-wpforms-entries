@@ -28,7 +28,6 @@ use App\AdvancedEntryManager\Admin\Menu;
 use App\AdvancedEntryManager\Core\Capabilities;
 use App\AdvancedEntryManager\Admin\Admin_Notice;
 
-
 /**
  * Bootstrap Plugin for the Advanced Entries Manager plugin.
  * 

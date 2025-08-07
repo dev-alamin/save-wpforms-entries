@@ -313,31 +313,44 @@ class Helper {
 
     public static function get_access_token() {
         $access_token = self::get_option('google_access_token');
-        $expires      = (int) self::get_option('google_token_expires', 0);
+        $expires_at   = (int) self::get_option('google_token_expires', 0);
 
-        // If token is valid and not close to expiry, return it
-        if ($access_token && $expires > time() + 60) { // 1 min buffer
+        // If valid and not expired, return
+        if ($access_token && $expires_at > (time() + 60)) {
             return $access_token;
         }
 
-        // Otherwise, try refreshing token via proxy
-        $site = site_url();
+        // Else: Refresh via POST request to proxy's REST endpoint
+        $response = wp_remote_post('https://api.almn.me/wp-json/swpfe/v1/refresh', [
+            'headers' => ['Content-Type' => 'application/json'],
+            'body'    => json_encode([
+                'site' => self::get_settings_page_url(),
+            ]),
+        ]);
 
-        $response = wp_remote_get("https://api.almn.me/oauth/refresh?site=" . urlencode($site));
         if (is_wp_error($response)) {
+            Helper::set_error_log('Token refresh failed: ' . $response->get_error_message());
             return false;
         }
 
         $body = json_decode(wp_remote_retrieve_body($response), true);
 
-        if (!empty($body['success']) && !empty($body['data']['access_token'])) {
-            self::update_option('google_access_token', sanitize_text_field($body['data']['access_token']));
-            if (!empty($body['data']['expires_in'])) {
-                self::update_option('google_token_expires', time() + intval($body['data']['expires_in']));
-            }
-            return $body['data']['access_token'];
+        if (!empty($body['access_token'])) {
+            self::update_option('google_access_token', sanitize_text_field($body['access_token']));
+            self::update_option('google_token_expires', time() + intval($body['expires_in'] ?? 3600)); // fallback: 1 hour
+            return $body['access_token'];
         }
 
+        Helper::set_error_log('Invalid refresh response: ' . wp_remote_retrieve_body($response));
         return false;
+    }
+
+    /**
+     * Get Settings page url wihout sanitization
+     *
+     * @return string
+     */
+    public static function get_settings_page_url(){
+        return admin_url( 'admin.php?page=swpfe-settings');
     }
 }
