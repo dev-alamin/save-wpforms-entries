@@ -32,7 +32,7 @@ class Send_Data {
         add_action('admin_init', [$this, 'capture_token']);
     }
 
-    public function capture_auth_code() {
+    public function capture_token() {
         if (!isset($_GET['oauth_proxy_code'])) {
             return;
         }

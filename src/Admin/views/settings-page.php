@@ -2,18 +2,9 @@
 
 use App\AdvancedEntryManager\Utility\Helper;
 
-$access_token  = Helper::get_option('google_access_token');
-$token_expires = Helper::get_option('google_token_expires');
-$now           = time();
-$expires_in    = $token_expires ? max(0, $token_expires - $now) : 0;
-
-function seconds_to_human_readable($seconds)
-{
-    if ($seconds <= 0) return esc_html__('Expired', 'advanced-entries-manager-for-wpforms');
-    $h = floor($seconds / 3600);
-    $m = floor(($seconds % 3600) / 60);
-    return ($h ? $h . 'h ' : '') . ($m ? $m . 'm' : esc_html__('less than a minute', 'advanced-entries-manager-for-wpforms'));
-}
+$access_token  = Helper::get_access_token();
+$expires_in    = Helper::get_token_expires_in();
+$expires_label = Helper::seconds_to_human_readable($expires_in);
 
 $per_page  = Helper::get_option('entries_per_page', 20);
 $sheet_id  = Helper::get_option('google_sheet_id');

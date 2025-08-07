@@ -353,4 +353,38 @@ class Helper {
     public static function get_settings_page_url(){
         return admin_url( 'admin.php?page=swpfe-settings');
     }
+
+    /**
+     * Retrieves the number of seconds remaining until the Google token expires.
+     *
+     * @return int Number of seconds until token expiration. Returns 0 if expired or not set.
+     */
+    public static function get_token_expires_in(): int {
+        
+        $token_expires = self::get_option('google_token_expires');
+        $now           = time();
+
+        return $token_expires ? max(0, $token_expires - $now) : 0;
+    }
+
+    /**
+     * Converts a number of seconds into a human-readable string format.
+     *
+     * @param int $seconds The number of seconds to convert.
+     * @return string Human-readable representation (e.g., "2h 15m", "Expired", "Less than a minute").
+     */
+    public static function seconds_to_human_readable(int $seconds): string {
+        if ($seconds <= 0) {
+            return esc_html__('Expired', 'advanced-entries-manager-for-wpforms');
+        }
+
+        $h = floor($seconds / 3600);
+        $m = floor(($seconds % 3600) / 60);
+
+        if ($h || $m) {
+            return trim(($h ? $h . 'h ' : '') . ($m ? $m . 'm' : ''));
+        }
+
+        return esc_html__('Less than a minute', 'advanced-entries-manager-for-wpforms');
+    }
 }

@@ -3,7 +3,7 @@
         <h3 class="!text-2xl font-semibold !mb-4">
             <?php
             use App\AdvancedEntryManager\Utility\Helper;
-            esc_html_e('Google Account Connection', 'advanced-entries-manager-for-wpforms'); 
+            esc_html_e('Google Account Connection', 'advanced-entries-manager-for-wpforms');
             ?>
         </h3>
         <?php if ($access_token): ?>
@@ -41,7 +41,7 @@
                     </svg>
                     <span class="font-medium">
                         <?php esc_html_e('Token expires in:', 'advanced-entries-manager-for-wpforms'); ?>
-                        <strong><?php echo esc_html(seconds_to_human_readable(absint($expires_in ?? 0))); ?></strong>
+                        <strong><?php echo esc_html( $expires_label ); ?></strong>
                     </span>
                 </div>
                 <a href="<?php echo esc_url('https://api.almn.me/oauth/init?site=' . rawurlencode(Helper::get_settings_page_url())); ?>"
