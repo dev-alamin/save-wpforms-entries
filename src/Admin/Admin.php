@@ -7,6 +7,7 @@ use App\AdvancedEntryManager\Admin\Options;
 use App\AdvancedEntryManager\Admin\Menu;
 use App\AdvancedEntryManager\Admin\Admin_Notice;
 use App\AdvancedEntryManager\GoogleSheet\Admin_UI;
+use App\AdvancedEntryManager\GoogleSheet\Send_Data;
 
 /**
  * Class Admin
@@ -48,6 +49,12 @@ class Admin {
     protected $admin_ui;
 
     /**
+     * Send_Data instance
+     * @var mixed
+     */
+    protected $send_data;
+
+    /**
      * Constructor.
      *
      * Hooks into WordPress admin actions to initialize the admin menu,
@@ -57,11 +64,13 @@ class Admin {
     Assets $assets,
     Options $options,
     Menu $menu,
-    Admin_Notice $admin_notice
+    Admin_Notice $admin_notice,
+    Send_Data $send_data
     ) {
         $this->assets = $assets;
         $this->options = $options;
         $this->menu = $menu;
         $this->admin_notice = $admin_notice;
+        $this->send_data = $send_data;
     }
 }

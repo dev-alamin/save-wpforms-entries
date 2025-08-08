@@ -177,3 +177,18 @@ function stop_all_export_jobs_for_debug() {
     }
 }
 add_action('admin_init', 'stop_all_export_jobs_for_debug');
+
+// Hook callback
+add_action('aemfw_process_gsheet_entry', 'process_single_entry');
+
+function process_single_entry($args) {
+    $entry_id = $args['entry_id'] ?? 0;
+    $form_id  = $args['form_id'] ?? 0;
+
+    echo '<pre>';
+    print_r( $args );
+    echo '</pre>';
+    die;
+    error_log("[AEMFW] process_single_entry triggered for Entry ID: $entry_id, Form ID: $form_id");
+
+}

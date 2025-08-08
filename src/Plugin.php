@@ -2,7 +2,7 @@
 
 namespace App\AdvancedEntryManager;
 
-defined( 'ABSPATH' ) || exit;
+defined('ABSPATH') || exit;
 
 use App\AdvancedEntryManager\Core\DB_Schema;
 use App\AdvancedEntryManager\Api\Route;
@@ -27,6 +27,8 @@ use App\AdvancedEntryManager\Admin\Options;
 use App\AdvancedEntryManager\Admin\Menu;
 use App\AdvancedEntryManager\Core\Capabilities;
 use App\AdvancedEntryManager\Admin\Admin_Notice;
+use App\AdvancedEntryManager\GoogleSheet\Send_Data;
+use App\AdvancedEntryManager\Scheduler\Actions\Sync_Google_Sheet_Action;
 
 /**
  * Bootstrap Plugin for the Advanced Entries Manager plugin.
@@ -55,7 +57,7 @@ class Plugin
     private function __construct()
     {
         // Load early to ensure all components are ready
-        add_action('plugins_loaded',[ $this, 'early_init'] );
+        add_action('plugins_loaded', [$this, 'early_init']);
 
         $this->load_core_classes();
 
@@ -67,6 +69,13 @@ class Plugin
 
         register_deactivation_hook(__FILE__, function () {
             (new Capabilities())->remove_cap();
+        });
+
+        // In your main plugin file, e.g., my-plugin.php
+        register_activation_hook(__FILE__, function () {
+            if (!as_has_scheduled_action('aemfw_daily_sync')) {
+                as_schedule_recurring_action(strtotime('tomorrow 2am'), DAY_IN_SECONDS, 'aemfw_daily_sync');
+            }
         });
     }
 
@@ -84,14 +93,14 @@ class Plugin
 
         return self::$instance;
     }
-    
+
     /**
      * Load text domain for translations and create the database table.
      * 
      * This method is called early in the plugin lifecycle to ensure
      * that the text domain is loaded and the database table is created before
      * any other operations that depend on these features.
-    */
+     */
     public function early_init()
     {
         load_plugin_textdomain('advanced-entries-manager-for-wpforms', false, dirname(plugin_basename(__FILE__)) . '/languages');
@@ -131,20 +140,23 @@ class Plugin
          * Migrate_Batch handles the migration of entries in batches.
          * Export_Entries_Action handles the export of entries to CSV or other formats.
          */
-        new Migrate_Batch_Action( new Migrate() );
+        new Migrate_Batch_Action(new Migrate());
+
+        new Sync_Google_Sheet_Action(new Send_Data());
 
         /**
          * Action Scheduler for exporting entries.
          */
-        new Export_Entries_Action( new Export_Entries() );
+        new Export_Entries_Action(new Export_Entries());
 
         // If in admin area, load the Admin class for managing entries and settings
-        if ( is_admin() ) {
+        if (is_admin()) {
             new Admin(
                 new Assets(),
                 new Options(),
                 new Menu(),
                 new Admin_Notice(),
+                new Send_Data()
             );
         }
     }

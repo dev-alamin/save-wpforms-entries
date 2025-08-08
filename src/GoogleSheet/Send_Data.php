@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Send_Data Class
  *
@@ -17,22 +18,23 @@
  *
  * @see        https://developers.google.com/sheets/api
  */
+
 namespace App\AdvancedEntryManager\GoogleSheet;
 
 use App\AdvancedEntryManager\Utility\Helper;
 use WP_Error;
 
-class Send_Data {
+class Send_Data
+{
 
-    public function __construct() {
-        // Hook async queue processing
-        add_action('aemfw_process_gsheet_entry', [$this, 'process_single_entry']);
-
+    public function __construct()
+    {
         // Capture token on init
         add_action('admin_init', [$this, 'capture_token']);
     }
 
-    public function capture_token() {
+    public function capture_token()
+    {
         if (!isset($_GET['oauth_proxy_code'])) {
             return;
         }
@@ -40,7 +42,7 @@ class Send_Data {
         $auth_code = sanitize_text_field($_GET['oauth_proxy_code']);
 
         // Exchange the one-time auth code for real tokens
-        $response = wp_remote_post( AEMFW_PROXY_BASE_URL . 'wp-json/swpfe/v1/token', [
+        $response = wp_remote_post(AEMFW_PROXY_BASE_URL . 'wp-json/swpfe/v1/token', [
             'headers' => ['Content-Type' => 'application/json'],
             'body'    => json_encode([
                 'auth_code' => $auth_code,
@@ -65,7 +67,6 @@ class Send_Data {
         Helper::set_error_log('Invalid token exchange response: ' . wp_remote_retrieve_body($response));
     }
 
-
     /**
      * Get or create the necessary spreadsheet and sheet for a given form.
      * This is the master function for ensuring a sync target exists and is ready.
@@ -73,12 +74,15 @@ class Send_Data {
      * @param int $form_id The ID of the WPForm.
      * @return array|WP_Error An array containing ['spreadsheet_id', 'sheet_title'] or a WP_Error on failure.
      */
-    protected function get_or_create_sheet_for_form(int $form_id) {
+    protected function get_or_create_sheet_for_form(int $form_id)
+    {
         $spreadsheet_id = Helper::get_option("gsheet_spreadsheet_id_{$form_id}");
         $sheet_title = Helper::get_option("gsheet_sheet_title_{$form_id}");
+        $headers_set = Helper::get_option("gsheet_headers_set_{$form_id}");
 
-        // If we already have what we need, return it.
-        if ($spreadsheet_id && $sheet_title) {
+        // If we have a spreadsheet and the headers have already been set and formatted,
+        // we can return immediately. This is the main performance optimization.
+        if ($spreadsheet_id && $sheet_title && $headers_set) {
             return [
                 'spreadsheet_id' => $spreadsheet_id,
                 'sheet_title'    => $sheet_title,
@@ -130,10 +134,10 @@ class Send_Data {
                     'fields'     => 'gridProperties.frozenRowCount',
                 ],
             ],
-            // 2. Write the headers
+            // 2. Write the headers with bold formatting
             [
                 'updateCells' => [
-                    'rows'  => [['values' => $this->format_cells($headers)]],
+                    'rows'   => [['values' => $this->format_cells($headers, true)]], // <-- PASS `true` HERE
                     'fields' => 'userEnteredValue,userEnteredFormat.textFormat.bold',
                     'start'  => ['sheetId' => $sheet_id, 'rowIndex' => 0, 'columnIndex' => 0],
                 ]
@@ -150,6 +154,7 @@ class Send_Data {
         Helper::update_option("gsheet_sheet_id_{$form_id}", $sheet_id);
         Helper::update_option("gsheet_sheet_title_{$form_id}", $sheet_title); // Use the actual sheet title
         Helper::update_option("gsheet_headers_{$form_id}", $headers); // Cache headers
+        Helper::update_option("gsheet_headers_set_{$form_id}", true); // Set the flag to true after successful setup
 
         delete_transient($lock_key);
 
@@ -158,17 +163,16 @@ class Send_Data {
             'sheet_title'    => $sheet_title,
         ];
     }
-    
-    /**
-     * Formats cell data for the Google Sheets API, making headers bold.
-     */
-    protected function format_cells(array $values, bool $bold = true): array {
+
+    protected function format_cells(array $values, bool $bold = false): array
+    {
         $formatted_cells = [];
         foreach ($values as $value) {
-            $formatted_cells[] = [
-                'userEnteredValue' => ['stringValue' => $value],
-                'userEnteredFormat' => ['textFormat' => ['bold' => $bold]]
-            ];
+            $cell = ['userEnteredValue' => ['stringValue' => (string) $value]];
+            if ($bold) { // <-- Conditional formatting based on the new parameter
+                $cell['userEnteredFormat'] = ['textFormat' => ['bold' => true]];
+            }
+            $formatted_cells[] = $cell;
         }
         return $formatted_cells;
     }
@@ -176,14 +180,22 @@ class Send_Data {
     /**
      * Process a single queued entry to send to Google Sheets.
      */
-    public function process_single_entry($args) {
+    public function process_single_entry($args)
+    {
         global $wpdb;
 
         $entry_id = absint($args['entry_id']);
         $table = Helper::get_table_name();
 
         $entry = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE id = %d", $entry_id));
-        if (!$entry || $entry->synced_to_gsheet) {
+
+        if (!$entry) {
+            error_log('[AEM]: No entry data found. Sorry');
+            return;
+        }
+
+        if ($entry->synced_to_gsheet) {
+            error_log('[AEM]: Already sync issue...');
             return;
         }
 
@@ -194,17 +206,19 @@ class Send_Data {
         if (is_wp_error($sheet_info)) {
             error_log("[AEM] GSheet preparation failed for form $form_id: " . $sheet_info->get_error_message());
             $this->handle_sync_failure($entry_id, $entry->retry_count);
+            error_log('[AEM]: No sheet is found. Sorry');
             return;
         }
-        
+
         $spreadsheet_id = $sheet_info['spreadsheet_id'];
         $sheet_title = $sheet_info['sheet_title'];
-        
+
         // Step 2: Prepare the data row, ensuring it matches the header order.
         $row_data = $this->prepare_row_data($entry);
         if (is_wp_error($row_data)) {
             error_log("[AEM] GSheet data preparation failed for entry $entry_id: " . $row_data->get_error_message());
             $this->handle_sync_failure($entry_id, $entry->retry_count);
+            error_log('[AEM]: No Header is matches. Sorry');
             return;
         }
 
@@ -238,78 +252,115 @@ class Send_Data {
             return;
         }
 
+        error_log('[AEM] Google sync is going on ' . $entry_id);
+
         // Step 4: Mark as synced on success.
         $wpdb->update($table, ['synced_to_gsheet' => 1, 'retry_count' => 0], ['id' => $entry_id]);
     }
 
     /**
-     * Retrieves the canonical headers for a form.
-     * @return array
+     * Retrieves the canonical headers for a form by inspecting a sample entry.
+     *
+     * This method ensures the header order is consistent with the data structure.
+     * @param int $form_id The ID of the form.
+     * @return array An array of headers.
      */
-    protected function get_form_headers(int $form_id): array {
-        // Return cached headers if available
+    protected function get_form_headers(int $form_id): array
+    {
         $cached_headers = Helper::get_option("gsheet_headers_{$form_id}");
         if ($cached_headers && is_array($cached_headers)) {
             return $cached_headers;
         }
 
+        global $wpdb;
+        $table = Helper::get_table_name();
+
+        // Fetch a sample entry to infer headers
+        $row = $wpdb->get_row(
+            $wpdb->prepare("SELECT entry, note, status FROM {$table} WHERE form_id = %d LIMIT 1", $form_id),
+            ARRAY_A
+        );
+
         $headers = [
-            'Entry ID',
-            'Submission Date',
-            'Entry URL',
+            __('Entry ID', 'your-text-domain'),
+            __('Submission Date', 'your-text-domain'),
         ];
 
-        $form_data = wpforms()->form->get($form_id, ['content_only' => true]);
-        if (!empty($form_data['fields'])) {
-            foreach ($form_data['fields'] as $field) {
-                $headers[] = $field['label'] ?? "Field #{$field['id']}";
+        $entry_data = [];
+        if (!empty($row['entry'])) {
+            $entry_data = maybe_unserialize($row['entry']);
+        }
+
+        if (is_array($entry_data)) {
+            foreach ($entry_data as $field_label => $field_value) {
+                $headers[] = $field_label;
             }
         }
-        
+
+        $headers[] = __('Status', 'your-text-domain');
+        $headers[] = __('Note', 'your-text-domain');
+
+        Helper::update_option("gsheet_headers_{$form_id}", $headers);
+
         return $headers;
     }
 
     /**
-     * Prepares a single row of data, ensuring order matches headers.
-     * @return array|WP_Error
+     * Prepares a single row of data, ensuring the order and values
+     * match the canonical headers for a form.
+     *
+     * @param object $entry The entry object from the database.
+     * @return array The formatted row data.
      */
-    protected function prepare_row_data($entry) {
+    protected function prepare_row_data($entry)
+    {
         $form_id = absint($entry->form_id);
-        $form_data = wpforms()->form->get($form_id, ['content_only' => true]);
-        if (!$form_data) {
-            return new WP_Error('no_form_data', "Could not retrieve form data for form ID {$form_id}.");
+
+        $headers = $this->get_form_headers($form_id);
+        if (is_wp_error($headers)) {
+            return $headers;
         }
 
-        $entry_fields = json_decode($entry->entry, true);
         $row = [];
+        $entry_data = maybe_unserialize($entry->entry);
+        $entry_data = is_array($entry_data) ? $entry_data : [];
 
-        // Add metadata values
-        $row[] = $entry->id;
-        $row[] = get_date_from_gmt($entry->created_at, 'Y-m-d H:i:s');
-        $row[] = admin_url('admin.php?page=swpfe-entries&view_entry=' . $entry->id);
+        foreach ($headers as $header_title) {
+            $value = '';
 
-        // Add form field values in the correct order
-        foreach ($form_data['fields'] as $field_info) {
-            $field_id = $field_info['id'];
-            $value = $entry_fields[$field_id]['value'] ?? '';
-
-            // Handle complex fields (e.g., arrays from checkboxes)
-            if (is_array($value)) {
-                $value = implode(', ', $value);
+            switch ($header_title) {
+                case __('Entry ID', 'your-text-domain'):
+                    $value = $entry->id;
+                    break;
+                case __('Submission Date', 'your-text-domain'):
+                    $value = get_date_from_gmt($entry->created_at, 'Y-m-d H:i:s');
+                    break;
+                case __('Status', 'your-text-domain'):
+                    $value = $entry->status ?? '';
+                    break;
+                case __('Note', 'your-text-domain'):
+                    $value = $entry->note ?? '';
+                    break;
+                default:
+                    if (isset($entry_data[$header_title])) {
+                        $value = $entry_data[$header_title];
+                    }
+                    break;
             }
             $row[] = (string) $value;
         }
 
         return $row;
     }
-    
+
     /**
      * Handles the logic for a failed sync attempt (retry or mark as failed).
      */
-    protected function handle_sync_failure(int $entry_id, int $current_retry_count) {
+    protected function handle_sync_failure(int $entry_id, int $current_retry_count)
+    {
         global $wpdb;
         $table = Helper::get_table_name();
-        
+
         if ($current_retry_count < 5) {
             $wpdb->update($table, ['retry_count' => $current_retry_count + 1], ['id' => $entry_id]);
             // Schedule retry with exponential backoff
@@ -325,7 +376,8 @@ class Send_Data {
     /**
      * Performs a batch update request to the Google Sheets API.
      */
-    public function gsheet_batch_update($spreadsheet_id, $requests) {
+    public function gsheet_batch_update($spreadsheet_id, $requests)
+    {
         $access_token = Helper::get_access_token();
         if (!$access_token) return new WP_Error('no_token', 'Missing access token.');
 
@@ -340,7 +392,7 @@ class Send_Data {
                 'body' => wp_json_encode($body),
             ]
         );
-        
+
         if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {
             return new WP_Error('batch_update_failed', 'Batch update failed.');
         }
@@ -348,7 +400,8 @@ class Send_Data {
         return true;
     }
 
-    public function gsheet_create_spreadsheet($title = 'WPForms Entries') {
+    public function gsheet_create_spreadsheet($title = 'WPForms Entries')
+    {
         $access_token = Helper::get_access_token();
 
         if (!$access_token) {
@@ -383,7 +436,8 @@ class Send_Data {
     /**
      * Fetch spreadsheet metadata (to get sheet info like sheetId)
      */
-    protected function get_spreadsheet_metadata(string $spreadsheet_id) {
+    protected function get_spreadsheet_metadata(string $spreadsheet_id)
+    {
         $access_token = Helper::get_access_token();
         if (!$access_token) {
             return new WP_Error('no_token', 'Missing access token.');
@@ -421,7 +475,8 @@ class Send_Data {
      *
      * @return int Number of entries enqueued in this batch.
      */
-    public function enqueue_unsynced_entries($form_id = null, $batch_size = 50, $delay_between = 5) {
+    public function enqueue_unsynced_entries($form_id = null, $batch_size = 50, $delay_between = 5)
+    {
         global $wpdb;
 
         $table = Helper::get_table_name();
@@ -439,7 +494,7 @@ class Send_Data {
 
         $entries = $wpdb->get_results($wpdb->prepare($query, ...$params));
 
-        if ( empty( $entries ) ) {
+        if (empty($entries)) {
             return 0;
         }
 
@@ -454,10 +509,13 @@ class Send_Data {
             }
         }
 
+        error_log('[AEM] : Entri is syncing...' . print_r($entries, true));
+
         return count($entries);
     }
 
-    private function _make_google_api_request(string $url, array $body = [], string $method = 'POST') {
+    private function _make_google_api_request(string $url, array $body = [], string $method = 'POST')
+    {
         $access_token = Helper::get_access_token();
         if (!$access_token) {
             return new WP_Error('no_token', 'Missing or invalid access token.');
@@ -475,13 +533,13 @@ class Send_Data {
         if (!empty($body)) {
             $args['body'] = wp_json_encode($body);
         }
-        
+
         $response = wp_remote_request($url, $args);
 
         if (is_wp_error($response)) {
             return $response;
         }
-        
+
         $code = wp_remote_retrieve_response_code($response);
         if ($code < 200 || $code >= 300) {
             $error_body = wp_remote_retrieve_body($response);
