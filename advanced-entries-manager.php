@@ -87,6 +87,19 @@ if( ! defined( 'AEMFW_TABLE_NAME' ) ) {
 }
 
 /**
+ * Define 3rd Party Proxy Server URL
+ * 
+ * This is where the proxy server of google authorization will be handled
+ */
+if( ! defined( 'AEMFW_PROXY_BASE_URL' ) ) {
+    define( 'AEMFW_PROXY_BASE_URL', trailingslashit( 'https://api.almn.me' ) );
+}
+
+if( ! defined( 'AEMFW_GOOGLE_PROXY_URL' ) ) {
+    define( 'AEMFW_GOOGLE_PROXY_URL', 'https://api.almn.me/oauth/init' );
+}
+
+/**
  * Define the plugin base path for use in various functionalities.
  * 
  * This is used to ensure that the plugin's base path is consistent across the plugin.

@@ -40,7 +40,7 @@ class Send_Data {
         $auth_code = sanitize_text_field($_GET['oauth_proxy_code']);
 
         // Exchange the one-time auth code for real tokens
-        $response = wp_remote_post('https://api.almn.me/wp-json/swpfe/v1/token', [
+        $response = wp_remote_post( AEMFW_PROXY_BASE_URL . 'wp-json/swpfe/v1/token', [
             'headers' => ['Content-Type' => 'application/json'],
             'body'    => json_encode([
                 'auth_code' => $auth_code,
@@ -348,9 +348,9 @@ class Send_Data {
         return true;
     }
 
-
     public function gsheet_create_spreadsheet($title = 'WPForms Entries') {
         $access_token = Helper::get_access_token();
+
         if (!$access_token) {
             return new WP_Error('no_token', 'Missing access token.');
         }
@@ -439,7 +439,7 @@ class Send_Data {
 
         $entries = $wpdb->get_results($wpdb->prepare($query, ...$params));
 
-        if (empty($entries)) {
+        if ( empty( $entries ) ) {
             return 0;
         }
 
@@ -455,5 +455,40 @@ class Send_Data {
         }
 
         return count($entries);
+    }
+
+    private function _make_google_api_request(string $url, array $body = [], string $method = 'POST') {
+        $access_token = Helper::get_access_token();
+        if (!$access_token) {
+            return new WP_Error('no_token', 'Missing or invalid access token.');
+        }
+
+        $args = [
+            'method'  => $method,
+            'headers' => [
+                'Authorization' => 'Bearer ' . $access_token,
+                'Content-Type'  => 'application/json',
+            ],
+            'timeout' => 20,
+        ];
+
+        if (!empty($body)) {
+            $args['body'] = wp_json_encode($body);
+        }
+        
+        $response = wp_remote_request($url, $args);
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+        
+        $code = wp_remote_retrieve_response_code($response);
+        if ($code < 200 || $code >= 300) {
+            $error_body = wp_remote_retrieve_body($response);
+            error_log("[AEM] Google API Error: Code $code - $error_body");
+            return new WP_Error('api_error', "Google API request failed with code {$code}.", ['body' => $error_body]);
+        }
+
+        return json_decode(wp_remote_retrieve_body($response), true);
     }
 }

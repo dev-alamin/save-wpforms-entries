@@ -321,7 +321,7 @@ class Helper {
         }
 
         // Else: Refresh via POST request to proxy's REST endpoint
-        $response = wp_remote_post('https://api.almn.me/wp-json/swpfe/v1/refresh', [
+        $response = wp_remote_post( AEMFW_PROXY_BASE_URL . 'wp-json/swpfe/v1/refresh', [
             'headers' => ['Content-Type' => 'application/json'],
             'body'    => json_encode([
                 'site' => self::get_settings_page_url(),

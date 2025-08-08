@@ -17,7 +17,7 @@
                         <p class="font-semibold text-lg">
                             <?php esc_html_e('Connected to Google Sheets', 'advanced-entries-manager-for-wpforms'); ?>
                             <br />
-                            <a href="<?php echo esc_url('https://api.almn.me/oauth/init?site=' . rawurlencode(Helper::get_settings_page_url())); ?>"
+                            <a href="<?php echo esc_url( AEMFW_GOOGLE_PROXY_URL . '?site=' . rawurlencode(Helper::get_settings_page_url())); ?>"
                                 class="text-green-700 hover:text-green-900 underline font-semibold"
                                 title="<?php esc_attr_e('Reconnect or switch Google Account', 'advanced-entries-manager-for-wpforms'); ?>">
                                 <?php esc_html_e('Switch Account', 'advanced-entries-manager-for-wpforms'); ?>
@@ -44,7 +44,7 @@
                         <strong><?php echo esc_html( $expires_label ); ?></strong>
                     </span>
                 </div>
-                <a href="<?php echo esc_url('https://api.almn.me/oauth/init?site=' . rawurlencode(Helper::get_settings_page_url())); ?>"
+                <a href="<?php echo esc_url( AEMFW_GOOGLE_PROXY_URL . '?site=' . rawurlencode(Helper::get_settings_page_url())); ?>"
                     class="text-green-700 hover:text-green-900 underline font-semibold"
                     title="<?php esc_attr_e('Reconnect or switch Google Account', 'advanced-entries-manager-for-wpforms'); ?>">
                     <?php esc_html_e('Reconnect', 'advanced-entries-manager-for-wpforms'); ?>
@@ -56,7 +56,7 @@
                 <?php esc_html_e('To start syncing WPForms entries with Google Sheets, please connect your Google account. This will enable live synchronization and easy data management.', 'advanced-entries-manager-for-wpforms'); ?>
             </p>
 
-            <a href="<?php echo esc_url('https://api.almn.me/oauth/init?site=' . rawurlencode(Helper::get_settings_page_url())); ?>"
+            <a href="<?php echo esc_url( AEMFW_GOOGLE_PROXY_URL . '?site=' . rawurlencode(Helper::get_settings_page_url())); ?>"
                 class="inline-flex items-center justify-center gap-2 px-7 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 !text-white font-medium shadow transition max-w-xs mx-auto">
                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
