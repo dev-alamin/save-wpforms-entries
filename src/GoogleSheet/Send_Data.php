@@ -331,6 +331,11 @@ class Send_Data
                     }
                     break;
             }
+
+            if ( is_string( $value ) && preg_match('/^[=+]/', trim( $value ) ) ) {
+                $value = "'" . $value;
+            }
+
             $row[] = (string) $value;
         }
 

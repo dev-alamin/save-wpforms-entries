@@ -439,8 +439,27 @@ function formTable(form) {
 
             const data = await response.json();
 
+            if (data.success) {
+            window.dispatchEvent(
+                new CustomEvent("toast", {
+                detail: {
+                    message: "Entry synchronization Done!",
+                    type: "success",
+                },
+                })
+            );
+            } else {
+            window.dispatchEvent(
+                new CustomEvent("toast", {
+                detail: {
+                    message: "❌ " + (data.data?.message || "Synchronization failed."),
+                    type: "error",
+                },
+                })
+            );
+            }
+        
             if (!response.ok) {
-                console.error(data.message);
                 return;
             }
 

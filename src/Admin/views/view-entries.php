@@ -202,7 +202,16 @@
                                     @click="handleCheckbox($event, entry.id)"
                                     class="cursor-pointer" />
 
-                                <div class="py-3 cursor-pointer truncate" title="<?php echo esc_attr__('Click for details', 'advanced-entries-manager-for-wpforms'); ?>" @click="showEntry(i)" x-text="entry.email || '-'"></div>
+                                <div
+                                    class="py-3 cursor-pointer truncate flex items-center gap-2"
+                                    title="<?php echo esc_attr__('Click for details', 'advanced-entries-manager-for-wpforms'); ?>"
+                                    @click="showEntry(i)">
+                                    <span x-text="entry.email || '-'"></span>
+                                    <span
+                                        class="text-xs text-gray-400"
+                                        x-text="'#' + entry.id"></span>
+                                </div>
+
                                 <div class="py-3 text-center whitespace-nowrap" x-text="timeAgo(entry.date)" :title="entry.date"></div>
                                 <div class="py-3 text-center">
                                     <span
