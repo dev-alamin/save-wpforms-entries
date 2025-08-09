@@ -1,24 +1,5 @@
 <?php
 
-/**
- * Send_Data Class
- *
- * Handles sending WPForms form submission data to Google Sheets.
- *
- * This class listens to the `wpforms_process_complete` action hook, extracts submitted
- * form field values, and sends the data to a specified Google Sheet using the Sheets API.
- * Requires a valid Google OAuth access token to function.
- *
- * @package    Save_WPForms_Entries
- * @subpackage Google_Sheets_Integration
- * @author     Mamu
- * @copyright  Copyright (c) 2025
- * @license    GPL-2.0-or-later
- * @since      1.1.0
- *
- * @see        https://developers.google.com/sheets/api
- */
-
 namespace App\AdvancedEntryManager\GoogleSheet;
 
 use App\AdvancedEntryManager\Utility\Helper;
@@ -30,7 +11,7 @@ class Send_Data
     public function __construct()
     {
         // Capture token on init
-        add_action('admin_init', [$this, 'capture_token']);
+        // add_action('admin_init', [$this, 'capture_token']);
     }
 
     public function capture_token()
@@ -280,6 +261,9 @@ class Send_Data
             $wpdb->prepare("SELECT entry, note, status FROM {$table} WHERE form_id = %d LIMIT 1", $form_id),
             ARRAY_A
         );
+
+        // If sample entry is unavailable somehow, use WPFORMS Default
+        $default = wpforms()->form->get($form_id);
 
         $headers = [
             __('Entry ID', 'your-text-domain'),
@@ -548,5 +532,98 @@ class Send_Data
         }
 
         return json_decode(wp_remote_retrieve_body($response), true);
+    }
+
+    /**
+     * Finds and removes a specific entry's row from the Google Sheet.
+     * This effectively "unsyncs" the entry.
+     *
+     * @param int $entry_id The ID of the entry to remove from the sheet.
+     * @return bool|WP_Error True on successful deletion, WP_Error on failure.
+     */
+    public function unsync_entry_from_sheet(int $entry_id)
+    {
+        global $wpdb;
+        $table = Helper::get_table_name();
+
+        // 1. Get Form ID from Entry ID
+        $form_id = $wpdb->get_var($wpdb->prepare("SELECT form_id FROM $table WHERE id = %d", $entry_id));
+        if (!$form_id) {
+            return new WP_Error('entry_not_found', "Entry with ID {$entry_id} not found in the local database.");
+        }
+
+        // 2. Get Spreadsheet and Sheet configuration
+        $spreadsheet_id = Helper::get_option("gsheet_spreadsheet_id_{$form_id}");
+        $sheet_info = $this->get_spreadsheet_metadata($spreadsheet_id);
+
+        if (is_wp_error($sheet_info) || !$spreadsheet_id) {
+            // If there's no sheet configured, it's already "unsynced".
+            error_log("[AEM] Unsync skipped for entry {$entry_id}: No spreadsheet is configured for form {$form_id}.");
+            return true;
+        }
+        
+        // We need the numeric sheetId for the delete request, not the title.
+        $sheet_id = $sheet_info['sheets'][0]['properties']['sheetId'];
+        $sheet_title = $sheet_info['sheets'][0]['properties']['title'];
+
+        // 3. Find the row number by searching the Entry ID column (assuming it's column A)
+        $range = rawurlencode($sheet_title) . '!A:A';
+        $url = "https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheet_id}/values/{$range}";
+        
+        $response = $this->_make_google_api_request($url, [], 'GET');
+
+        if (is_wp_error($response)) {
+            error_log("[AEM] Unsync failed for entry {$entry_id}: Could not read sheet to find row. " . $response->get_error_message());
+            return $response;
+        }
+
+        $rows_to_delete = [];
+        $values = $response['values'] ?? [];
+
+        foreach ($values as $index => $row) {
+            if (isset($row[0]) && (int) $row[0] === $entry_id) {
+                // API is 0-indexed, so the index is the row number we need.
+                $rows_to_delete[] = $index;
+            }
+        }
+
+        if (empty($rows_to_delete)) {
+            error_log("[AEM] Unsync notice for entry {$entry_id}: Row was not found in the Google Sheet.");
+            // The desired state (row is gone) is achieved, so we can return true.
+            // Also update local status to be sure.
+            $wpdb->update($table, ['synced_to_gsheet' => 0], ['id' => $entry_id]);
+            return true;
+        }
+
+        // 4. Build and send the batch delete request.
+        // We process the rows in reverse order to avoid shifting indices.
+        rsort($rows_to_delete);
+        $requests = [];
+        foreach ($rows_to_delete as $row_index) {
+            $requests[] = [
+                'deleteDimension' => [
+                    'range' => [
+                        'sheetId'     => $sheet_id,
+                        'dimension'   => 'ROWS',
+                        'startIndex'  => $row_index,
+                        'endIndex'    => $row_index + 1,
+                    ],
+                ],
+            ];
+        }
+        
+        $batch_update_result = $this->gsheet_batch_update($spreadsheet_id, $requests);
+
+        if (is_wp_error($batch_update_result)) {
+            error_log("[AEM] Unsync failed for entry {$entry_id}: The batch delete request failed.");
+            return $batch_update_result;
+        }
+
+        // 5. Update the local database to mark it as unsynced
+        $wpdb->update($table, ['synced_to_gsheet' => 0], ['id' => $entry_id]);
+
+        error_log("[AEM] Successfully unsynced entry {$entry_id} from Google Sheet.");
+
+        return true;
     }
 }

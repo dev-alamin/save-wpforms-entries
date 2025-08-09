@@ -144,7 +144,7 @@ function formTable(form) {
           ...entry,
           email: entry.email || "",
           is_favorite: Number(entry.is_favorite),
-          synced_to_gsheet: Number(entry.synced_to_gsheet),
+          synced_to_gsheet: Number(entry.synced),
           exported_to_csv: Number(entry.exported_to_csv),
           printed_at: entry.printed_at ?? null,
           resent_at: entry.resent_at ?? null,
@@ -262,7 +262,7 @@ function formTable(form) {
         is_favorite: Number(entry.is_favorite),
         note: entry.note,
         exported_to_csv: Number(entry.exported_to_csv),
-        synced_to_gsheet: Number(entry.synced_to_gsheet),
+        synced_to_gsheet: Number(entry.synced),
         printed_at: entry.printed_at,
         resent_at: entry.resent_at,
         ...changes,
@@ -369,7 +369,7 @@ function formTable(form) {
         is_favorite: Number(this.selectedEntry.is_favorite),
         note: this.selectedEntry.note,
         exported_to_csv: Number(this.selectedEntry.exported_to_csv),
-        synced_to_gsheet: Number(this.selectedEntry.synced_to_gsheet),
+        synced_to_gsheet: Number(this.selectedEntry.synced),
         printed_at: this.selectedEntry.printed_at,
         resent_at: this.selectedEntry.resent_at,
       };
@@ -418,10 +418,39 @@ function formTable(form) {
 
       this.updateSelectedEntry({ note });
     },
-    syncToGoogleSheet(index) {
-      const entry = this.entries[index];
-      entry.synced_to_gsheet = 1;
-      this.updateEntry(index, { synced_to_gsheet: 1 });
+    async toggleGoogleSheetSync(index) {
+        const entry = this.entries[index];
+        const entryId = entry.id;
+        const nonce = swpfeSettings.nonce;
+
+        // Decide action based on current state
+        const isCurrentlySynced = !!entry.synced;
+        const action = isCurrentlySynced ? 'unsync' : 'sync';
+        const apiUrl = `${swpfeSettings.restUrl}aem/v1/entries/${entryId}/${action}`;
+
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-WP-Nonce': nonce,
+                },
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                console.error(data.message);
+                return;
+            }
+
+            // Update state after success so Alpine re-renders correctly
+            entry.synced_to_gsheet = isCurrentlySynced ? 0 : 1;
+            this.updateEntry(index, { synced_to_gsheet: entry.synced_to_gsheet });
+        } catch (error) {
+            console.error('Fetch Error:', error);
+            alert('A network error occurred. Please try again.');
+        }
     },
     printEntry(index) {
       const entry = this.entries[index];

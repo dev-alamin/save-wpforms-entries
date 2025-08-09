@@ -7,6 +7,7 @@ use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
 use App\AdvancedEntryManager\Utility\Helper;
+use App\AdvancedEntryManager\GoogleSheet\Send_Data;
 
 /**
  * Class Update_Entries
@@ -138,5 +139,65 @@ class Update_Entries {
             'updated_fields' => array_keys($data),
             'entry_id'       => $id,
         ], 200);
+    }
+
+    /**
+     * The callback function to handle the unsync request.
+     *
+     * @param WP_REST_Request $request
+     * @return WP_REST_Response|WP_Error
+     */
+    public function handle_unsync_request(WP_REST_Request $request) {
+        $entry_id = absint($request['id']);
+        if (! $entry_id) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => __('Invalid or missing entry ID.', 'advanced-entries-manager-for-wpforms'),
+            ], 400);
+        }
+
+        $send_data = new Send_Data();
+        $result    = $send_data->unsync_entry_from_sheet($entry_id);
+
+        if (is_wp_error($result)) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => $result->get_error_message(), // Assuming WP_Error already has human-readable text
+            ], 500); // Internal Server Error
+        } elseif (! $result) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => __('Failed to unsync entry from Google Sheet.', 'advanced-entries-manager-for-wpforms'),
+            ], 500); // Internal Server Error
+        }
+
+        return new WP_REST_Response([
+            'success' => true,
+            'message' => __('Entry successfully unsynced from Google Sheet.', 'advanced-entries-manager-for-wpforms'),
+        ], 200); // OK
+    }
+
+    /**
+     * The callback function to handle the unsync request.
+     *
+     * @param WP_REST_Request $request
+     * @return WP_REST_Response|WP_Error
+     */
+    public function handle_sync_request(WP_REST_Request $request) {
+        $entry_id = absint($request['id']);
+        if (! $entry_id) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => __('Invalid or missing entry ID.', 'advanced-entries-manager-for-wpforms'),
+            ], 400);
+        }
+
+        $send_data = new Send_Data();
+        $send_data->process_single_entry( [ 'entry_id' => $entry_id ]);
+
+        return rest_ensure_response([
+            'success' => true,
+            'message' => __('Entry successfully sync to Google Sheet.', 'advanced-entries-manager-for-wpforms'),
+        ], 200); // OK
     }
 }

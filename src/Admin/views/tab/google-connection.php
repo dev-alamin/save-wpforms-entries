@@ -10,14 +10,16 @@
                 // $count = $send_data->enqueue_unsynced_entries(2);
                 // $send_data->process_single_entry([ 'entry_id' => 18 ] );
                 $ids = [
-                    4255232, 4254976
+                    18
                 ];
 
-                foreach( $ids as $id ) {
-                    $send_data->process_single_entry( ['entry_id' => $id ] );
-                }
+                // foreach( $ids as $id ) {
+                //     $send_data->process_single_entry( ['entry_id' => $id ] );
+                // }
 
                 // $send_data->unsync_entry( 4254567 );
+
+                // $send_data->unsync_entry_from_sheet(18);
             }
             ?>
         </h3>
