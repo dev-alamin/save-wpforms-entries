@@ -18,6 +18,7 @@
 namespace App\AdvancedEntryManager\Core;
 
 use App\AdvancedEntryManager\Utility\Helper;
+use App\AdvancedEntryManager\GoogleSheet\Send_Data;
 
 /**
  * Class Submit_Entry
@@ -82,13 +83,15 @@ class Submit_Entry {
 		$last_id = get_option( "swpfe_last_entry_id_{$form_data['id']}" );
 
 		if ( $last_id ) {
-			$wpdb->update(
+			$updated_entry = $wpdb->update(
 				$table,
 				[ 'name' => $name, 'email' => $email ],
 				[ 'id' => $last_id ]
 			);
-		}
 
+            // $send_data = new Send_Data();
+            // $send_data->process_single_entry( [ 'entry_id' => $updated_entry ] );
+		}
 		//error_log( "[Entry $entry_id] Updated: Name: $name | Email: $email | Last ID: $last_id" );
 	}
 }

@@ -139,7 +139,5 @@ class Assets {
                 'dismissAlt'  => __('Dismiss', 'save-wpf-entries'),
             )
         );
-
-
     }
 }
