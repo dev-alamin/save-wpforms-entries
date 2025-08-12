@@ -12,8 +12,8 @@ class Admin_Notice
      */
     public function __construct()
     {
-        add_action('swpfe_before_entries_ui_header', [$this, 'display_doc_link']);
-        add_action('swpfe_before_entries_ui_header', [$this, 'aem_rest_notice']);
+        add_action('aemfw_before_entries_ui_header', [$this, 'display_doc_link']);
+        add_action('aemfw_before_entries_ui_header', [$this, 'aem_rest_notice']);
 
         add_action('admin_notices', [$this, 'rest_disabled_notice']);
 
@@ -32,20 +32,20 @@ class Admin_Notice
             // Settings link.
             'settings' => sprintf(
                 '<a href="%s">%s</a>',
-                esc_url( admin_url( 'admin.php?page=swpfe-settings' ) ),
-                esc_html__( 'Settings', 'save-wpf-entries' )
+                esc_url( admin_url( 'admin.php?page=aemfw-settings' ) ),
+                esc_html__( 'Settings', 'advanced-entries-manager-for-wpforms' )
             ),
             // Documentation link.
             'docs'     => sprintf(
                 '<a href="%s" target="_blank">%s</a>',
                 'https://entriesmanager.com/aem/docs',
-                esc_html__( 'Docs', 'save-wpf-entries' )
+                esc_html__( 'Docs', 'advanced-entries-manager-for-wpforms' )
             ),
             // Upgrade PRO link.
             'upgrade_pro' => sprintf(
                 '<a href="%s" target="_blank" style="color:#d54e21;font-weight:bold;">%s</a>',
                 'https://entriesmanager.com/aem/pro',
-                esc_html__( 'Upgrade PRO', 'save-wpf-entries' )
+                esc_html__( 'Upgrade PRO', 'advanced-entries-manager-for-wpforms' )
             ),
         );
 
@@ -64,7 +64,7 @@ class Admin_Notice
     {
         if (! Helper::is_rest_enabled()) {
             echo '<div class="notice notice-error aem-notice"><p>';
-            esc_html_e('🚫 Your site is blocking REST API access required by Advanced Entries Manager. Please whitelist /wp-json/aem/entries/v1/* to ensure full functionality.', 'save-wpf-entries');
+            esc_html_e('🚫 Your site is blocking REST API access required by Advanced Entries Manager. Please whitelist /wp-json/aem/entries/v1/* to ensure full functionality.', 'advanced-entries-manager-for-wpforms');
             echo '</p></div>';
         }
     }
@@ -97,7 +97,7 @@ class Admin_Notice
                     echo wp_kses_post(
                         __(
                             'Your site is blocking the REST API endpoints required by Advanced Entries Manager. Please whitelist <code>/wp-json/wpforms/entries/v1/*</code> in your firewall or security plugin (e.g., Wordfence, Sucuri) to ensure full functionality.',
-                            'save-wpf-entries'
+                            'advanced-entries-manager-for-wpforms'
                         )
                     );
                     ?>
@@ -106,7 +106,7 @@ class Admin_Notice
                 <button
                     @click="show = false"
                     class="ml-auto text-red-500 hover:text-red-700 transition"
-                    aria-label="<?php esc_attr_e('Dismiss REST API alert', 'save-wpf-entries'); ?>">
+                    aria-label="<?php esc_attr_e('Dismiss REST API alert', 'advanced-entries-manager-for-wpforms'); ?>">
                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                         <path
                             d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59 7.11 5.7a1 1 0 0 0-1.41 
@@ -144,7 +144,7 @@ class Admin_Notice
                     echo wp_kses_post(
                         sprintf(
                             /* translators: %s: documentation URL */
-                            __('Need help managing entries or exporting them to Google Sheets? <a href="%s" class="text-blue-600 hover:underline font-medium" target="_blank" rel="noopener noreferrer">Visit the documentation</a>.', 'save-wpf-entries'),
+                            __('Need help managing entries or exporting them to Google Sheets? <a href="%s" class="text-blue-600 hover:underline font-medium" target="_blank" rel="noopener noreferrer">Visit the documentation</a>.', 'advanced-entries-manager-for-wpforms'),
                             esc_url('https://entriesmanager.com/aem/docs')
                         )
                     );
@@ -155,7 +155,7 @@ class Admin_Notice
                 <button
                     @click="expanded = !expanded"
                     class="text-blue-500 hover:text-blue-700 transition transform"
-                    :aria-label="expanded ? '<?php echo esc_attr(__('Collapse details', 'save-wpf-entries')); ?>' : '<?php echo esc_attr(__('Expand details', 'save-wpf-entries')); ?>'">
+                    :aria-label="expanded ? '<?php echo esc_attr(__('Collapse details', 'advanced-entries-manager-for-wpforms')); ?>' : '<?php echo esc_attr(__('Expand details', 'advanced-entries-manager-for-wpforms')); ?>'">
                     <svg :class="{ 'rotate-180': expanded }" class="w-5 h-5 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
@@ -165,7 +165,7 @@ class Admin_Notice
                 <button
                     @click="show = false"
                     class="ml-2 text-blue-400 hover:text-blue-700 transition"
-                    aria-label="<?php echo esc_attr__('Dismiss', 'save-wpf-entries'); ?>">
+                    aria-label="<?php echo esc_attr__('Dismiss', 'advanced-entries-manager-for-wpforms'); ?>">
                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                         <path
                             d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59 7.11 5.7a1 1 0 0 0-1.41 
@@ -182,7 +182,7 @@ class Admin_Notice
                         <svg class="w-5 h-5 text-green-500 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor">
                             <path d="M478-240q21 0 35.5-14.5T528-290q0-21-14.5-35.5T478-340q-21 0-35.5 14.5T428-290q0 21 14.5 35.5T478-240Zm-36-154h74q0-33 7.5-52t42.5-52q26-26 41-49.5t15-56.5q0-56-41-86t-97-30q-57 0-92.5 30T342-618l66 26q5-18 22.5-39t53.5-21q32 0 48 17.5t16 38.5q0 20-12 37.5T506-526q-44 39-54 59t-10 73Zm38 314q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z" />
                         </svg>
-                        <span><?php echo esc_html__('Getting Started Guide', 'save-wpf-entries'); ?></span>
+                        <span><?php echo esc_html__('Getting Started Guide', 'advanced-entries-manager-for-wpforms'); ?></span>
                     </a>
 
                     <!-- Entry Viewer Modal -->
@@ -190,7 +190,7 @@ class Admin_Notice
                         <svg class="w-5 h-5 text-indigo-500 mt-0.5" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M3 4v16h18V4H3zm16 14H5V6h14v12z" />
                         </svg>
-                        <span><?php echo esc_html__('View Full Entry in Modal', 'save-wpf-entries'); ?></span>
+                        <span><?php echo esc_html__('View Full Entry in Modal', 'advanced-entries-manager-for-wpforms'); ?></span>
                     </a>
 
                     <!-- Bulk Actions -->
@@ -198,7 +198,7 @@ class Admin_Notice
                         <svg class="w-5 h-5 text-purple-500 mt-0.5" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 14.5h-2V11h2v5.5zm0-7h-2V9h2v.5z" />
                         </svg>
-                        <span><?php echo esc_html__('Bulk Actions & Filters', 'save-wpf-entries'); ?></span>
+                        <span><?php echo esc_html__('Bulk Actions & Filters', 'advanced-entries-manager-for-wpforms'); ?></span>
                     </a>
 
                     <!-- Export & Field Exclusion -->
@@ -206,7 +206,7 @@ class Admin_Notice
                         <svg class="w-5 h-5 text-green-600 mt-0.5" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M5 20h14v-2H5v2zm7-18L5.33 9h4.67v6h4V9h4.67L12 2z" />
                         </svg>
-                        <span><?php echo esc_html__('CSV Export & Field Exclusion', 'save-wpf-entries'); ?></span>
+                        <span><?php echo esc_html__('CSV Export & Field Exclusion', 'advanced-entries-manager-for-wpforms'); ?></span>
                     </a>
 
                     <!-- Commenting Feature -->
@@ -214,7 +214,7 @@ class Admin_Notice
                         <svg class="w-5 h-5 text-pink-500 mt-0.5" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z" />
                         </svg>
-                        <span><?php echo esc_html__('Comment on Entries', 'save-wpf-entries'); ?></span>
+                        <span><?php echo esc_html__('Comment on Entries', 'advanced-entries-manager-for-wpforms'); ?></span>
                     </a>
 
                     <!-- Print Friendly -->
@@ -222,7 +222,7 @@ class Admin_Notice
                         <svg class="w-5 h-5 text-indigo-600 mt-0.5" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M19 8H5V5h14m0 14H5v-4h14m0-10a2 2 0 0 1 2 2v6h-2v4H5v-4H3V8a2 2 0 0 1 2-2h14z" />
                         </svg>
-                        <span><?php echo esc_html__('Print Friendly Entries', 'save-wpf-entries'); ?></span>
+                        <span><?php echo esc_html__('Print Friendly Entries', 'advanced-entries-manager-for-wpforms'); ?></span>
                     </a>
 
                     <!-- Google Sheets Sync -->
@@ -230,7 +230,7 @@ class Admin_Notice
                         <svg class="w-5 h-5 text-yellow-600 mt-0.5" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M3 3v18h18V3H3zm6 14H7v-2h2v2zm0-4H7v-2h2v2zm0-4H7V7h2v2zm4 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V7h2v2zm4 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V7h2v2z" />
                         </svg>
-                        <span><?php echo esc_html__('Sync to Google Sheets', 'save-wpf-entries'); ?></span>
+                        <span><?php echo esc_html__('Sync to Google Sheets', 'advanced-entries-manager-for-wpforms'); ?></span>
                     </a>
 
                     <!-- Migration Help -->
@@ -238,7 +238,7 @@ class Admin_Notice
                         <svg class="w-5 h-5 text-red-500 mt-0.5" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M12 2L3 21h18L12 2zm0 3.84L17.53 19H6.47L12 5.84zM11 10h2v4h-2v-4zm0 6h2v2h-2v-2z" />
                         </svg>
-                        <span><?php echo esc_html__('Entry Migration Guide', 'save-wpf-entries'); ?></span>
+                        <span><?php echo esc_html__('Entry Migration Guide', 'advanced-entries-manager-for-wpforms'); ?></span>
                     </a>
                 </div>
             </div>

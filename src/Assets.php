@@ -25,37 +25,37 @@ class Assets {
         $version = defined('AEMFW_VERSION') ? AEMFW_VERSION : time();
 
         return [
-            'swpfe-tailwind-css' => [
+            'aemfw-tailwind-css' => [
                 'src'     => AEMFW_ASSETS_URL . 'admin/tailwind.min.js',
                 'deps'    => [],
                 'version' => $version,
                 'in_footer' => false,
             ],
-            'swpfe-admin-js' => [
+            'aemfw-admin-js' => [
                 'src'     => AEMFW_ASSETS_URL . 'admin/admin.js',
                 'deps'    => [],
                 'version' => $version,
                 'in_footer' => true,
             ],
-            'swpfe-collapse' => [
+            'aemfw-collapse' => [
                 'src'     => AEMFW_ASSETS_URL . 'admin/collapse.js',
                 'deps'    => [],
                 'version' => null,
                 'in_footer' => true,
             ],
-            'swpfe-alpine' => [
+            'aemfw-alpine' => [
                 'src'     => AEMFW_ASSETS_URL . 'admin/alpine.min.js',
-                'deps'    => ['swpfe-collapse'],
+                'deps'    => ['aemfw-collapse'],
                 'version' => null,
                 'in_footer' => true,
             ],
-            'swpfe-lodash' => [
+            'aemfw-lodash' => [
                 'src'     => AEMFW_ASSETS_URL . 'admin/lodash.min.js',
                 'deps'    => [],
                 'version' => $version,
                 'in_footer' => false,
             ],
-            'swpfe-lottie' => [
+            'aemfw-lottie' => [
                 'src'     => AEMFW_ASSETS_URL . 'admin/lottie-player.js',
                 'deps'    => [],
                 'version' => '5.12.0',
@@ -73,7 +73,7 @@ class Assets {
         $version = defined('AEMFW_VERSION') ? AEMFW_VERSION : time();
 
         return [
-            'swpfe-admin-css' => [
+            'aemfw-admin-css' => [
                 'src'     => AEMFW_ASSETS_URL . 'admin/admin.css',
                 'deps'    => [],
                 'version' => $version,
@@ -89,9 +89,9 @@ class Assets {
      */
     public function register_assets( $hook ) {
         if ( ! in_array( $hook, [
-            'toplevel_page_swpfe-entries',
-            'wpforms-entries_page_swpfe-settings',
-            'wpforms-entries_page_swpfe-migration',
+            'toplevel_page_aemfw-entries',
+            'wpforms-entries_page_aemfw-settings',
+            'wpforms-entries_page_aemfw-migration',
         ], true ) ) {
             return;
         }
@@ -122,21 +122,21 @@ class Assets {
         }
 
         // Localize main admin JS
-        wp_localize_script( 'swpfe-admin-js', 'swpfeSettings', [
+        wp_localize_script( 'aemfw-admin-js', 'aemfwSettings', [
             'restUrl'  => esc_url_raw( rest_url() ),
             'nonce'    => wp_create_nonce( 'wp_rest' ),
-            'perPage'  => get_option( 'swpfe_entries_per_page', 20 ),
+            'perPage'  => get_option( 'aemfw_entries_per_page', 20 ),
             'ajax_url' => admin_url( 'admin-ajax.php' ),
         ] );
 
         wp_localize_script(
-            'swpfe-admin-js',
-            'swpfeMigrationNotice',
+            'aemfw-admin-js',
+            'aemfwMigrationNotice',
             array(
-                'title'       => __('Migrate from WPFormsDB', 'save-wpf-entries'),
-                'message'     => __('We found data in the legacy', 'save-wpf-entries') . ' <code>wpforms_db</code> ' . __('table. You can migrate all your entries into our advanced manager in just a few clicks.', 'save-wpf-entries'),
-                'start'       => __('Start Migration', 'save-wpf-entries'),
-                'dismissAlt'  => __('Dismiss', 'save-wpf-entries'),
+                'title'       => __('Migrate from WPFormsDB', 'advanced-entries-manager-for-wpforms'),
+                'message'     => __('We found data in the legacy', 'advanced-entries-manager-for-wpforms') . ' <code>wpforms_db</code> ' . __('table. You can migrate all your entries into our advanced manager in just a few clicks.', 'advanced-entries-manager-for-wpforms'),
+                'start'       => __('Start Migration', 'advanced-entries-manager-for-wpforms'),
+                'dismissAlt'  => __('Dismiss', 'advanced-entries-manager-for-wpforms'),
             )
         );
     }

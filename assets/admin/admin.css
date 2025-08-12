@@ -1,20 +1,20 @@
 /* Make admin page body match our custom design */
-body.toplevel_page_swpfe-entries #screen-meta,
-body.toplevel_page_swpfe-entries #wpfooter,
-body.toplevel_page_swpfe-entries .notice:not(.notice-error.aem-notice) {
+body.toplevel_page_aemfw-entries #screen-meta,
+body.toplevel_page_aemfw-entries #wpfooter,
+body.toplevel_page_aemfw-entries .notice:not(.notice-error.aem-notice) {
     display: none;
 }
 
 
-body.toplevel_page_swpfe-entries,
-body.wpforms-entries_page_swpfe-settings,
-body.wpforms-entries_page_swpfe-migration  {
+body.toplevel_page_aemfw-entries,
+body.wpforms-entries_page_aemfw-settings,
+body.wpforms-entries_page_aemfw-migration  {
 	background: #DDD !important;
     background-repeat: no-repeat;
     background-size: cover;
 }
 
-.swpfe-admin-page {
+.aemfw-admin-page {
 	background: #DDD;
     background-repeat: no-repeat;
     background-size: cover;
@@ -25,7 +25,7 @@ body.wpforms-entries_page_swpfe-migration  {
 }
 
 /* Optional: Remove WP’s default max width */
-.swpfe-admin-page .wrap {
+.aemfw-admin-page .wrap {
 	max-width: 100% !important;
 	padding: 0;
 }

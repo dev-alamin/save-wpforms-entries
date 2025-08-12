@@ -90,7 +90,7 @@ class Get_Entries {
 
         $where = 'WHERE ' . implode(' AND ', $where_clauses);
 
-        $where = apply_filters('swpfe_get_entries_where', $where, $params, $request);
+        $where = apply_filters('aemfw_get_entries_where', $where, $params, $request);
 
         $sql = $wpdb->prepare(
             "SELECT * FROM $table $where ORDER BY created_at DESC LIMIT %d OFFSET %d",
@@ -135,7 +135,7 @@ class Get_Entries {
             ];
         }
 
-        $data = apply_filters('swpfe_get_entries_data', $data, $results, $request);
+        $data = apply_filters('aemfw_get_entries_data', $data, $results, $request);
 
         $response = rest_ensure_response([
             'entries' => $data,
@@ -144,6 +144,6 @@ class Get_Entries {
             'per_page' => $per_page,
         ]);
 
-        return apply_filters('swpfe_get_entries_response', $response, $request);
+        return apply_filters('aemfw_get_entries_response', $response, $request);
     }
 }

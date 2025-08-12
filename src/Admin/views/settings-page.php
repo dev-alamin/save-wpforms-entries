@@ -23,7 +23,7 @@ $sheet_tab = Helper::get_option('google_sheet_tab', 'Sheet1');
 </div>
 
 
-<div class="wrap swpfe-admin-page min-h-screen max-w-7xl !m-auto bg-gray-50 px-8 py-10 text-[15px] font-inter text-gray-800 space-y-10 !m-auto"
+<div class="wrap aemfw-admin-page min-h-screen max-w-7xl !m-auto bg-gray-50 px-8 py-10 text-[15px] font-inter text-gray-800 space-y-10 !m-auto"
     x-data="settingsForm()">
     <div class="mb-8 bg-slate-700 text-white px-4 py-2 rounded-lg">
         <h1 class="!text-4xl !font-extrabold !text-indigo-100 !tracking-tight mb-2 flex items-center gap-3">
@@ -37,7 +37,7 @@ $sheet_tab = Helper::get_option('google_sheet_tab', 'Sheet1');
         </p>
     </div>
 
-    <div x-data="{ tab: 'google' }" class="swpfe-settings-tabs mb-10">
+    <div x-data="{ tab: 'google' }" class="aemfw-settings-tabs mb-10">
         <!-- Tab Control Navigation -->
         <nav class="flex flex-wrap gap-3 border-b border-indigo-200 text-sm font-medium">
             <button
@@ -83,7 +83,7 @@ $sheet_tab = Helper::get_option('google_sheet_tab', 'Sheet1');
             </button>
         </nav>
 
-        <form id="swpfe-settings-form" @submit.prevent="saveSettings" class="space-y-6">
+        <form id="aemfw-settings-form" @submit.prevent="saveSettings" class="space-y-6">
             <div x-show="tab === 'google'">
                 <!-- ✅ Connected Notice -->
                 <?php include __DIR__ . '/tab/google-connection.php'; ?>

@@ -35,8 +35,8 @@
         title=""
         class="mr-2 text-indigo-600 hover:text-indigo-800 transition cursor-pointer"
         :title="entry.note && entry.note.trim() !== '' 
-            ? '<?php echo esc_js(__('Edit Note', 'save-wpf-entries')); ?>' 
-            : '<?php echo esc_js(__('Add Note', 'save-wpf-entries')); ?>'"
+            ? '<?php echo esc_js(__('Edit Note', 'advanced-entries-manager-for-wpforms')); ?>' 
+            : '<?php echo esc_js(__('Add Note', 'advanced-entries-manager-for-wpforms')); ?>'"
     >
         <!-- Filled Note Icon (if has note) -->
         <template x-if="entry.note && entry.note.trim() !== ''">

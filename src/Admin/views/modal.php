@@ -74,7 +74,7 @@
                 @click="noteOpen = !noteOpen"
                 class="text-indigo-600 font-semibold flex items-center gap-2 hover:text-indigo-800 transition"
                 :aria-expanded="noteOpen.toString()"
-                :aria-controls="'swpfe-note-section'">
+                :aria-controls="'aemfw-note-section'">
                 <!-- Icon toggle -->
                 <template x-if="noteOpen">
                     <!-- ❌ Close Icon -->
@@ -99,10 +99,10 @@
 
                 <!-- Smart label -->
                 <span x-text="noteOpen
-                    ? '<?php echo esc_js(__('Close Note', 'save-wpf-entries')); ?>'
+                    ? '<?php echo esc_js(__('Close Note', 'advanced-entries-manager-for-wpforms')); ?>'
                     : (selectedEntry.note && selectedEntry.note.trim() !== ''
-                        ? '<?php echo esc_js(__('Edit Note', 'save-wpf-entries')); ?>'
-                        : '<?php echo esc_js(__('Add Note', 'save-wpf-entries')); ?>'
+                        ? '<?php echo esc_js(__('Edit Note', 'advanced-entries-manager-for-wpforms')); ?>'
+                        : '<?php echo esc_js(__('Add Note', 'advanced-entries-manager-for-wpforms')); ?>'
                     )">
                 </span>
             </button>
@@ -120,21 +120,21 @@
                 x-show="noteOpen"
                 x-collapse
                 class="mt-4 overflow-hidden transition-all duration-300 ease-in-out">
-                <label for="swpfe_note_fields" class="block text-sm font-medium text-gray-700 mb-1">
-                    <?php esc_html_e('Your Note', 'save-wpf-entries'); ?>
+                <label for="aemfw_note_fields" class="block text-sm font-medium text-gray-700 mb-1">
+                    <?php esc_html_e('Your Note', 'advanced-entries-manager-for-wpforms'); ?>
                 </label>
                 <textarea
-                    id="swpfe_note_fields"
-                    name="swpfe_note"
+                    id="aemfw_note_fields"
+                    name="aemfw_note"
                     x-model="selectedEntry.note"
                     rows="5"
                     maxlength="1000"
-                    placeholder="<?php echo esc_attr(__('Write something helpful for this entry…', 'save-wpf-entries')); ?>"
+                    placeholder="<?php echo esc_attr(__('Write something helpful for this entry…', 'advanced-entries-manager-for-wpforms')); ?>"
                     class="w-full bg-white border border-indigo-200 rounded-xl px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-800 placeholder-gray-400 transition"></textarea>
 
                 <div class="mt-2 flex justify-between items-center">
                     <p class="text-sm text-gray-500">
-                        <?php esc_html_e('Max 1000 characters. Avoid sensitive data.', 'save-wpf-entries'); ?>
+                        <?php esc_html_e('Max 1000 characters. Avoid sensitive data.', 'advanced-entries-manager-for-wpforms'); ?>
                     </p>
                     <button
                         @click="validateAndSaveNote"
@@ -145,7 +145,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" class="mr-2" height="20px" viewBox="0 -960 960 960" width="20px" fill="#fff">
                             <path d="M840-680v480q0 33-23.5 56.5T760-120H200q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h480l160 160Zm-80 34L646-760H200v560h560v-446ZM480-240q50 0 85-35t35-85q0-50-35-85t-85-35q-50 0-85 35t-35 85q0 50 35 85t85 35ZM240-560h360v-160H240v160Z" />
                         </svg>
-                        <span x-text="saved ? '<?php echo esc_js(__('Saved Note', 'save-wpf-entries')); ?>' : '<?php echo esc_js(__('Save Note', 'save-wpf-entries')); ?>'"></span>
+                        <span x-text="saved ? '<?php echo esc_js(__('Saved Note', 'advanced-entries-manager-for-wpforms')); ?>' : '<?php echo esc_js(__('Save Note', 'advanced-entries-manager-for-wpforms')); ?>'"></span>
                     </button>
 
                 </div>

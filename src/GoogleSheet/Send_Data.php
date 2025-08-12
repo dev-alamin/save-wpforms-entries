@@ -23,7 +23,7 @@ class Send_Data
         $auth_code = sanitize_text_field($_GET['oauth_proxy_code']);
 
         // Exchange the one-time auth code for real tokens
-        $response = wp_remote_post(AEMFW_PROXY_BASE_URL . 'wp-json/swpfe/v1/token', [
+        $response = wp_remote_post(AEMFW_PROXY_BASE_URL . 'wp-json/aemfw/v1/token', [
             'headers' => ['Content-Type' => 'application/json'],
             'body'    => json_encode([
                 'auth_code' => $auth_code,
@@ -31,7 +31,7 @@ class Send_Data
         ]);
 
         if (is_wp_error($response)) {
-            error_log('[SWPFE] Token exchange failed: ' . $response->get_error_message());
+            error_log('[aemfw] Token exchange failed: ' . $response->get_error_message());
             return;
         }
 
@@ -41,7 +41,7 @@ class Send_Data
             Helper::update_option('google_access_token', sanitize_text_field($body['access_token']));
             Helper::update_option('google_token_expires', time() + intval($body['expires_in'] ?? 3600));
             // Optional: Store refresh token too if ever needed on client (rare)
-            wp_safe_redirect(admin_url('admin.php?page=swpfe-settings&connected=true'));
+            wp_safe_redirect(admin_url('admin.php?page=aemfw-settings&connected=true'));
             exit;
         }
 

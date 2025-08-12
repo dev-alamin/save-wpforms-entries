@@ -21,7 +21,7 @@ class Options {
 
         add_action( 'admin_init', [ $this, 'register_settings' ] );
 
-        add_action('wp_ajax_swpfe_save_settings', [ $this, 'save_settings' ]);
+        add_action('wp_ajax_aemfw_save_settings', [ $this, 'save_settings' ]);
 
     }
 
@@ -34,8 +34,8 @@ class Options {
     public function save_settings () {
         check_ajax_referer('wp_rest');
 
-        update_option('swpfe_export_limit', absint($_POST['swpfe_export_limit'] ?? 100));
-        update_option('swpfe_entries_per_page', absint($_POST['swpfe_entries_per_page'] ?? 20));
+        update_option('aemfw_export_limit', absint($_POST['aemfw_export_limit'] ?? 100));
+        update_option('aemfw_entries_per_page', absint($_POST['aemfw_entries_per_page'] ?? 20));
 
         wp_send_json_success(['message' => 'Saved']);
     }
@@ -48,24 +48,24 @@ class Options {
      */
     public function register_settings(){
         // OAuth credentials
-        register_setting('swpfe_google_settings', 'swpfe_google_sheet_tab', [
+        register_setting('aemfw_google_settings', 'aemfw_google_sheet_tab', [
             'type'              => 'string',
             'sanitize_callback' => 'sanitize_text_field',
         ]);
 
         // New custom options
-        register_setting('swpfe_google_settings', 'swpfe_entries_per_page', [
+        register_setting('aemfw_google_settings', 'aemfw_entries_per_page', [
             'type'              => 'integer',
             'sanitize_callback' => 'absint',
             'default'           => 25,
         ]);
 
-        register_setting('swpfe_google_settings', 'swpfe_google_sheet_id', [
+        register_setting('aemfw_google_settings', 'aemfw_google_sheet_id', [
             'type'              => 'string',
             'sanitize_callback' => 'sanitize_text_field',
         ]);
 
-        register_setting('swpfe_google_settings', 'swpfe_google_sheet_auto_sync', [
+        register_setting('aemfw_google_settings', 'aemfw_google_sheet_auto_sync', [
             'type'              => 'boolean',
             'sanitize_callback' => function($val) {
                 return $val === '1' || $val === 1;
@@ -85,7 +85,7 @@ class Options {
     public function hide_update_notices() {
         $screen = get_current_screen();
 
-        if ($screen && strpos($screen->id, 'swpfe') !== false) {
+        if ($screen && strpos($screen->id, 'aemfw') !== false) {
             echo '<style>
                 .update-nag, 
                 .updated, 

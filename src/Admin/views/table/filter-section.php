@@ -6,7 +6,7 @@
      <!-- Controls -->
      <div class="flex flex-wrap gap-4 items-center py-4 px-4">
          <?php
-            $swpfe_bulk_actions = [
+            $aemfw_bulk_actions = [
                 [
                     'key'   => 'export_csv',
                     'label' => __('Export CSV', 'advanced-entries-manager-for-wpforms'),
@@ -54,7 +54,7 @@
              x-data='{
          showBulkMenu: false,
          selectedBulkAction: "",
-         bulkActions: <?php echo json_encode($swpfe_bulk_actions); ?>,
+         bulkActions: <?php echo json_encode($aemfw_bulk_actions); ?>,
          bulkIcon() {
              const action = this.bulkActions.find(a => a.key === this.selectedBulkAction);
              return action ? action.icon : "";

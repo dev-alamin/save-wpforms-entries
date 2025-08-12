@@ -6,7 +6,7 @@ function formTable(form) {
     totalEntries: form.entry_count,
     entries: [],
     currentPage: 1,
-    pageSize: swpfeSettings.perPage,
+    pageSize: aemfwSettings.perPage,
     totalPages: 1,
     sortAsc: true,
     sortAscStatus: true,
@@ -22,10 +22,10 @@ function formTable(form) {
     entryModalOpen: false,
     selectedEntry: {},
     bgClasses: [
-      "swpfe-row-bg-1",
-      "swpfe-row-bg-2",
-      "swpfe-row-bg-3",
-      "swpfe-row-bg-4",
+      "aemfw-row-bg-1",
+      "aemfw-row-bg-2",
+      "aemfw-row-bg-3",
+      "aemfw-row-bg-4",
     ],
 
     get paginatedEntries() {
@@ -37,12 +37,12 @@ function formTable(form) {
       try {
         if (action === "export_csv") {
           const res = await fetch(
-            `${swpfeSettings.restUrl}aem/v1/export/bulk`,
+            `${aemfwSettings.restUrl}aem/v1/export/bulk`,
             {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
-                "X-WP-Nonce": swpfeSettings.nonce,
+                "X-WP-Nonce": aemfwSettings.nonce,
               },
               body: JSON.stringify({ ids: this.bulkSelected }),
             }
@@ -67,12 +67,12 @@ function formTable(form) {
         } else {
           // Handle other actions
           const res = await fetch(
-            `${swpfeSettings.restUrl}aem/v1/entries/bulk`,
+            `${aemfwSettings.restUrl}aem/v1/entries/bulk`,
             {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
-                "X-WP-Nonce": swpfeSettings.nonce,
+                "X-WP-Nonce": aemfwSettings.nonce,
               },
               body: JSON.stringify({ ids: this.bulkSelected, action }),
             }
@@ -128,10 +128,10 @@ function formTable(form) {
         });
 
         const res = await fetch(
-          `${swpfeSettings.restUrl}aem/v1/entries?${query}`,
+          `${aemfwSettings.restUrl}aem/v1/entries?${query}`,
           {
             headers: {
-              "X-WP-Nonce": swpfeSettings.nonce,
+              "X-WP-Nonce": aemfwSettings.nonce,
             },
           }
         );
@@ -270,14 +270,14 @@ function formTable(form) {
 
       try {
         const res = await fetch(
-          `${swpfeSettings.restUrl}aem/v1/entries/${
+          `${aemfwSettings.restUrl}aem/v1/entries/${
             payload.id
           }?form_id=${encodeURIComponent(payload.form_id)}`,
           {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "X-WP-Nonce": swpfeSettings.nonce,
+              "X-WP-Nonce": aemfwSettings.nonce,
             },
             body: JSON.stringify(payload),
           }
@@ -293,11 +293,11 @@ function formTable(form) {
       if (!this.selectedEntry) return;
 
       try {
-        const response = await fetch(`${swpfeSettings.restUrl}aem/v1/entries`, {
+        const response = await fetch(`${aemfwSettings.restUrl}aem/v1/entries`, {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
-            "X-WP-Nonce": swpfeSettings.nonce,
+            "X-WP-Nonce": aemfwSettings.nonce,
           },
           body: JSON.stringify({
             id: this.selectedEntry.id,
@@ -375,13 +375,13 @@ function formTable(form) {
       };
 
       try {
-        const res = await fetch(`${swpfeSettings.restUrl}aem/v1/entries/${
+        const res = await fetch(`${aemfwSettings.restUrl}aem/v1/entries/${
             payload.id
           }?form_id=${encodeURIComponent(payload.form_id)}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "X-WP-Nonce": swpfeSettings.nonce,
+            "X-WP-Nonce": aemfwSettings.nonce,
           },
           body: JSON.stringify(payload),
         });
@@ -411,7 +411,7 @@ function formTable(form) {
       if (note.length > 1000) {
         alert(
           "Note is too long. Please limit to 1000 characters.",
-          "save-wpf-entries"
+          "advanced-entries-manager-for-wpforms"
         );
         return;
       }
@@ -421,12 +421,12 @@ function formTable(form) {
     async toggleGoogleSheetSync(index) {
         const entry = this.entries[index];
         const entryId = entry.id;
-        const nonce = swpfeSettings.nonce;
+        const nonce = aemfwSettings.nonce;
 
         // Decide action based on current state
         const isCurrentlySynced = !!entry.synced;
         const action = isCurrentlySynced ? 'unsync' : 'sync';
-        const apiUrl = `${swpfeSettings.restUrl}aem/v1/entries/${entryId}/${action}`;
+        const apiUrl = `${aemfwSettings.restUrl}aem/v1/entries/${entryId}/${action}`;
 
         try {
             const response = await fetch(apiUrl, {
@@ -652,9 +652,9 @@ function entriesApp() {
     async fetchForms() {
       this.loading = true;
       try {
-        const res = await fetch(`${swpfeSettings.restUrl}aem/v1/forms`, {
+        const res = await fetch(`${aemfwSettings.restUrl}aem/v1/forms`, {
           headers: {
-            "X-WP-Nonce": swpfeSettings.nonce,
+            "X-WP-Nonce": aemfwSettings.nonce,
           },
         });
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -681,10 +681,10 @@ function entriesApp() {
 
       try {
         const res = await fetch(
-          `${swpfeSettings.restUrl}aem/v1/entries?${query}`,
+          `${aemfwSettings.restUrl}aem/v1/entries?${query}`,
           {
             headers: {
-              "X-WP-Nonce": swpfeSettings.nonce,
+              "X-WP-Nonce": aemfwSettings.nonce,
             },
           }
         );
@@ -750,10 +750,10 @@ function formEntriesApp(formId, entryCount) {
 
       try {
         const res = await fetch(
-          `${swpfeSettings.restUrl}aem/v1/entries?${queryParams}`,
+          `${aemfwSettings.restUrl}aem/v1/entries?${queryParams}`,
           {
             headers: {
-              "X-WP-Nonce": swpfeSettings.nonce,
+              "X-WP-Nonce": aemfwSettings.nonce,
             },
           }
         );
@@ -824,7 +824,7 @@ function settingsForm() {
       this.isSaving = true;
       this.message = "";
 
-      const form = document.querySelector("#swpfe-settings-form");
+      const form = document.querySelector("#aemfw-settings-form");
       const formData = new FormData(form);
 
       // ❌ Remove default WP fields
@@ -834,8 +834,8 @@ function settingsForm() {
       formData.delete("_wp_http_referer");
 
       // ✅ Add custom action and nonce
-      formData.append("action", "swpfe_save_settings");
-      formData.append("_wpnonce", swpfeSettings.nonce);
+      formData.append("action", "aemfw_save_settings");
+      formData.append("_wpnonce", aemfwSettings.nonce);
 
       try {
         const res = await fetch(ajaxurl, {
@@ -902,7 +902,7 @@ function exportSettings() {
       this.fetchForms();
 
       // Check for a saved job on page load
-      const savedJobId = localStorage.getItem("swpfe_export_job_id");
+      const savedJobId = localStorage.getItem("aemfw_export_job_id");
       if (savedJobId) {
         this.exportJobId = savedJobId;
         this.isExporting = true;
@@ -916,8 +916,8 @@ function exportSettings() {
     // Fetches forms from the REST API
     async fetchForms() {
       try {
-        const res = await fetch(`${swpfeSettings.restUrl}aem/v1/forms`, {
-          headers: { "X-WP-Nonce": swpfeSettings.nonce },
+        const res = await fetch(`${aemfwSettings.restUrl}aem/v1/forms`, {
+          headers: { "X-WP-Nonce": aemfwSettings.nonce },
         });
         const data = await res.json();
         this.forms = data;
@@ -937,9 +937,9 @@ function exportSettings() {
       this.errorMessage = "";
       try {
         const res = await fetch(
-          `${swpfeSettings.restUrl}aem/v1/forms/${this.selectedFormId}/fields`,
+          `${aemfwSettings.restUrl}aem/v1/forms/${this.selectedFormId}/fields`,
           {
-            headers: { "X-WP-Nonce": swpfeSettings.nonce },
+            headers: { "X-WP-Nonce": aemfwSettings.nonce },
           }
         );
         const data = await res.json();
@@ -966,8 +966,8 @@ function exportSettings() {
       this.isExporting = true;
       this.exportProgress = 0;
       this.exportJobId = null;
-      this.dateFrom = document.getElementById("swpfe_export_date_from").value;
-      this.dateTo = document.getElementById("swpfe_export_date_to").value;
+      this.dateFrom = document.getElementById("aemfw_export_date_from").value;
+      this.dateTo = document.getElementById("aemfw_export_date_to").value;
 
 
       const exportData = {
@@ -978,10 +978,10 @@ function exportSettings() {
       };
 
       try {
-        const res = await fetch(`${swpfeSettings.restUrl}aem/v1/export/start`, {
+        const res = await fetch(`${aemfwSettings.restUrl}aem/v1/export/start`, {
           method: "POST",
           headers: {
-            "X-WP-Nonce": swpfeSettings.nonce,
+            "X-WP-Nonce": aemfwSettings.nonce,
             "Content-Type": "application/json",
           },
           body: JSON.stringify(exportData),
@@ -1016,7 +1016,7 @@ function exportSettings() {
 
         if (res.ok && result.success) {
           this.exportJobId = result.job_id;
-          localStorage.setItem("swpfe_export_job_id", this.exportJobId);
+          localStorage.setItem("aemfw_export_job_id", this.exportJobId);
           this.startPolling();
         } else {
           throw new Error(result.message || "Failed to start export.");
@@ -1036,12 +1036,12 @@ function exportSettings() {
         try {
           const res = await fetch(
             `${
-              swpfeSettings.restUrl
+              aemfwSettings.restUrl
             }aem/v1/export/progress?job_id=${encodeURIComponent(
               this.exportJobId
             )}`,
             {
-              headers: { "X-WP-Nonce": swpfeSettings.nonce },
+              headers: { "X-WP-Nonce": aemfwSettings.nonce },
             }
           );
           const result = await res.json();
@@ -1098,7 +1098,7 @@ function exportSettings() {
       }
       // This implementation is fine. It uses a dedicated endpoint which is good practice.
       const downloadUrl = `${
-        swpfeSettings.restUrl
+        aemfwSettings.restUrl
       }aem/v1/export/download?job_id=${encodeURIComponent(this.exportJobId)}`;
       window.open(downloadUrl, "_blank");
     },
@@ -1115,7 +1115,7 @@ function exportSettings() {
       this.processedCount = 0;
       this.totalEntries = 0;
       // Note: isExportComplete is NOT reset here. It's handled separately.
-      localStorage.removeItem("swpfe_export_job_id");
+      localStorage.removeItem("aemfw_export_job_id");
     },
 
     showExportProgress() {
@@ -1139,12 +1139,12 @@ function exportSettings() {
       try {
         const res = await fetch(
           `${
-            swpfeSettings.restUrl
+            aemfwSettings.restUrl
           }aem/v1/export/delete?job_id=${encodeURIComponent(this.exportJobId)}`,
           {
             method: "POST",
             headers: {
-              "X-WP-Nonce": swpfeSettings.nonce,
+              "X-WP-Nonce": aemfwSettings.nonce,
             },
           }
         );
@@ -1189,15 +1189,15 @@ function migrationHandler() {
 
     init() {
       // Load batch size from localStorage if you want to persist that too
-      const savedBatch = localStorage.getItem("swpfe_batch_size");
+      const savedBatch = localStorage.getItem("aemfw_batch_size");
       if (savedBatch) this.batchSize = parseInt(savedBatch, 10);
 
       // ✅ Prevent duplicate fetch
       if (!this.entryFetchStarted) {
         this.entryFetchStarted = true;
 
-        fetch(`${swpfeSettings.restUrl}aem/v1/legacy/source/count`, {
-          headers: { "X-WP-Nonce": swpfeSettings.nonce },
+        fetch(`${aemfwSettings.restUrl}aem/v1/legacy/source/count`, {
+          headers: { "X-WP-Nonce": aemfwSettings.nonce },
         })
           .then((res) => {
             if (!res.ok) throw new Error("Failed to fetch entry counts");
@@ -1219,7 +1219,7 @@ function migrationHandler() {
       }
 
       // Check if migration was in progress before page reload
-      const inProgress = localStorage.getItem("swpfe_migration_in_progress");
+      const inProgress = localStorage.getItem("aemfw_migration_in_progress");
       if (inProgress === "true") {
         this.migrationInProgress = true;
 
@@ -1247,17 +1247,17 @@ function migrationHandler() {
 
       this.log.push(`🔁 Starting migration with batch size: ${this.batchSize}`);
 
-      localStorage.setItem("swpfe_migration_in_progress", "true");
-      localStorage.setItem("swpfe_batch_size", this.batchSize);
+      localStorage.setItem("aemfw_migration_in_progress", "true");
+      localStorage.setItem("aemfw_batch_size", this.batchSize);
 
       try {
         const triggerRes = await fetch(
-          `${swpfeSettings.restUrl}aem/v1/migration/trigger`,
+          `${aemfwSettings.restUrl}aem/v1/migration/trigger`,
           {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "X-WP-Nonce": swpfeSettings.nonce,
+              "X-WP-Nonce": aemfwSettings.nonce,
             },
             body: JSON.stringify({ batch_size: this.batchSize }),
           }
@@ -1266,7 +1266,7 @@ function migrationHandler() {
 
         if (!triggerData.success) {
           this.migrating = false;
-          localStorage.setItem("swpfe_migration_in_progress", "false");
+          localStorage.setItem("aemfw_migration_in_progress", "false");
           this.log.push(
             `❌ Failed to start migration: ${
               triggerData.message || "Unknown error."
@@ -1281,7 +1281,7 @@ function migrationHandler() {
         this.pollInterval = setInterval(() => this.checkProgress(), 2000);
       } catch (error) {
         this.migrating = false;
-        localStorage.setItem("swpfe_migration_in_progress", "false");
+        localStorage.setItem("aemfw_migration_in_progress", "false");
         this.log.push(`❌ Error starting migration: ${error.message}`);
       }
     },
@@ -1289,9 +1289,9 @@ function migrationHandler() {
     async checkProgress() {
       try {
         const res = await fetch(
-          `${swpfeSettings.restUrl}aem/v1/migration/progress`,
+          `${aemfwSettings.restUrl}aem/v1/migration/progress`,
           {
-            headers: { "X-WP-Nonce": swpfeSettings.nonce },
+            headers: { "X-WP-Nonce": aemfwSettings.nonce },
           }
         );
         const data = await res.json();
@@ -1323,7 +1323,7 @@ function migrationHandler() {
           this.complete = true;
           this.progress = 100;
           this.log.push("🎉 Migration complete!");
-          localStorage.setItem("swpfe_migration_in_progress", "false");
+          localStorage.setItem("aemfw_migration_in_progress", "false");
           this.migrationInProgress = false;
         }
       } catch (error) {
@@ -1346,7 +1346,7 @@ function migrationHandler() {
       this.complete = false;
       this.progress = 0;
       this.log.push("🛑 Migration stopped.");
-      localStorage.setItem("swpfe_migration_in_progress", "false");
+      localStorage.setItem("aemfw_migration_in_progress", "false");
       this.migrationInProgress = false;
     },
 

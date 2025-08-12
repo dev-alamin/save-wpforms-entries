@@ -51,7 +51,7 @@ class Delete_Single_Entry {
             ], 403);
         }
 
-        do_action('swpfe_before_entry_delete', $id, $form_id);
+        do_action('aemfw_before_entry_delete', $id, $form_id);
 
         $table = Helper::get_table_name(); // e.g., 'aemfw_entries_manager'
         $deleted = $wpdb->delete(
@@ -61,7 +61,7 @@ class Delete_Single_Entry {
         );
 
         if ($deleted) {
-            do_action('swpfe_after_entry_delete', $id, $form_id);
+            do_action('aemfw_after_entry_delete', $id, $form_id);
 
             return new WP_REST_Response(['deleted' => true], 200);
         }

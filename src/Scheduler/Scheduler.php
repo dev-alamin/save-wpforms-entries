@@ -3,7 +3,6 @@
 namespace App\AdvancedEntryManager\Scheduler;
 
 use App\AdvancedEntryManager\Utility\Helper;
-use WPForms\Admin\Builder\Help;
 
 class Scheduler
 {
@@ -44,7 +43,6 @@ class Scheduler
             ...$args
         );
 
-
         $total_entries = (int) $wpdb->get_var($count_sql);
 
         $batches = (int) ceil($total_entries / $batch_size);
@@ -61,8 +59,8 @@ class Scheduler
                 'offset'         => $i * $batch_size,
             ];
 
-            if (! as_next_scheduled_action('swpfe_export_csv_batch', [$args])) {
-                as_schedule_single_action(time() + ($i * 15), 'swpfe_export_csv_batch', [$args], 'swpfe_export_csv_group');
+            if (! as_next_scheduled_action('aemfw_export_csv_batch', [$args])) {
+                as_schedule_single_action(time() + ($i * 15), 'aemfw_export_csv_batch', [$args], 'aemfw_export_csv_group');
             }
         }
     }

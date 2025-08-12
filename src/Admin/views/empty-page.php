@@ -1,5 +1,5 @@
 <div
-    x-show="setError && Object.keys(forms).length === 0 && !loading" x-cloak
+    x-show="setError || Object.keys(forms).length === 0 && !loading" x-cloak
     class="flex flex-col items-center justify-center mt-20 space-y-6 text-gray-600 bg-indigo-50 rounded-lg">
 
     <lottie-player
@@ -17,7 +17,7 @@
 
     <p class="!text-base !sm:text-lg text-gray-500 max-w-md text-center">
         <?php echo wp_kses_post( sprintf(
-            __( "Looks like this form hasn't received any submissions yet.
+            __( "Looks like you haven't received any submissions yet.
             <br class='hidden sm:block'>Sit back and relax — 
             we’ll show the entries here as soon as they arrive! 📨", 
             'advanced-entries-manager-for-wpforms' )

@@ -18,7 +18,7 @@ class Export_Entries
     /**
      * Plugin Prefix
      */
-    const AEM_PREFIX = 'swpfe_';
+    const AEM_PREFIX = 'aemfw_';
 
     /**
      * The hook used by Action Scheduler to process a single batch.

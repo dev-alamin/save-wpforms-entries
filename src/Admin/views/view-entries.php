@@ -1,4 +1,4 @@
-<?php do_action('swpfe_before_entries_ui'); ?>
+<?php do_action('aemfw_before_entries_ui'); ?>
 
 <div
     x-data="toastHandler()"
@@ -17,11 +17,11 @@
 <div
     x-data="entriesApp()"
     x-init="fetchForms()"
-    class="wrap swpfe-admin-page min-h-screen max-w-7xl !m-auto px-8 py-10 text-[15px] font-inter"
+    class="wrap aemfw-admin-page min-h-screen max-w-7xl !m-auto px-8 py-10 text-[15px] font-inter"
     role="main"
     aria-label="<?php echo esc_attr__('WPForms Entries Overview', 'advanced-entries-manager-for-wpforms'); ?>">
 
-    <?php do_action('swpfe_before_entries_ui_header'); ?>
+    <?php do_action('aemfw_before_entries_ui_header'); ?>
     <!-- Header -->
     <div class="mb-8 bg-slate-700 text-white px-4 py-2 rounded-lg">
         <h1 class="!text-4xl !font-extrabold !text-indigo-100 !tracking-tight mb-2 flex items-center gap-3">
@@ -54,26 +54,26 @@
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-yellow-700" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M20 2H4C2.9 2 2 2.9 2 4v4c0 1.1.9 2 2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 8H4V4h16v6z" />
                         </svg>
-                        <span x-text="swpfeMigrationNotice.title"></span>
+                        <span x-text="aemfwMigrationNotice.title"></span>
                     </h2>
-                    <p class="text-sm" x-html="swpfeMigrationNotice.message"></p>
+                    <p class="text-sm" x-html="aemfwMigrationNotice.message"></p>
                 </div>
 
                 <div class="flex gap-2">
                     <button
-                        @click="window.location.href = '<?php echo esc_url(admin_url('admin.php?page=swpfe-migration')); ?>'"
+                        @click="window.location.href = '<?php echo esc_url(admin_url('admin.php?page=aemfw-migration')); ?>'"
                         class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md transition">
                         <!-- Material Icon: rocket_launch -->
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M20 2c-2 0-3.94.79-5.38 2.21l-1.44 1.44 4.24 4.24 1.44-1.44C21.21 8.94 22 7 22 5c0-1.1-.9-2-2-2zm-8.49 4.91l-7.07 7.07c-.28.28-.49.63-.61 1.01l-1.82 5.55c-.18.56.37 1.1.93.93l5.55-1.82c.38-.12.73-.33 1.01-.61l7.07-7.07-4.06-4.06zM5 20h4v2H5v-2z" />
                         </svg>
-                        <span x-text="swpfeMigrationNotice.start"></span>
+                        <span x-text="aemfwMigrationNotice.start"></span>
                     </button>
 
                     <button
                         @click="showMigrationNotice = false"
                         class="text-sm text-gray-600 hover:text-gray-900 transition"
-                        :aria-label="swpfeMigrationNotice.dismissAlt">
+                        :aria-label="aemfwMigrationNotice.dismissAlt">
                         <!-- Material Icon: close -->
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
@@ -286,4 +286,4 @@
     <!-- Powered by message ends -->
 
 </div>
-<?php do_action('swpfe_after_entries_ui'); ?>
+<?php do_action('aemfw_after_entries_ui'); ?>

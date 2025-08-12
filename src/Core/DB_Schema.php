@@ -7,7 +7,7 @@
  * Provides methods to retrieve the table name and to create the required database table
  * for storing form entries, including metadata such as status, notes, export/sync flags, and timestamps.
  *
- * @package SWPFE
+ * @package aemfw
  */
 
 namespace App\AdvancedEntryManager\Core;
@@ -23,7 +23,7 @@ class DB_Schema
     public static function table()
     {
         global $wpdb;
-        return $wpdb->prefix . 'swpfe_entries';
+        return $wpdb->prefix . 'aemfw_entries';
     }
 
     /**
@@ -44,29 +44,29 @@ class DB_Schema
         $charset_collate = $wpdb->get_charset_collate();
 
         $sql = "CREATE TABLE $table (
-            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            form_id BIGINT UNSIGNED NOT NULL,
+            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            form_id BIGINT(20) UNSIGNED NOT NULL,
             entry LONGTEXT NOT NULL,
             name VARCHAR(255) DEFAULT NULL,
             email VARCHAR(255) DEFAULT NULL,
             status ENUM('unread','read') DEFAULT 'unread',
-            is_favorite BOOLEAN DEFAULT FALSE,
+            is_favorite TINYINT(1) DEFAULT 0,
             note TEXT DEFAULT NULL,
-            exported_to_csv BOOLEAN DEFAULT FALSE,
-            synced_to_gsheet BOOLEAN DEFAULT FALSE,
+            exported_to_csv TINYINT(1) DEFAULT 0,
+            synced_to_gsheet TINYINT(1) DEFAULT 0,
             printed_at DATETIME DEFAULT NULL,
             is_spam TINYINT(1) DEFAULT 0,
             resent_at DATETIME DEFAULT NULL,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            retry_count INT DEFAULT 0;
-            PRIMARY KEY (id),
-            INDEX idx_form_id (form_id),
-            INDEX idx_status (status),
-            INDEX idx_created_at (created_at),
-            INDEX idx_email (email),
-            INDEX idx_name (name),
-            INDEX idx_formid_id (form_id, id) -- Composite index for pagination performance
+            retry_count INT(11) DEFAULT 0,
+            PRIMARY KEY  (id),
+            KEY idx_form_id (form_id),
+            KEY idx_status (status),
+            KEY idx_created_at (created_at),
+            KEY idx_email (email),
+            KEY idx_name (name),
+            KEY idx_formid_id (form_id, id)
         ) $charset_collate;";
 
         /**

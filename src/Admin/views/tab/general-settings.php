@@ -5,10 +5,10 @@
     </p>
 
     <div>
-        <label for="swpfe_entries_per_page" class="block text-sm font-medium text-gray-700 mb-1">
+        <label for="aemfw_entries_per_page" class="block text-sm font-medium text-gray-700 mb-1">
             <?php esc_html_e('Entries per Page', 'advanced-entries-manager-for-wpforms'); ?>
         </label>
-        <input type="number" name="swpfe_entries_per_page" id="swpfe_entries_per_page"
+        <input type="number" name="aemfw_entries_per_page" id="aemfw_entries_per_page"
             value="<?php echo esc_attr($per_page); ?>" min="5" max="200"
             class="!w-full !px-4 !py-2 !border !border-gray-300 !rounded-md !shadow-sm !text-sm !focus:ring !focus:ring-indigo-200 !focus:border-indigo-500">
     </div>

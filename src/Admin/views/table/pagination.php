@@ -38,7 +38,7 @@
     
     <!-- Go to Page Input -->
     <div class="ml-4 flex items-center gap-1">
-        <span class="text-sm text-gray-600"><?php esc_html_e( 'Go to', 'save-wpf-entries' ); ?></span>
+        <span class="text-sm text-gray-600"><?php esc_html_e( 'Go to', 'advanced-entries-manager-for-wpforms' ); ?></span>
 
         <input
             type="number"
@@ -52,7 +52,7 @@
             "
             class="w-16 px-2 py-1 border border-gray-300 rounded-md text-center text-sm focus:outline-none focus:ring focus:border-indigo-500"
             :placeholder="currentPage"
-            aria-label="<?php esc_attr_e( 'Jump to page number', 'save-wpf-entries' ); ?>"
+            aria-label="<?php esc_attr_e( 'Jump to page number', 'advanced-entries-manager-for-wpforms' ); ?>"
         />
 
         <span class="text-sm text-gray-600">/ <span x-text="totalPages"></span></span>

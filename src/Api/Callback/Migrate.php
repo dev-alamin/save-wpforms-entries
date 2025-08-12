@@ -10,13 +10,13 @@ use App\AdvancedEntryManager\Utility\DB;
 
 class Migrate
 {
-    const AEM_PREFIX         = 'swpfe_';
+    const AEM_PREFIX         = 'aemfw_';
     const SOURCE_TABLE       = 'wpforms_db';
     const OPTION_LAST_ID     = self::AEM_PREFIX . 'migration_last_id';
     const OPTION_COMPLETE    = self::AEM_PREFIX . 'migration_complete';
     const BATCH_SIZE         = 500;
-    const ACTION_HOOK        = self::AEM_PREFIX . 'swpfe_migrate_batch';
-    const SCHEDULE_GROUP     = self::AEM_PREFIX . 'swpfe_migration';
+    const ACTION_HOOK        = self::AEM_PREFIX . 'aemfw_migrate_batch';
+    const SCHEDULE_GROUP     = self::AEM_PREFIX . 'aemfw_migration';
 
     /**
      * Trigger the migration process.
@@ -30,7 +30,7 @@ class Migrate
         }
 
         // Prevent triggering if migration already running and not complete
-        if (Helper::get_option('swpfe_migration_started_at') && ! Helper::get_option(self::OPTION_COMPLETE)) {
+        if (Helper::get_option('aemfw_migration_started_at') && ! Helper::get_option(self::OPTION_COMPLETE)) {
             return new WP_Error('migration_already_running', __('Migration is already in progress.', 'advanced-entries-manager-for-wpforms'));
         }
 
@@ -38,8 +38,8 @@ class Migrate
         Helper::update_option(self::OPTION_LAST_ID, 0);
         Helper::delete_option(self::OPTION_COMPLETE);
 
-        if (! Helper::get_option('swpfe_migration_started_at')) {
-            Helper::update_option('swpfe_migration_started_at', time());
+        if (! Helper::get_option('aemfw_migration_started_at')) {
+            Helper::update_option('aemfw_migration_started_at', time());
         }
 
         // Clear any pending/reserved duplicate actions
@@ -56,7 +56,7 @@ class Migrate
         return rest_ensure_response([
             'success' => true,
             'message' => __('Migration started in background.', 'advanced-entries-manager-for-wpforms'),
-            'code'    => 'swpfe_migration_started',
+            'code'    => 'aemfw_migration_started',
         ]);
     }
 
@@ -68,7 +68,7 @@ class Migrate
      */
     public function migrate_from_wpformsdb_plugin(int $batch_size = self::BATCH_SIZE): void
     {
-        error_log('[SWPFE MIGRATION] migrate_from_wpformsdb_plugin called, batch size: ' . $batch_size);
+        error_log('[aemfw MIGRATION] migrate_from_wpformsdb_plugin called, batch size: ' . $batch_size);
         global $wpdb;
 
         $last_id = absint(Helper::get_option(self::OPTION_LAST_ID, 0));
@@ -76,12 +76,12 @@ class Migrate
         $target_table = Helper::get_table_name(); // e.g., AEMFW table
 
         if (! Helper::table_exists($source_table)) {
-            error_log('[SWPFE ERROR] Source table missing: ' . $source_table);
+            error_log('[aemfw ERROR] Source table missing: ' . $source_table);
             return;
         }
 
         if (! Helper::table_exists($target_table)) {
-            error_log('[SWPFE ERROR] Target table missing: ' . $target_table);
+            error_log('[aemfw ERROR] Target table missing: ' . $target_table);
             return;
         }
 
@@ -197,7 +197,7 @@ class Migrate
 
         $complete = (bool) Helper::get_option('migration_complete', false);
 
-        $start = (int) Helper::get_option('swpfe_migration_started_at', 0);
+        $start = (int) Helper::get_option('aemfw_migration_started_at', 0);
         $eta   = null;
 
         if ($start > 0 && $migrated > 0 && !$complete) {

@@ -20,6 +20,6 @@ class Sync_Google_Sheet_Action
         });
 
         // Hook the task.
-        add_action( 'aemfw_fiveminutes_sync', [ $this->send_data, 'enqueue_unsynced_entries' ] );
+        add_action( 'aemfw_enqueue_unsynced_entries', [ $this->send_data, 'enqueue_unsynced_entries' ] );
     }
 }

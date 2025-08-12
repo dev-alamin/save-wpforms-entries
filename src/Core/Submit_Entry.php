@@ -75,15 +75,5 @@ class Submit_Entry {
         ] );
         
         $last_inserted_id = $wpdb->insert_id;
-
-        if( $last_inserted_id ) {
-
-            // $send_data = new Send_Data();
-            // $send_data->process_single_entry( [ 'entry_id' => $last_inserted_id ] );
-            
-            // $results = $wpdb->get_results( "SELECT * FROM {$table} WHERE id = {$last_inserted_id}", OBJECT );
-            
-            // Helper::set_error_log( print_r( $results, true ) );
-        }
     }
 }

@@ -8,7 +8,7 @@ use App\AdvancedEntryManager\Utility\DB;
 
 class Helper {
 
-    const OPTION_PREFIX = 'swpfe_';
+    const OPTION_PREFIX = 'aemfw_';
 
     /**
      * Set AEM Transient
@@ -28,7 +28,7 @@ class Helper {
     public static function get_table_name(): string {
         global $wpdb;
         // return $wpdb->prefix . AEMFW_TABLE_NAME;
-        return $wpdb->prefix . 'swpfe_entries';
+        return $wpdb->prefix . 'aemfw_entries';
     }
 
     /**
@@ -140,7 +140,7 @@ class Helper {
      * @return WP_Error
      */
     public static function wp_error( string $message, $code = 'error', array $data = [] ): WP_Error {
-        return new WP_Error( $code, __( $message, 'save-wpf-entries' ), $data );
+        return new WP_Error( $code, __( $message, 'advanced-entries-manager-for-wpforms' ), $data );
     }
 
     /**
@@ -321,7 +321,7 @@ class Helper {
         }
 
         // Else: Refresh via POST request to proxy's REST endpoint
-        $response = wp_remote_post( AEMFW_PROXY_BASE_URL . 'wp-json/swpfe/v1/refresh', [
+        $response = wp_remote_post( AEMFW_PROXY_BASE_URL . 'wp-json/aemfw/v1/refresh', [
             'headers' => ['Content-Type' => 'application/json'],
             'body'    => json_encode([
                 'site' => self::get_settings_page_url(),
@@ -351,7 +351,7 @@ class Helper {
      * @return string
      */
     public static function get_settings_page_url(){
-        return admin_url( 'admin.php?page=swpfe-settings');
+        return admin_url( 'admin.php?page=aemfw-settings');
     }
 
     /**

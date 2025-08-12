@@ -73,7 +73,7 @@ class Create_Entries {
          * @param array           $params  Full request parameters.
          * @param WP_REST_Request $request REST request object.
          */
-        do_action('swpfe_before_entry_create', $form_id, $entry, $params, $request);
+        do_action('aemfw_before_entry_create', $form_id, $entry, $params, $request);
 
         // Prepare data for DB insert
         $data = [
@@ -121,7 +121,7 @@ class Create_Entries {
          * @param array           $params   Full request parameters.
          * @param WP_REST_Request $request  REST request object.
          */
-        do_action('swpfe_after_entry_create', $wpdb->insert_id, $form_id, $entry, $params, $request);
+        do_action('aemfw_after_entry_create', $wpdb->insert_id, $form_id, $entry, $params, $request);
 
         return new WP_REST_Response([
             'success'  => true,
