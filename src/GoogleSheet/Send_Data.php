@@ -176,7 +176,7 @@ class Send_Data
         }
 
         if ($entry->synced_to_gsheet) {
-            error_log('[AEM]: Already sync issue...');
+            error_log('[AEM]: Already synced this entry...');
             return;
         }
 
@@ -233,7 +233,7 @@ class Send_Data
             return;
         }
 
-        error_log('[AEM] Google sync is going on ' . $entry_id);
+        error_log('[AEM] Google sync is going on ' . $entry_id . ' Form ID: ' . $form_id );
 
         // Step 4: Mark as synced on success.
         $wpdb->update($table, ['synced_to_gsheet' => 1, 'retry_count' => 0], ['id' => $entry_id]);
@@ -263,11 +263,13 @@ class Send_Data
         );
 
         // If sample entry is unavailable somehow, use WPFORMS Default
-        $default = wpforms()->form->get($form_id);
+        // $default = wpforms()->form->get($form_id);
 
         $headers = [
-            __('Entry ID', 'your-text-domain'),
-            __('Submission Date', 'your-text-domain'),
+            __('Entry ID', 'advanced-entries-manager-for-wpforms'),
+            __('Submission Date', 'advanced-entries-manager-for-wpforms'),
+            __( 'Name', 'advanced-entries-manager-for-wpforms' ),
+            __( 'Email', 'advanced-entries-manager-for-wpforms' )
         ];
 
         $entry_data = [];
@@ -281,8 +283,8 @@ class Send_Data
             }
         }
 
-        $headers[] = __('Status', 'your-text-domain');
-        $headers[] = __('Note', 'your-text-domain');
+        $headers[] = __('Status', 'advanced-entries-manager-for-wpforms');
+        $headers[] = __('Note', 'advanced-entries-manager-for-wpforms');
 
         Helper::update_option("gsheet_headers_{$form_id}", $headers);
 
@@ -308,21 +310,29 @@ class Send_Data
         $row = [];
         $entry_data = maybe_unserialize($entry->entry);
         $entry_data = is_array($entry_data) ? $entry_data : [];
+        
+        // Helper::set_error_log( print_r( $entry_data, true ) );
 
         foreach ($headers as $header_title) {
             $value = '';
 
             switch ($header_title) {
-                case __('Entry ID', 'your-text-domain'):
+                case __('Entry ID', 'advanced-entries-manager-for-wpforms'):
                     $value = $entry->id;
                     break;
-                case __('Submission Date', 'your-text-domain'):
+                case __('Submission Date', 'advanced-entries-manager-for-wpforms'):
                     $value = get_date_from_gmt($entry->created_at, 'Y-m-d H:i:s');
                     break;
-                case __('Status', 'your-text-domain'):
+                case __( 'Name', 'advanced-entries-manager-for-wpforms' ):
+                    $value = $entry->name;
+                    break;
+                case __( 'Email', 'advanced-entries-manager-for-wpforms' ):
+                    $value = $entry->email;
+                    break;
+                case __('Status', 'advanced-entries-manager-for-wpforms'):
                     $value = $entry->status ?? '';
                     break;
-                case __('Note', 'your-text-domain'):
+                case __('Note', 'advanced-entries-manager-for-wpforms'):
                     $value = $entry->note ?? '';
                     break;
                 default:
@@ -335,9 +345,13 @@ class Send_Data
             if ( is_string( $value ) && preg_match('/^[=+]/', trim( $value ) ) ) {
                 $value = "'" . $value;
             }
-
+            
             $row[] = (string) $value;
+
+            // Helper::set_error_log( print_r( $header_title, true ) );
         }
+
+        // Helper::set_error_log( print_r( $row, true ) );
 
         return $row;
     }
@@ -498,7 +512,7 @@ class Send_Data
             }
         }
 
-        error_log('[AEM] : Entri is syncing...' . print_r($entries, true));
+        // error_log('[AEM] : Entri is syncing...' . print_r($entries, true));
 
         return count($entries);
     }

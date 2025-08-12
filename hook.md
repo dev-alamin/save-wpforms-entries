@@ -1,7 +1,7 @@
 ## REST API Hooks
 
-### swpfe_before_entry_delete
-do_action( 'swpfe_before_entry_delete', int $entry_id, int $form_id );
+### aemfw_before_entry_delete
+do_action( 'aemfw_before_entry_delete', int $entry_id, int $form_id );
 
 Fires before a form entry is deleted from the custom entries table.
 
@@ -17,8 +17,8 @@ Prevent deletion by flagging via a custom condition
 
 Trigger external sync/cleanup before local deletion
 
-### swpfe_after_entry_delete
-do_action( 'swpfe_after_entry_delete', int $entry_id, int $form_id );
+### aemfw_after_entry_delete
+do_action( 'aemfw_after_entry_delete', int $entry_id, int $form_id );
 
 Fires after a form entry has been successfully deleted from the database.
 
@@ -34,7 +34,7 @@ Log deletion history
 
 Sync deletion to external services like Google Sheets, Airtable, etc.
 
-### swpfe_after_entry_update
+### aemfw_after_entry_update
 /**
 * Fires after an entry has been successfully updated.
 *
@@ -42,9 +42,9 @@ Sync deletion to external services like Google Sheets, Airtable, etc.
 * @param array           $data    Data that was updated.
 * @param WP_REST_Request $request Full REST request object.
 */
-do_action('swpfe_after_entry_update', $id, $data, $request);
+do_action('aemfw_after_entry_update', $id, $data, $request);
 
-### swpfe_before_entry_update
+### aemfw_before_entry_update
 /**
 * Fires before an entry update is performed.
 *
@@ -52,9 +52,9 @@ do_action('swpfe_after_entry_update', $id, $data, $request);
 * @param array           $data    Data to update (column => value).
 * @param WP_REST_Request $request Full REST request object.
 */
-do_action('swpfe_before_entry_update', $id, $data, $request);
+do_action('aemfw_before_entry_update', $id, $data, $request);
 
-### swpfe_before_entry_create
+### aemfw_before_entry_create
 /**
 * Fires before inserting a new entry.
 *
@@ -63,9 +63,9 @@ do_action('swpfe_before_entry_update', $id, $data, $request);
 * @param array           $params  Full request parameters.
 * @param WP_REST_Request $request REST request object.
 */
-do_action('swpfe_before_entry_create', $form_id, $entry, $params, $request);
+do_action('aemfw_before_entry_create', $form_id, $entry, $params, $request);
 
-### swpfe_after_entry_create
+### aemfw_after_entry_create
 /**
 * Fires after successfully inserting a new entry.
 *
@@ -75,17 +75,17 @@ do_action('swpfe_before_entry_create', $form_id, $entry, $params, $request);
 * @param array           $params   Full request parameters.
 * @param WP_REST_Request $request  REST request object.
 */
-do_action('swpfe_after_entry_create', $wpdb->insert_id, $form_id, $entry, $params, $request);
+do_action('aemfw_after_entry_create', $wpdb->insert_id, $form_id, $entry, $params, $request);
 
-### swpfe_get_forms
+### aemfw_get_forms
 /**
 * Filter the list of forms returned by get_forms().
 *
 * @param array $forms List of forms with entry counts.
 */
-return rest_ensure_response( apply_filters( 'swpfe_get_forms', $forms ) );
+return rest_ensure_response( apply_filters( 'aemfw_get_forms', $forms ) );
 
-### swpfe_get_entries_where
+### aemfw_get_entries_where
 /**
 * Filter the WHERE clause and parameters before the query is executed.
 *
@@ -93,9 +93,9 @@ return rest_ensure_response( apply_filters( 'swpfe_get_forms', $forms ) );
 * @param array           $params Query parameters.
 * @param WP_REST_Request $request The current REST request.
 */
-$where = apply_filters('swpfe_get_entries_where', $where, $params, $request);
+$where = apply_filters('aemfw_get_entries_where', $where, $params, $request);
 
-### swpfe_get_entries_data
+### aemfw_get_entries_data
 /**
     * Filter the entries data before returning the response.
     *
@@ -103,18 +103,18 @@ $where = apply_filters('swpfe_get_entries_where', $where, $params, $request);
     * @param array           $results Raw DB results.
     * @param WP_REST_Request $request The current REST request.
     */
-$data = apply_filters('swpfe_get_entries_data', $data, $results, $request);
+$data = apply_filters('aemfw_get_entries_data', $data, $results, $request);
 
-### swpfe_get_entries_response
+### aemfw_get_entries_response
 /**
     * Filter the full REST response before returning.
     *
     * @param WP_REST_Response $response The REST response object.
     * @param WP_REST_Request  $request  The current REST request.
     */
-return apply_filters('swpfe_get_entries_response', $response, $request);
+return apply_filters('aemfw_get_entries_response', $response, $request);
 
-## swpfe_check_new_entries
+## aemfw_check_new_entries
 /**
     * Filter the new entry result rows.
     *
@@ -123,7 +123,7 @@ return apply_filters('swpfe_get_entries_response', $response, $request);
     * @param int             $last_id The last seen entry ID.
     * @param WP_REST_Request $request The original REST request.
     */
-$rows = apply_filters('swpfe_check_new_entries', $rows, $form_id, $last_id, $request);
+$rows = apply_filters('aemfw_check_new_entries', $rows, $form_id, $last_id, $request);
 
 ### aemfw_create_entries_table_sql
 /**

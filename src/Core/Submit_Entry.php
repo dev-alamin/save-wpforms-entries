@@ -26,72 +26,64 @@ use App\AdvancedEntryManager\GoogleSheet\Send_Data;
  * Handles saving WPForms entries to a custom database table.
  */
 class Submit_Entry {
-	public function __construct() {
-		add_action( 'wpforms_process_entry_save', [ $this, 'save_entry' ], 10, 3 );
-		add_action( 'wpforms_process_complete', [ $this, 'update_meta_fields' ], 10, 4 );
-	}
+    public function __construct() {
+        add_action( 'wpforms_process_entry_save', [ $this, 'save_entry_to_custom_table' ], 10, 3 );
+    }
 
     /**
-     * Save the entry data into the custom table.
+     * Extracts all data, including name and email, and saves the complete
+     * entry into the custom table in a single operation.
      *
      * @param array $fields The fields submitted in the form.
      * @param array $entry The entry data from WPForms.
-     * @param int $form_id The ID of the form being submitted.
+     * @param int   $form_id The ID of the form being submitted.
      */
-	public function save_entry( $fields, $entry, $form_id ) {
-		global $wpdb;
+    public function save_entry_to_custom_table( $fields, $entry, $form_id ) {
+        global $wpdb;
 
-		$table = Helper::get_table_name(); // e.g., 'AEMFW' table
+        $table = Helper::get_table_name();
 
-		$data = [];
-		foreach ( $fields as $field ) {
-			$value = is_array( $field['value'] ) ? implode(',', $field['value']) : $field['value'];
-			$data[ $field['name'] ] = $value;
-		}
+        $name  = '';
+        $email = '';
+        $serialized_data = [];
 
-		$wpdb->insert( $table, [
-			'form_id'    => $form_id,
-			'entry'      => maybe_serialize( $data ),
-			'status'     => 'unread',
-			'created_at' => current_time( 'mysql' ),
-		] );
-
-		// Store entry ID in wp_options to update later
-		update_option( "swpfe_last_entry_id_{$form_id}", $wpdb->insert_id );
-	}
-
-	public function update_meta_fields( $fields, $entry, $form_data, $entry_id ) {
-		global $wpdb;
-
-		$table = Helper::get_table_name();
-
-		$name  = '';
-		$email = '';
-
-		foreach ( $fields as $field ) {
-			if ( $field['type'] === 'name' ) {
-				$first = $field['first'] ?? '';
-				$last  = $field['last'] ?? '';
-				$name  = trim( $first . ' ' . $last );
-			}
+        foreach ( $fields as $field ) {
+            // --- Logic to extract Name and Email ---
+            if ( ! empty( $field['type'] ) && $field['type'] === 'name' ) {
+                $first = $field['first'] ?? '';
+                $last  = $field['last'] ?? '';
+                $name  = trim( $first . ' ' . $last );
+            }
             
-			if ( $field['type'] === 'email' ) {
-				$email = $field['value'];
-			}
-		}
+            if ( ! empty( $field['type'] ) && $field['type'] === 'email' ) {
+                $email = $field['value'] ?? '';
+            }
 
-		$last_id = get_option( "swpfe_last_entry_id_{$form_data['id']}" );
+            // --- Logic to build the serialized data array ---
+            $value = is_array( $field['value'] ) ? implode(',', $field['value']) : $field['value'];
+            $serialized_data[ $field['name'] ] = $value;
+        }
 
-		if ( $last_id ) {
-			$updated_entry = $wpdb->update(
-				$table,
-				[ 'name' => $name, 'email' => $email ],
-				[ 'id' => $last_id ]
-			);
+        // Insert all data into the custom table in one query
+        $wpdb->insert( $table, [
+            'form_id'    => $form_id,
+            'name'       => $name,
+            'email'      => $email,
+            'entry'      => maybe_serialize( $serialized_data ),
+            'status'     => 'unread',
+            'created_at' => current_time( 'mysql' ),
+        ] );
+        
+        $last_inserted_id = $wpdb->insert_id;
+
+        if( $last_inserted_id ) {
 
             // $send_data = new Send_Data();
-            // $send_data->process_single_entry( [ 'entry_id' => $updated_entry ] );
-		}
-		//error_log( "[Entry $entry_id] Updated: Name: $name | Email: $email | Last ID: $last_id" );
-	}
+            // $send_data->process_single_entry( [ 'entry_id' => $last_inserted_id ] );
+            
+            // $results = $wpdb->get_results( "SELECT * FROM {$table} WHERE id = {$last_inserted_id}", OBJECT );
+            
+            // Helper::set_error_log( print_r( $results, true ) );
+        }
+    }
 }

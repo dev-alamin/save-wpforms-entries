@@ -72,11 +72,30 @@ class Plugin
         });
 
         // In your main plugin file, e.g., my-plugin.php
-        register_activation_hook(__FILE__, function () {
-            if (!as_has_scheduled_action('aemfw_daily_sync')) {
-                as_schedule_recurring_action(strtotime('tomorrow 2am'), DAY_IN_SECONDS, 'aemfw_daily_sync');
-            }
-        });
+        // register_activation_hook( AEMFW_PLUGIN_BASE_FILE, function () {
+        //     if (!as_has_scheduled_action('aemfw_daily_sync')) {
+        //         as_schedule_recurring_action(strtotime('tomorrow 2am'), DAY_IN_SECONDS, 'aemfw_daily_sync');
+        //     }
+        // });
+
+        add_filter( 'cron_schedules', function( $schedules ) {
+            $schedules['every_five_minutes'] = [
+                'interval' => 5 * 60,
+                'display'  => __( 'Every 5 Minutes', 'advanced-entries-manager-for-wpforms' ),
+            ];
+            return $schedules;
+        } );
+
+        // register_activation_hook( AEMFW_PLUGIN_BASE_FILE, function() {
+        //     if ( ! wp_next_scheduled( 'aemfw_fiveminutes_sync' ) ) {
+        //         wp_schedule_event( time(), 'every_five_minutes', 'aemfw_fiveminutes_sync' );
+        //     }
+        // } );
+
+        // register_deactivation_hook( AEMFW_PLUGIN_BASE_FILE, function() {
+        //     wp_clear_scheduled_hook( 'aemfw_fiveminutes_sync' );
+        // } );
+
     }
 
     /**

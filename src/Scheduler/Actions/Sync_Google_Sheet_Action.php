@@ -19,6 +19,7 @@ class Sync_Google_Sheet_Action
             $this->send_data->process_single_entry(['entry_id' => $entry_id]);
         });
 
-        add_action('aemfw_daily_sync', [$this->send_data, 'enqueue_unsynced_entries']);
+        // Hook the task.
+        add_action( 'aemfw_fiveminutes_sync', [ $this->send_data, 'enqueue_unsynced_entries' ] );
     }
 }
