@@ -19,13 +19,13 @@
     x-init="fetchForms()"
     class="wrap aemfw-admin-page min-h-screen max-w-7xl !m-auto px-8 py-10 text-[15px] font-inter"
     role="main"
-    aria-label="<?php echo esc_attr__('WPForms Entries Overview', 'advanced-entries-manager-for-wpforms'); ?>">
+    aria-label="<?php echo esc_attr__('Advanced Entries Manager Overview', 'advanced-entries-manager-for-wpforms'); ?>">
 
     <?php do_action('aemfw_before_entries_ui_header'); ?>
     <!-- Header -->
     <div class="mb-8 bg-slate-700 text-white px-4 py-2 rounded-lg">
         <h1 class="!text-4xl !font-extrabold !text-indigo-100 !tracking-tight mb-2 flex items-center gap-3">
-            📋 <span><?php esc_html_e('WPForms Entries Overview', 'advanced-entries-manager-for-wpforms'); ?></span>
+            📋 <span><?php esc_html_e('Advanced Entries Manager Overview', 'advanced-entries-manager-for-wpforms'); ?></span>
         </h1>
         <p class="text-gray-200 !text-[15px] leading-relaxed">
             <?php

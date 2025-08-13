@@ -94,7 +94,7 @@ class Menu {
             65
         );
 
-        if ( Helper::table_exists( $legacy_table_exists ) && ! Helper::get_option( 'migration_complete' )  ) :
+        if ( $legacy_table_exists && ! Helper::get_option( 'migration_complete' )  ) :
             add_submenu_page(
                 'aemfw-entries',
                 __('Migration', 'advanced-entries-manager-for-wpforms'),
