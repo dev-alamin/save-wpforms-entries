@@ -57,6 +57,14 @@ class Send_Data
      */
     protected function get_or_create_sheet_for_form(int $form_id)
     {
+        // Enforce Free Version form limitation
+        if (!Helper::is_pro_version()) {
+            $linked_forms = Helper::get_option('aem_linked_forms', []);
+            if (!in_array($form_id, $linked_forms) && count($linked_forms) >= 1) {
+                return new WP_Error('limit_exceeded', 'The free version supports synchronizing data from only one form. Please upgrade to Pro to sync more forms.');
+            }
+        }
+
         $spreadsheet_id = Helper::get_option("gsheet_spreadsheet_id_{$form_id}");
         $sheet_title = Helper::get_option("gsheet_sheet_title_{$form_id}");
         $headers_set = Helper::get_option("gsheet_headers_set_{$form_id}");
@@ -90,6 +98,13 @@ class Send_Data
             }
             Helper::update_option("gsheet_spreadsheet_id_{$form_id}", $spreadsheet_id);
             Helper::update_option("gsheet_spreadsheet_title_{$form_id}", $spreadsheet_title); // Save for UI
+
+            // Track linked forms for the free version
+            $linked_forms = Helper::get_option('aem_linked_forms', []);
+            if (!in_array($form_id, $linked_forms)) {
+                $linked_forms[] = $form_id;
+                Helper::update_option('aem_linked_forms', $linked_forms);
+            }
         }
 
         // --- Configure the Sheet (Tab) ---
@@ -187,48 +202,42 @@ class Send_Data
         if (is_wp_error($sheet_info)) {
             error_log("[AEM] GSheet preparation failed for form $form_id: " . $sheet_info->get_error_message());
             $this->handle_sync_failure($entry_id, $entry->retry_count);
-            error_log('[AEM]: No sheet is found. Sorry');
             return;
         }
 
         $spreadsheet_id = $sheet_info['spreadsheet_id'];
         $sheet_title = $sheet_info['sheet_title'];
+        
+        // Enforce Free Version row limitation
+        if (!Helper::is_pro_version()) {
+            $metadata = $this->get_spreadsheet_metadata($spreadsheet_id);
+            if (!is_wp_error($metadata) && isset($metadata['sheets'][0]['properties']['gridProperties']['rowCount'])) {
+                $row_count = $metadata['sheets'][0]['properties']['gridProperties']['rowCount'];
+                if ($row_count >= 1000) {
+                    error_log("[AEM] GSheet row limit reached for form $form_id. Entry {$entry_id} not synced.");
+                    $wpdb->update($table, ['synced_to_gsheet' => 2], ['id' => $entry_id]); // '2' can indicate 'sync_limit_reached'
+                    return;
+                }
+            }
+        }
 
         // Step 2: Prepare the data row, ensuring it matches the header order.
         $row_data = $this->prepare_row_data($entry);
         if (is_wp_error($row_data)) {
             error_log("[AEM] GSheet data preparation failed for entry $entry_id: " . $row_data->get_error_message());
             $this->handle_sync_failure($entry_id, $entry->retry_count);
-            error_log('[AEM]: No Header is matches. Sorry');
             return;
         }
 
         // Step 3: Append data to the sheet.
-        $access_token = Helper::get_access_token();
-        if (!$access_token) {
-            error_log("[AEM] GSheet sync failed for entry $entry_id: No access token.");
-            return;
-        }
-
         $range = rawurlencode($sheet_title) . '!A:Z';
         $body = ['values' => [$row_data]];
+        $url = "https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheet_id}/values/{$range}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS";
 
-        $response = wp_remote_post(
-            "https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheet_id}/values/{$range}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS",
-            [
-                'headers' => [
-                    'Authorization' => 'Bearer ' . $access_token,
-                    'Content-Type'  => 'application/json',
-                ],
-                'body'    => wp_json_encode($body),
-                'timeout' => 20,
-            ]
-        );
+        $response = $this->_make_google_api_request($url, $body, 'POST');
 
-        $code = wp_remote_retrieve_response_code($response);
-        if (is_wp_error($response) || $code !== 200) {
-            $error_msg = is_wp_error($response) ? $response->get_error_message() : wp_remote_retrieve_body($response);
-            error_log("[AEM] GSheet append failed for entry $entry_id. Code: $code. Error: $error_msg");
+        if (is_wp_error($response)) {
+            error_log("[AEM] GSheet append failed for entry $entry_id. Error: " . $response->get_error_message());
             $this->handle_sync_failure($entry_id, $entry->retry_count);
             return;
         }
@@ -253,33 +262,20 @@ class Send_Data
             return $cached_headers;
         }
 
-        global $wpdb;
-        $table = Helper::get_table_name();
-
-        // Fetch a sample entry to infer headers
-        $row = $wpdb->get_row(
-            $wpdb->prepare("SELECT entry, note, status FROM {$table} WHERE form_id = %d LIMIT 1", $form_id),
-            ARRAY_A
-        );
-
-        // If sample entry is unavailable somehow, use WPFORMS Default
-        // $default = wpforms()->form->get($form_id);
-
         $headers = [
             __('Entry ID', 'advanced-entries-manager-for-wpforms'),
             __('Submission Date', 'advanced-entries-manager-for-wpforms'),
             __( 'Name', 'advanced-entries-manager-for-wpforms' ),
             __( 'Email', 'advanced-entries-manager-for-wpforms' )
         ];
-
-        $entry_data = [];
-        if (!empty($row['entry'])) {
-            $entry_data = maybe_unserialize($row['entry']);
-        }
-
-        if (is_array($entry_data)) {
-            foreach ($entry_data as $field_label => $field_value) {
-                $headers[] = $field_label;
+        
+        // **BUG FIX**: Directly get headers from WPForms form fields
+        $form_data = wpforms()->get('form_handler')->get_form_fields($form_id, false);
+        if (!is_wp_error($form_data) && !empty($form_data['fields'])) {
+            foreach ($form_data['fields'] as $field_id => $field_data) {
+                if (!empty($field_data['label'])) {
+                    $headers[] = $field_data['label'];
+                }
             }
         }
 
@@ -301,8 +297,8 @@ class Send_Data
     protected function prepare_row_data($entry)
     {
         $form_id = absint($entry->form_id);
-
         $headers = $this->get_form_headers($form_id);
+
         if (is_wp_error($headers)) {
             return $headers;
         }
@@ -381,59 +377,21 @@ class Send_Data
      */
     public function gsheet_batch_update($spreadsheet_id, $requests)
     {
-        $access_token = Helper::get_access_token();
-        if (!$access_token) return new WP_Error('no_token', 'Missing access token.');
-
         $body = ['requests' => $requests];
-        $response = wp_remote_post(
-            "https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheet_id}:batchUpdate",
-            [
-                'headers' => [
-                    'Authorization' => 'Bearer ' . $access_token,
-                    'Content-Type'  => 'application/json',
-                ],
-                'body' => wp_json_encode($body),
-            ]
-        );
-
-        if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {
-            return new WP_Error('batch_update_failed', 'Batch update failed.');
-        }
-
-        return true;
+        $url = "https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheet_id}:batchUpdate";
+        return $this->_make_google_api_request($url, $body, 'POST');
     }
 
     public function gsheet_create_spreadsheet($title = 'WPForms Entries')
     {
-        $access_token = Helper::get_access_token();
-
-        if (!$access_token) {
-            return new WP_Error('no_token', 'Missing access token.');
-        }
-
         $body = [
             'properties' => [
                 'title' => $title,
             ]
         ];
-
-        $response = wp_remote_post(
-            'https://sheets.googleapis.com/v4/spreadsheets',
-            [
-                'headers' => [
-                    'Authorization' => 'Bearer ' . $access_token,
-                    'Content-Type'  => 'application/json',
-                ],
-                'body' => wp_json_encode($body),
-            ]
-        );
-
-        if (is_wp_error($response)) {
-            return $response;
-        }
-
-        $data = json_decode(wp_remote_retrieve_body($response), true);
-        return $data['spreadsheetId'] ?? new WP_Error('create_failed', 'Spreadsheet creation failed.');
+        $url = 'https://sheets.googleapis.com/v4/spreadsheets';
+        $response = $this->_make_google_api_request($url, $body, 'POST');
+        return $response['spreadsheetId'] ?? new WP_Error('create_failed', 'Spreadsheet creation failed.');
     }
 
     /**
@@ -441,32 +399,9 @@ class Send_Data
      */
     protected function get_spreadsheet_metadata(string $spreadsheet_id)
     {
-        $access_token = Helper::get_access_token();
-        if (!$access_token) {
-            return new WP_Error('no_token', 'Missing access token.');
-        }
-
-        $response = wp_remote_get(
-            "https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheet_id}",
-            [
-                'headers' => [
-                    'Authorization' => 'Bearer ' . $access_token,
-                    'Content-Type' => 'application/json',
-                ],
-                'timeout' => 15,
-            ]
-        );
-
-        if (is_wp_error($response)) {
-            return $response;
-        }
-
-        $code = wp_remote_retrieve_response_code($response);
-        if ($code !== 200) {
-            return new WP_Error('http_error', 'HTTP code ' . $code);
-        }
-
-        return json_decode(wp_remote_retrieve_body($response), true);
+        $url = "https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheet_id}";
+        $response = $this->_make_google_api_request($url, [], 'GET');
+        return $response;
     }
 
     /**

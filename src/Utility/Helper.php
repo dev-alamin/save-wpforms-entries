@@ -387,4 +387,18 @@ class Helper {
 
         return esc_html__('Less than a minute', 'advanced-entries-manager-for-wpforms');
     }
+
+    /**
+     * Checks if the Pro version of the plugin is active.
+     * This method is crucial for handling free/pro version limitations.
+     *
+     * @return bool
+     */
+    public static function is_pro_version()
+    {
+        // For demonstration, we assume a constant is defined in the Pro version.
+        // In a real plugin, this constant would be defined in the main plugin file of the Pro version.
+        // Example: define('AEMFW_PRO_VERSION', true);
+        return defined('AEMFW_PRO_VERSION') && AEMFW_PRO_VERSION;
+    }
 }
