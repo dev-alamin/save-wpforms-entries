@@ -192,7 +192,7 @@
                                     entry.status === 'unread' ? 'font-bold' : 'font-normal',
                                     entry.is_spam == 1 ? 'bg-red-50 opacity-50' : '',
                                 ]"
-                                class="grid items-center px-4 text-sm text-gray-800 border-b border-gray-100 hover:bg-gray-50"
+                                class="py-2 grid items-center px-4 text-sm text-gray-800 border-b border-gray-100 hover:bg-gray-50"
                                 style="grid-template-columns: 50px 1fr 150px 150px 250px;"
                                 role="row">
                                 <input
@@ -203,7 +203,7 @@
                                     class="cursor-pointer" />
 
                                 <div
-                                    class="py-3 cursor-pointer truncate flex items-center gap-2"
+                                    class="cursor-pointer truncate flex items-center gap-2"
                                     title="<?php echo esc_attr__('Click for details', 'advanced-entries-manager-for-wpforms'); ?>"
                                     @click="showEntry(i)">
                                     <span x-text="entry.email || '-'"></span>
@@ -212,8 +212,8 @@
                                         x-text="'#' + entry.id"></span>
                                 </div>
 
-                                <div class="py-3 text-center whitespace-nowrap" x-text="timeAgo(entry.date)" :title="entry.date"></div>
-                                <div class="py-3 text-center">
+                                <div class="text-center whitespace-nowrap" x-text="timeAgo(entry.date)" :title="entry.date"></div>
+                                <div class="text-center">
                                     <span
                                         class="inline-block px-3 py-1 rounded-full text-xs font-semibold"
                                         :class="entry.status === 'unread' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'"
