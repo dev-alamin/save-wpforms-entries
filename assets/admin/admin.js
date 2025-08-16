@@ -1,6 +1,6 @@
 function formTable(form) {
   return {
-    open: false,
+   open: false,
     formId: form.form_id,
     formTitle: form.form_title,
     totalEntries: form.entry_count,
@@ -18,6 +18,11 @@ function formTable(form) {
     bulkSelected: [],
     selectAll: false,
     lastCheckedIndex: null,
+    
+    // NEW STATE PROPERTY
+    isJumping: false,
+    lastId: null,
+    lastDate: null,
 
     entryModalOpen: false,
     selectedEntry: {},
@@ -123,9 +128,19 @@ function formTable(form) {
       try {
         const query = new URLSearchParams({
           form_id: this.formId,
-          page: this.currentPage,
           per_page: this.pageSize,
         });
+
+        // CRITICAL CHANGE: Use `this.isJumping` flag, which is a boolean
+        if (this.isJumping) {
+            query.append('page', this.currentPage);
+        } else if (this.lastId && this.lastDate) {
+            query.append('last_id', this.lastId);
+            query.append('last_date', this.lastDate);
+        } else {
+            // This is for the very first page load
+            query.append('page', this.currentPage);
+        }
 
         const res = await fetch(
           `${aemfwSettings.restUrl}aem/v1/entries?${query}`,
@@ -137,7 +152,6 @@ function formTable(form) {
         );
         const data = await res.json();
 
-        // Flat array now, no more need for lookup
         const rawEntries = Array.isArray(data.entries) ? data.entries : [];
 
         this.entries = rawEntries.map((entry) => ({
@@ -155,6 +169,14 @@ function formTable(form) {
         this.totalEntries = Number(data.total) || rawEntries.length;
         this.totalPages = Math.ceil(this.totalEntries / this.pageSize);
         this.domKey = Date.now();
+
+        // NEW: Always update the cursors from the response
+        this.lastId = data.last_id;
+        this.lastDate = data.last_date;
+        
+        // NEW: Reset the jumping flag
+        this.isJumping = false;
+
       } catch (error) {
         console.error("Failed to fetch entries:", error);
       } finally {
@@ -177,19 +199,29 @@ function formTable(form) {
     goToPage(page) {
       page = Number(page);
       if (page > 0 && page <= this.totalPages) {
+        // CRITICAL CHANGE: Set the `isJumping` flag to true
+        // this.isJumping = true;
         this.currentPage = page;
+        // CRITICAL CHANGE: Reset the cursors to ensure a new jump query
+        // this.lastId = null;
+        // this.lastDate = null;
         this.fetchEntries();
       }
     },
     nextPage() {
       if (this.currentPage < this.totalPages) {
-        this.currentPage++;
+        // CRITICAL CHANGE: Use `isJumping` flag and rely on cursors
+        this.isJumping = false;
         this.fetchEntries();
       }
     },
     prevPage() {
       if (this.currentPage > 1) {
+        // CRITICAL CHANGE: Treat as a jump to use the fast, indexed lookup on the backend
+        this.isJumping = true;
         this.currentPage--;
+        this.lastId = null;
+        this.lastDate = null;
         this.fetchEntries();
       }
     },
@@ -293,16 +325,14 @@ function formTable(form) {
       if (!this.selectedEntry) return;
 
       try {
-        const response = await fetch(`${aemfwSettings.restUrl}aem/v1/entries`, {
+        const response = await fetch(`${aemfwSettings.restUrl}aem/v1/entries/${
+            this.selectedEntry.id
+          }?form_id=${encodeURIComponent(this.selectedEntry.form_id)}`, {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
             "X-WP-Nonce": aemfwSettings.nonce,
           },
-          body: JSON.stringify({
-            id: this.selectedEntry.id,
-            form_id: this.selectedEntry.form_id,
-          }),
         });
 
         const data = await response.json();

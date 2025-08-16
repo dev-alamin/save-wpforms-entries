@@ -27,6 +27,7 @@ use App\AdvancedEntryManager\Admin\Options;
 use App\AdvancedEntryManager\Admin\Menu;
 use App\AdvancedEntryManager\Core\Capabilities;
 use App\AdvancedEntryManager\Admin\Admin_Notice;
+use App\AdvancedEntryManager\Core\Handle_Cache;
 use App\AdvancedEntryManager\GoogleSheet\Send_Data;
 use App\AdvancedEntryManager\Scheduler\Actions\Sync_Google_Sheet_Action;
 
@@ -146,6 +147,8 @@ class Plugin
         new Migrate_Batch_Action(new Migrate());
 
         new Sync_Google_Sheet_Action(new Send_Data());
+
+        new Handle_Cache();
 
         /**
          * Action Scheduler for exporting entries.

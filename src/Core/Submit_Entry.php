@@ -65,7 +65,7 @@ class Submit_Entry {
         }
 
         // Insert all data into the custom table in one query
-        $wpdb->insert( $table, [
+        $inserted = $wpdb->insert( $table, [
             'form_id'    => $form_id,
             'name'       => $name,
             'email'      => $email,
@@ -73,7 +73,11 @@ class Submit_Entry {
             'status'     => 'unread',
             'created_at' => current_time( 'mysql' ),
         ] );
-        
-        $last_inserted_id = $wpdb->insert_id;
+
+        if( $inserted ) {
+            do_action( 'aemfw_entry_created' );
+        }else{
+            Helper::set_error_log( 'Entry could not inserted: ' . print_r( $fields, true ) );
+        }
     }
 }

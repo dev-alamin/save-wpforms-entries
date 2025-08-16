@@ -123,59 +123,20 @@ function aemfw_init() {
 // Kick-off the plugin initialization
 aemfw_init();
 
-// Print all capabilities of the current user for debugging purposes
-// if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-//     add_action( 'admin_init', function() {
-//         $current_user = wp_get_current_user();
-//         if ( $current_user ) {
-//             echo '<pre>';
-//             echo 'Current User Capabilities:';
-//             print_r( $current_user->allcaps );
-//             echo '</pre>';
-//         } else {
-//             echo '<pre>';
-//             echo 'No current user found.';
-//             echo '</pre>';
-//         }
-//     } );
-// }
+function aem_create_page_index_table() {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'aem_page_index';
+    $charset_collate = $wpdb->get_charset_collate();
 
-/**
- * A debugging utility to unschedule all pending export jobs.
- *
- * To use: visit a URL like yoursite.com/wp-admin/?stop_export_jobs=true
- *
- * @return void
- */
-function stop_all_export_jobs_for_debug() {
-    // Check for a specific GET parameter and ensure the user is an admin
-    if (isset($_GET['stop_export_jobs']) && current_user_can('manage_options')) {
-        
-        // Use a static hook and group names to match your implementation
-        $batch_hook = 'aemfw_process_export_batch'; // Replace with your actual hook name
-        $finalize_hook = 'aemfw_finalize_export_file'; // Replace with your actual hook name
-        $group = 'aemfw_exports'; // Replace with your actual group name
+    $sql = "CREATE TABLE IF NOT EXISTS $table_name (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        page_num INT UNSIGNED NOT NULL,
+        first_entry_id BIGINT UNSIGNED NOT NULL,
+        PRIMARY KEY (id),
+        UNIQUE KEY page_num (page_num)
+    ) $charset_collate;";
 
-        // Unschedule all pending batch processing actions
-        $count_batch = as_unschedule_all_actions($batch_hook, [], $group);
-
-        // Unschedule all pending finalization actions
-        $count_finalize = as_unschedule_all_actions($finalize_hook, [], $group);
-        
-        $message = sprintf(
-            'Action Scheduler Debug: Stopped %d batch jobs and %d finalization jobs.',
-            $count_batch,
-            $count_finalize
-        );
-        
-        // Print a confirmation message for debugging
-        add_action('admin_notices', function() use ($message) {
-            echo '<div class="notice notice-success is-dismissible"><p>' . esc_html($message) . '</p></div>';
-        });
-
-        // Optional: Also delete any job transients for a clean slate
-        // Note: This would require looping through all transients to find them,
-        // so it's often easier to do manually or with a dedicated tool.
-    }
+    require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+    dbDelta($sql);
 }
-add_action('admin_init', 'stop_all_export_jobs_for_debug');
+// add_action('plugins_loaded', 'aem_create_page_index_table');

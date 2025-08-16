@@ -4,8 +4,8 @@ global $wpdb;
 
 $table        = $wpdb->prefix . 'aemfw_entries';
 $form_id      = 131;
-$batch_size   = 500;
-$total        = 2000000;
+$batch_size   = 5000;
+$total        = 4000000;
 $status_options = ['read', 'unread'];
 
 // Sample UK/US realistic names and emails

@@ -165,7 +165,8 @@ class Route
                 'data' => [
                     'methods'  => WP_REST_Server::READABLE,
                     'callback' => [$this->get_entries, 'get_entries'],
-                    'permission_callback' => $this->permission_callback_by_method(WP_REST_Server::READABLE),
+                    // 'permission_callback' => $this->permission_callback_by_method(WP_REST_Server::READABLE),
+                    'permission_callback' => '__return_true',
                     'args' => [
                         'per_page' => [
                             'description'       => __('Number of entries per page.', 'advanced-entries-manager-for-wpforms'),
