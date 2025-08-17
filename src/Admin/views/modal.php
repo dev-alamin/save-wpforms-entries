@@ -64,12 +64,17 @@
                             class="font-semibold text-gray-700"
                             x-text="key.charAt(0).toUpperCase() + key.slice(1) + ':'">
                         </strong>
-                        <span class="ml-1" x-text="value || '<?php echo esc_js(__('-', 'advanced-entries-manager-for-wpforms')); ?>'"></span>
+
+                        <!-- If value is array (e.g., files), loop inside -->
+                        <span class="ml-1" x-html="Array.isArray(value) 
+                            ? value.map(f => `<a href='${f.url}' target='_blank'>${f.url.split('/').pop()}</a>`).join('<br>') 
+                            : value || '<?php echo esc_js(__('-', 'advanced-entries-manager-for-wpforms')); ?>'">
+                        </span>
                     </div>
                 </template>
+
             </div>
         </div>
-
 
         <!-- Note Section -->
         <div class="mt-8">

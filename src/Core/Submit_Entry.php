@@ -24,23 +24,20 @@ use App\AdvancedEntryManager\GoogleSheet\Send_Data;
  * Class Submit_Entry
  *
  * Handles saving WPForms entries to a custom database table.
- */
-class Submit_Entry {
+ */class Submit_Entry {
     public function __construct() {
-        add_action( 'wpforms_process_entry_save', [ $this, 'save_entry_to_custom_table' ], 10, 3 );
+        // WPForms
+        add_action( 'wpforms_process_entry_save', [ $this, 'save_entry_from_wpforms' ], 10, 3 );
+
+        // Contact Form 7
+        add_action( 'wpcf7_before_send_mail', [ $this, 'save_entry_from_cf7' ], 10, 3 );
     }
 
     /**
-     * Extracts all data, including name and email, and saves the complete
-     * entry into the custom table in a single operation.
-     *
-     * @param array $fields The fields submitted in the form.
-     * @param array $entry The entry data from WPForms.
-     * @param int   $form_id The ID of the form being submitted.
+     * Handles WPForms entries
      */
-    public function save_entry_to_custom_table( $fields, $entry, $form_id ) {
+    public function save_entry_from_wpforms( $fields, $entry, $form_id ) {
         global $wpdb;
-
         $table = Helper::get_table_name();
 
         $name  = '';
@@ -48,23 +45,20 @@ class Submit_Entry {
         $serialized_data = [];
 
         foreach ( $fields as $field ) {
-            // --- Logic to extract Name and Email ---
-            if ( ! empty( $field['type'] ) && $field['type'] === 'name' ) {
+            if ( $field['type'] === 'name' ) {
                 $first = $field['first'] ?? '';
                 $last  = $field['last'] ?? '';
                 $name  = trim( $first . ' ' . $last );
             }
-            
-            if ( ! empty( $field['type'] ) && $field['type'] === 'email' ) {
+
+            if ( $field['type'] === 'email' ) {
                 $email = $field['value'] ?? '';
             }
 
-            // --- Logic to build the serialized data array ---
             $value = is_array( $field['value'] ) ? implode(',', $field['value']) : $field['value'];
             $serialized_data[ $field['name'] ] = $value;
         }
 
-        // Insert all data into the custom table in one query
         $wpdb->insert( $table, [
             'form_id'    => $form_id,
             'name'       => $name,
@@ -73,9 +67,92 @@ class Submit_Entry {
             'status'     => 'unread',
             'created_at' => current_time( 'mysql' ),
         ] );
-        
-        $last_inserted_id = $wpdb->insert_id;
+    }
 
-        Helper::set_error_log( $fields );
+    /**
+     * Handles CF7 entries
+     */
+    public function save_entry_from_cf7( $contact_form, &$abort, $submission ) {
+        global $wpdb;
+        $table = Helper::get_table_name();
+
+        $submission = \WPCF7_Submission::get_instance();
+        if ( ! $submission ) {
+            return;
+        }
+
+        $posted_data    = $submission->get_posted_data();
+        $uploaded_files = $submission->uploaded_files();
+
+        $form_id = absint( $contact_form->id() );
+
+        // Sanitize specific known fields (fallback if not present)
+        $name  = isset( $posted_data['your-name'] ) ? sanitize_text_field( $posted_data['your-name'] ) : '';
+        $email = isset( $posted_data['your-email'] ) ? sanitize_email( $posted_data['your-email'] ) : '';
+
+        // Sanitize all posted fields
+        $serialized_data = [];
+        foreach ( $posted_data as $key => $value ) {
+            $clean_key = sanitize_key( $key );
+
+            if ( is_array( $value ) ) {
+                $clean_value = array_map( 'sanitize_text_field', $value );
+                $serialized_data[ $clean_key ] = implode( ',', $clean_value );
+            } else {
+                $serialized_data[ $clean_key ] = sanitize_text_field( $value );
+            }
+        }
+
+        if ( ! empty( $uploaded_files ) ) {
+            foreach ( $uploaded_files as $file_key => $file_paths ) {
+
+                // Always treat as array for consistency
+                $file_paths = (array) $file_paths;
+
+                foreach ( $file_paths as $file_path ) {
+                    if ( ! empty( $file_path ) && is_string( $file_path ) ) {
+
+                        // Move file into Media Library
+                        $file_id = media_handle_sideload(
+                            [
+                                'name'     => basename( $file_path ),
+                                'tmp_name' => $file_path,
+                            ],
+                            0
+                        );
+
+                        if ( ! isset( $serialized_data[ $file_key ] ) || ! is_array( $serialized_data[ $file_key ] ) ) {
+                            $serialized_data[ $file_key ] = [];
+                        }
+
+                        $serialized_data[ $file_key ][] = [
+                            'id'  => $file_id,
+                            'url' => wp_get_attachment_url( $file_id ),
+                        ];
+
+                    }
+                }
+            }
+        }
+
+        // Insert into DB
+        $wpdb->insert(
+            $table,
+            [
+                'form_id'    => $form_id,
+                'name'       => $name,
+                'email'      => $email,
+                'entry'      => maybe_serialize( $serialized_data ),
+                'status'     => 'unread',
+                'created_at' => current_time( 'mysql' ),
+            ],
+            [ '%d', '%s', '%s', '%s', '%s', '%s' ]
+        );
+
+        // Log the new entry ID
+        $last_inserted_id = $wpdb->insert_id;
+        Helper::set_error_log( 'CF7 Entry saved with ID: ' . $last_inserted_id );
+
+        // Helper::set_error_log( print_r( $posted_data, true ) );
     }
 }
