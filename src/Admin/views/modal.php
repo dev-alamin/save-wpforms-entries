@@ -28,7 +28,10 @@
 
         <!-- Entry Details Header with Copy Button -->
         <div class="flex items-center justify-between mb-6">
-            <h2 class="text-2xl font-extrabold text-indigo-700"> <?php esc_html_e('Entry Details', 'advanced-entries-manager-for-wpforms'); ?></h2>
+            <h2 class="text-2xl font-extrabold text-indigo-700"> <?php esc_html_e('Entry Details', 'advanced-entries-manager-for-wpforms'); ?>
+                <br />
+                <span class="text-sm font-normal" x-text="selectedEntry.formated_date || '<?php echo esc_js(__('-', 'advanced-entries-manager-for-wpforms')); ?>'"></span>
+            </h2>
 
             <button
                 @click="copyEntryToClipboard"

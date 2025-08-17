@@ -87,7 +87,7 @@
 
     <!-- Loop Over Forms -->
     <template x-for="form in forms" :key="form.form_id">
-        <div x-data="formTable(form)" class="mb-10" x-cloak>
+        <div x-data="formTable(form)" class="mb-10" x-cloak :key="domKey">
 
             <!-- Clickable Form Header -->
             <div

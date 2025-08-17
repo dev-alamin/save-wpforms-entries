@@ -66,6 +66,8 @@ function formTable(form) {
           });
         } else {
           // Handle other actions
+          const uniqueIds = [...new Set(this.bulkSelected)];
+
           const res = await fetch(
             `${aemfwSettings.restUrl}aem/v1/entries/bulk`,
             {
@@ -74,23 +76,35 @@ function formTable(form) {
                 "Content-Type": "application/json",
                 "X-WP-Nonce": aemfwSettings.nonce,
               },
-              body: JSON.stringify({ ids: this.bulkSelected, action }),
+              body: JSON.stringify({ ids: uniqueIds, action }),
             }
           );
 
           const data = await res.json();
 
-          this.$dispatch("toast", {
-            type: "success",
-            message: "✅ Bulk action completed successfully!",
-          });
-        }
-
         this.bulkSelected = [];
         this.selectAll = false;
+
+        if (action === 'delete') {
+            this.entries = this.entries.filter(e => !uniqueIds.includes(e.id));
+
+            this.$dispatch("toast", {
+                type: "success",
+                message: `✅ ${data.message}`,
+            });
+
+        } else {
+            // For other actions
+            this.$dispatch("toast", {
+                type: "success",
+                message: `✅ ${data.affected} entries updated successfully!`,
+            });
+        }
+
+
+        }
       } catch (error) {
         console.error("Bulk action failed:", error);
-        alert("Bulk action failed. Please try again.");
       }
     },
     handleCheckbox(event, entryId) {
@@ -146,6 +160,11 @@ function formTable(form) {
           is_favorite: Number(entry.is_favorite),
           synced_to_gsheet: Number(entry.synced),
           exported_to_csv: Number(entry.exported_to_csv),
+          formated_date: new Date(entry.date).toLocaleTimeString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+            }),
           printed_at: entry.printed_at ?? null,
           resent_at: entry.resent_at ?? null,
           status: entry.status ?? "unread",
@@ -154,7 +173,9 @@ function formTable(form) {
 
         this.totalEntries = Number(data.total) || rawEntries.length;
         this.totalPages = Math.ceil(this.totalEntries / this.pageSize);
-        this.domKey = Date.now();
+
+        // this.entries = [...data.entries];
+        this.domKey = Date.now(); // optional fallback
       } catch (error) {
         console.error("Failed to fetch entries:", error);
       } finally {
@@ -293,17 +314,18 @@ function formTable(form) {
       if (!this.selectedEntry) return;
 
       try {
-        const response = await fetch(`${aemfwSettings.restUrl}aem/v1/entries`, {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            "X-WP-Nonce": aemfwSettings.nonce,
-          },
-          body: JSON.stringify({
-            id: this.selectedEntry.id,
-            form_id: this.selectedEntry.form_id,
-          }),
-        });
+        const response = await fetch(
+          `${aemfwSettings.restUrl}aem/v1/entries/${
+            this.selectedEntry.id
+          }?form_id=${encodeURIComponent(this.selectedEntry.form_id)}`,
+          {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              "X-WP-Nonce": aemfwSettings.nonce,
+            },
+          }
+        );
 
         const data = await response.json();
 
@@ -317,6 +339,10 @@ function formTable(form) {
           if (this.currentPage > this.totalPages) {
             this.currentPage = this.totalPages;
           }
+
+          this.entries = this.entries.filter((e) => e.id !== id);
+          this.entries = [...this.entries]; // ✅ force update
+          this.domKey = Date.now(); // fallback if needed
 
           console.log("Entry deleted successfully");
         } else {
@@ -375,16 +401,19 @@ function formTable(form) {
       };
 
       try {
-        const res = await fetch(`${aemfwSettings.restUrl}aem/v1/entries/${
+        const res = await fetch(
+          `${aemfwSettings.restUrl}aem/v1/entries/${
             payload.id
-          }?form_id=${encodeURIComponent(payload.form_id)}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-WP-Nonce": aemfwSettings.nonce,
-          },
-          body: JSON.stringify(payload),
-        });
+          }?form_id=${encodeURIComponent(payload.form_id)}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-WP-Nonce": aemfwSettings.nonce,
+            },
+            body: JSON.stringify(payload),
+          }
+        );
 
         const data = await res.json();
 
@@ -419,57 +448,58 @@ function formTable(form) {
       this.updateSelectedEntry({ note });
     },
     async toggleGoogleSheetSync(index) {
-        const entry = this.entries[index];
-        const entryId = entry.id;
-        const nonce = aemfwSettings.nonce;
+      const entry = this.entries[index];
+      const entryId = entry.id;
+      const nonce = aemfwSettings.nonce;
 
-        // Decide action based on current state
-        const isCurrentlySynced = !!entry.synced;
-        const action = isCurrentlySynced ? 'unsync' : 'sync';
-        const apiUrl = `${aemfwSettings.restUrl}aem/v1/entries/${entryId}/${action}`;
+      // Decide action based on current state
+      const isCurrentlySynced = !!entry.synced;
+      const action = isCurrentlySynced ? "unsync" : "sync";
+      const apiUrl = `${aemfwSettings.restUrl}aem/v1/entries/${entryId}/${action}`;
 
-        try {
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-WP-Nonce': nonce,
-                },
-            });
+      try {
+        const response = await fetch(apiUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-WP-Nonce": nonce,
+          },
+        });
 
-            const data = await response.json();
+        const data = await response.json();
 
-            if (data.success) {
-            window.dispatchEvent(
-                new CustomEvent("toast", {
-                detail: {
-                    message: "Entry synchronization Done!",
-                    type: "success",
-                },
-                })
-            );
-            } else {
-            window.dispatchEvent(
-                new CustomEvent("toast", {
-                detail: {
-                    message: "❌ " + (data.data?.message || "Synchronization failed."),
-                    type: "error",
-                },
-                })
-            );
-            }
-        
-            if (!response.ok) {
-                return;
-            }
-
-            // Update state after success so Alpine re-renders correctly
-            entry.synced_to_gsheet = isCurrentlySynced ? 0 : 1;
-            this.updateEntry(index, { synced_to_gsheet: entry.synced_to_gsheet });
-        } catch (error) {
-            console.error('Fetch Error:', error);
-            alert('A network error occurred. Please try again.');
+        if (data.success) {
+          window.dispatchEvent(
+            new CustomEvent("toast", {
+              detail: {
+                message: "Entry synchronization Done!",
+                type: "success",
+              },
+            })
+          );
+        } else {
+          window.dispatchEvent(
+            new CustomEvent("toast", {
+              detail: {
+                message:
+                  "❌ " + (data.data?.message || "Synchronization failed."),
+                type: "error",
+              },
+            })
+          );
         }
+
+        if (!response.ok) {
+          return;
+        }
+
+        // Update state after success so Alpine re-renders correctly
+        entry.synced_to_gsheet = isCurrentlySynced ? 0 : 1;
+        this.updateEntry(index, { synced_to_gsheet: entry.synced_to_gsheet });
+      } catch (error) {
+        console.error("Fetch Error:", error);
+        alert("A network error occurred. Please try again.");
+      }
     },
     printEntry(index) {
       const entry = this.entries[index];
@@ -968,7 +998,6 @@ function exportSettings() {
       this.exportJobId = null;
       this.dateFrom = document.getElementById("aemfw_export_date_from").value;
       this.dateTo = document.getElementById("aemfw_export_date_to").value;
-
 
       const exportData = {
         form_id: this.selectedFormId,

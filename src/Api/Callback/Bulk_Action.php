@@ -13,7 +13,8 @@ use WP_Error;
  *
  * Handles the retrieval of forms from the custom database table.
  */
-class Bulk_Action {
+class Bulk_Action
+{
     /**
      * Handle bulk actions on entries.
      *
@@ -27,7 +28,7 @@ class Bulk_Action {
      */
     public function bulk_actions(WP_REST_Request $request)
     {
-        $ids = $request->get_param('ids');
+        $ids = array_unique(array_map('absint', $request->get_param('ids')));
         $action = sanitize_text_field($request->get_param('action'));
 
         // Validate IDs
@@ -54,6 +55,8 @@ class Bulk_Action {
         $table = Helper::get_table_name();
 
         $affected = 0;
+        $deleted_ids = [];
+        $updated_ids = [];
 
         foreach ($ids as $id) {
             switch ($action) {
@@ -61,6 +64,7 @@ class Bulk_Action {
                     $deleted = $wpdb->delete($table, ['id' => $id]);
                     if ($deleted !== false) {
                         $affected++;
+                        $deleted_ids[] = $id;
                     }
                     break;
 
@@ -68,6 +72,7 @@ class Bulk_Action {
                     $updated = $wpdb->update($table, ['status' => 'read'], ['id' => $id]);
                     if ($updated !== false) {
                         $affected++;
+                        $updated_ids[] = $id;
                     }
                     break;
 
@@ -75,6 +80,7 @@ class Bulk_Action {
                     $updated = $wpdb->update($table, ['status' => 'unread'], ['id' => $id]);
                     if ($updated !== false) {
                         $affected++;
+                        $updated_ids[] = $id;
                     }
                     break;
 
@@ -82,6 +88,7 @@ class Bulk_Action {
                     $updated = $wpdb->update($table, ['is_favorite' => 1], ['id' => $id]);
                     if ($updated !== false) {
                         $affected++;
+                        $updated_ids[] = $id;
                     }
                     break;
 
@@ -89,26 +96,35 @@ class Bulk_Action {
                     $updated = $wpdb->update($table, ['is_favorite' => 0], ['id' => $id]);
                     if ($updated !== false) {
                         $affected++;
+                        $updated_ids[] = $id;
                     }
                     break;
 
                 case 'mark_spam':
                     $updated = $wpdb->update($table, ['is_spam' => 1], ['id' => $id]);
+                    if ($updated !== false) {
+                        $affected++;
+                        $updated_ids[] = $id;
+                    }
                     break;
 
                 case 'unmark_spam':
                     $updated = $wpdb->update($table, ['is_spam' => 0], ['id' => $id]);
+                    if ($updated !== false) {
+                        $affected++;
+                        $updated_ids[] = $id;
+                    }
                     break;
             }
         }
 
         return rest_ensure_response([
             'success' => true,
-            'message' => sprintf(
-                // translators: %d is number of affected entries
-                _n('%d entry updated.', '%d entries updated.', $affected, 'advanced-entries-manager-for-wpforms'),
-                $affected
-            ),
+            'message' => $action === 'delete'
+                ? sprintf(_n('%d entry deleted.', '%d entries deleted.', count($deleted_ids), 'advanced-entries-manager-for-wpforms'), count($deleted_ids))
+                : sprintf(_n('%d entry updated.', '%d entries updated.', count($updated_ids), 'advanced-entries-manager-for-wpforms'), count($updated_ids)),
+            'deleted_ids' => $deleted_ids,
+            'updated_ids' => $updated_ids,
             'affected' => $affected,
         ]);
     }

@@ -22,7 +22,7 @@ class Get_Entries {
      *
      * @return \WP_REST_Response List of decoded entries as a REST response.
      */
-    public function get_entries(WP_REST_Request $request)
+   public function get_entries(WP_REST_Request $request)
     {
         global $wpdb;
 
@@ -35,8 +35,12 @@ class Get_Entries {
         $page        = absint($request->get_param('page')) ?: 1;
         $date_from   = $request->get_param('date_from');
         $date_to     = $request->get_param('date_to');
-        $offset      = ($page - 1) * $per_page;
 
+        // --- Start of Hybrid Pagination Logic ---
+        $offset      = ($page - 1) * $per_page;
+        $start_id    = null;
+
+        // Construct WHERE clauses and parameters
         $where_clauses = [];
         $params = [];
 
@@ -89,22 +93,46 @@ class Get_Entries {
         }
 
         $where = 'WHERE ' . implode(' AND ', $where_clauses);
-
         $where = apply_filters('aemfw_get_entries_where', $where, $params, $request);
 
-        $sql = $wpdb->prepare(
-            "SELECT * FROM $table $where ORDER BY created_at DESC LIMIT %d OFFSET %d",
-            ...array_merge($params, [$per_page, $offset])
-        );
-
-        $results = $wpdb->get_results($sql);
-
+        // First, get the total count. This query is still needed for pagination button rendering.
         $count_sql = $wpdb->prepare(
             "SELECT COUNT(*) FROM $table $where",
             ...$params
         );
         $total_count = (int) $wpdb->get_var($count_sql);
 
+        // Step 1: Find the ID of the first entry for the requested page.
+        // This is the optimized 'offset' query.
+        if ($page > 1) {
+            $get_id_sql = $wpdb->prepare(
+                "SELECT id FROM $table $where ORDER BY created_at DESC LIMIT 1 OFFSET %d",
+                ...array_merge($params, [$offset])
+            );
+            $start_id = $wpdb->get_var($get_id_sql);
+        }
+        
+        // Step 2: Fetch the data using the cursor/start ID.
+        // This is the main data query that avoids a large OFFSET.
+        $data_sql = "SELECT * FROM $table $where ";
+        $data_params = $params;
+
+        if ($page > 1 && $start_id) {
+            // Use the found ID as a cursor for the main query.
+            // This is the fast part.
+            $data_sql .= " AND id <= %d ORDER BY created_at DESC LIMIT %d";
+            $data_params[] = $start_id;
+            $data_params[] = $per_page;
+        } else {
+            // For the first page or if start_id is not found, use a simple LIMIT.
+            $data_sql .= " ORDER BY created_at DESC LIMIT %d";
+            $data_params[] = $per_page;
+        }
+        
+        $sql = $wpdb->prepare($data_sql, ...$data_params);
+        $results = $wpdb->get_results($sql);
+
+        // --- The rest of the code remains the same ---
         $data = [];
         foreach ($results as $row) {
             $entry_raw = maybe_unserialize($row->entry);
