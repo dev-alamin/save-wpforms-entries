@@ -31,11 +31,14 @@ class Get_Forms {
     public function get_forms()
     {
         global $wpdb;
-        $table = Helper::get_table_name(); // e.g., 'aemfw_entries_manager'
+        $table = Helper::get_table_name();
 
         // Query distinct form IDs and their entry counts
         $results = $wpdb->get_results(
-            "SELECT form_id, COUNT(*) as entry_count 
+            "SELECT 
+                form_id, 
+                COUNT(*) as entry_count,
+                SUM(CASE WHEN status = 'unread' THEN 1 ELSE 0 END) as unread_count
             FROM {$table} 
             GROUP BY form_id",
             OBJECT
@@ -46,10 +49,12 @@ class Get_Forms {
         foreach ($results as $row) {
             $form_id = (int) $row->form_id;
 
+            // Populate the forms array
             $forms[] = [
-                'form_id'     => $form_id,
-                'form_title'  => get_the_title($form_id),
-                'entry_count' => (int) $row->entry_count,
+                'form_id'       => $form_id,
+                'form_title'    => get_the_title($form_id),
+                'entry_count'   => (int) $row->entry_count,
+                'number_unread' => (int) $row->unread_count
             ];
         }
 

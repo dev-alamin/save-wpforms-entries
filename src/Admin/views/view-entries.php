@@ -108,15 +108,29 @@
                     </div>
 
                     <div>
-                        <h2 class="text-xl sm:text-2xl font-semibold text-gray-800" x-text="form.form_title"></h2>
-                        <p class="text-xs sm:text-sm text-gray-600 font-medium">
-                            🆔 <strong><?php esc_html_e('Form ID:', 'advanced-entries-manager-for-wpforms'); ?></strong> <span x-text="form.form_id"></span> &nbsp; | &nbsp;
-                            📌 <strong><?php esc_html_e('Total Entries:', 'advanced-entries-manager-for-wpforms'); ?></strong>
+                        <h2 class="text-xl sm:text-2xl font-semibold text-gray-800 !m-2" x-text="form.form_title"></h2>
+                        <p class="text-xs sm:text-sm text-gray-600 font-medium flex items-center gap-2 mt-1 !m-0">
+                            <span class="bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full font-bold">
+                                <?php esc_html_e('ID:', 'advanced-entries-manager-for-wpforms'); ?> <span x-text="form.form_id"></span>
+                            </span>
+
+                            <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold">
+                                <?php esc_html_e('Entries:', 'advanced-entries-manager-for-wpforms'); ?>
+                                <span
+                                    x-text="formatNumber(form.entry_count)"
+                                    :title="formatFullNumber(form.entry_count)"
+                                    class="cursor-help"
+                                    aria-label="<?php esc_attr_e('Total number of entries', 'advanced-entries-manager-for-wpforms'); ?>">
+                                </span>
+                            </span>
+
                             <span
-                                x-text="formatNumber(form.entry_count)"
-                                :title="formatFullNumber(form.entry_count)"
-                                class="cursor-help"
-                                aria-label="<?php esc_attr_e('Total number of entries', 'advanced-entries-manager-for-wpforms'); ?>">
+                                class="px-2 py-0.5 rounded-full font-bold"
+                                :class="{ 'bg-orange-100 text-orange-700': form.number_unread > 0, 'bg-gray-100 text-gray-500': form.number_unread === 0 }"
+                                x-show="form.number_unread > 0"
+                                title="<?php esc_attr_e('Number of unread entries', 'advanced-entries-manager-for-wpforms'); ?>"
+                                aria-label="<?php esc_attr_e('Total number of unread entries', 'advanced-entries-manager-for-wpforms'); ?>">
+                                <?php esc_html_e('Unread:', 'advanced-entries-manager-for-wpforms'); ?> <span x-text="form.number_unread"></span>
                             </span>
                         </p>
                     </div>

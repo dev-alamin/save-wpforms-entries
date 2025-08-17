@@ -3,9 +3,9 @@
 global $wpdb;
 
 $table        = $wpdb->prefix . 'aemfw_entries';
-$form_id      = 131;
-$batch_size   = 500;
-$total        = 2000000;
+$form_id      = 136;
+$batch_size   = 50;
+$total        = 1000;
 $status_options = ['read', 'unread'];
 
 // Sample UK/US realistic names and emails
@@ -33,6 +33,14 @@ $comments = [
     'Please add more fields.', 'Encountered a small bug.', 'Satisfied with the results.', 'Great customer support.'
 ];
 
+$attending = [
+    'yes', 'no'
+];
+
+$guests = [
+    '+2', '+3', '+4', '+5 or more'
+];
+
 for ($i = 0; $i < $total; $i += $batch_size) {
     $values = [];
     $placeholders = [];
@@ -47,11 +55,21 @@ for ($i = 0; $i < $total; $i += $batch_size) {
         $email = $email_parts[0] . "+{$i}_{$j}@" . $email_parts[1];
 
         $comment = $comments[array_rand($comments)];
+        $attend = $attending[array_rand($attending)];
+        $guest = $guests[array_rand($guests)];
 
         $entry_data = maybe_serialize([
             'Name'                 => $name,
             'Email'                => $email,
             'Comment Or Message'   => $comment,
+        ]);
+
+        $entry_data = maybe_serialize([
+            'Name' => $name,
+            'Email' => $email,
+            'Any comments or questions?' => $comment,
+            'Will you be attending?' => $attend, 
+            'How many additional guests are you bringing?' => $guest
         ]);
 
         $created_at  = date('Y-m-d H:i:s', strtotime("-" . rand(0, 365) . " days"));

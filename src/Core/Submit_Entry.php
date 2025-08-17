@@ -75,5 +75,7 @@ class Submit_Entry {
         ] );
         
         $last_inserted_id = $wpdb->insert_id;
+
+        Helper::set_error_log( $fields );
     }
 }

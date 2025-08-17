@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Advanced Entries Manager for WPFroms
- * Plugin URI:  https://almn.me/advanced-entries-manager-for-wpforms
+ * Plugin URI:  https://entriesmanager.com/
  * Description: The ultimate dashboard to manage, search, and sync WPForms entries like a pro.
  * Version:     1.0.0
  * Author:      Md. Al Amin
