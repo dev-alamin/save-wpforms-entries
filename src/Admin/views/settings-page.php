@@ -23,7 +23,7 @@ $sheet_tab = Helper::get_option('google_sheet_tab', 'Sheet1');
 </div>
 
 
-<div class="wrap aemfw-admin-page min-h-screen max-w-7xl !m-auto bg-gray-50 px-8 py-10 text-[15px] font-inter text-gray-800 space-y-10 !m-auto"
+<div class="wrap aemfw-admin-page min-h-screen max-w-[1400px] !m-auto bg-gray-50 px-8 py-10 text-[15px] font-inter text-gray-800 space-y-10 !m-auto"
     x-data="settingsForm()">
     <div class="mb-8 bg-slate-700 text-white px-4 py-2 rounded-lg">
         <h1 class="!text-4xl !font-extrabold !text-indigo-100 !tracking-tight mb-2 flex items-center gap-3">

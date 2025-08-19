@@ -23,7 +23,7 @@
             <button
                 type="button"
                 @click="showBulkMenu = !showBulkMenu"
-                class="flex items-center justify-between w-full px-4 py-[11px] bg-white border border-gray-300 rounded-lg shadow-sm text-gray-800 font-medium hover:border-indigo-500 transition"
+                class="flex items-center justify-between w-full !px-3 !py-[10px] !border !border-gray-300 !rounded-lg !text-gray-800 !font-medium !focus:outline-none !focus:ring-2 !focus:ring-indigo-500 !transition !hover:border-indigo-500"
                 :disabled="bulkSelected.length === 0">
                 <span class="flex items-center gap-2" x-html="bulkIcon() + ' ' + bulkLabel()"></span>
 
@@ -61,37 +61,37 @@
     </div>
 
     <div class="flex items-center gap-4">
-        <div class="relative">
+        <div class="relative md:w-[150px]">
             <label for="status-filter" class="sr-only">Filter by Status</label>
             <select
                 id="status-filter"
                 x-model="filterStatus"
                 @change="handleStatusChange()"
-                class="...">
+                class="md:w-[150px] !px-3 !py-[6px] !border !border-gray-300 !rounded-lg !text-gray-800 !font-medium !focus:outline-none !focus:ring-2 !focus:ring-indigo-500 !transition !hover:border-indigo-500">
                 <option value="all"><?php esc_html_e('All Statuses', 'advanced-entries-manager-for-wpforms'); ?></option>
                 <option value="read"><?php esc_html_e('Read', 'advanced-entries-manager-for-wpforms'); ?></option>
                 <option value="unread"><?php esc_html_e('Unread', 'advanced-entries-manager-for-wpforms'); ?></option>
             </select>
         </div>
 
-        <div class="relative">
+        <div class="relative md:w-[150px]">
             <label for="date-from-filter" class="sr-only">Date From</label>
             <input
                 id="date-from-filter"
                 type="date"
                 x-model="dateFrom"
                 @change="handleDateChange()"
-                class="px-4 py-[11px] bg-white border border-gray-300 rounded-lg shadow-sm text-gray-800 font-medium hover:border-indigo-500 transition">
+                class="!px-3 !py-[6px] !border !border-gray-300 !rounded-lg !text-gray-800 !font-medium !focus:outline-none !focus:ring-2 !focus:ring-indigo-500 !transition !hover:border-indigo-500">
         </div>
 
-        <div class="relative">
+        <div class="relative md:w-[150px]">
             <label for="date-to-filter" class="sr-only">Date To</label>
             <input
                 id="date-to-filter"
                 type="date"
                 x-model="dateTo"
                 @change="handleDateChange()"
-                class="px-4 py-[11px] bg-white border border-gray-300 rounded-lg shadow-sm text-gray-800 font-medium hover:border-indigo-500 transition">
+                class="!px-3 !py-[6px] !border !border-gray-300 !rounded-lg !text-gray-800 !font-medium !focus:outline-none !focus:ring-2 !focus:ring-indigo-500 !transition !hover:border-indigo-500">
         </div>
     </div>
 
@@ -143,25 +143,6 @@
                 aria-atomic="true">
                 <?php esc_html_e('Searching...', 'advanced-entries-manager-for-wpforms'); ?>
             </div>
-
-            <!-- <div
-                x-show="entries.length && searchQuery"
-                x-transition
-                class="absolute z-50 top-[100%] left-0 mt-1 !w-full !bg-white !shadow-lg !border !border-gray-200 !rounded-lg max-h-72 overflow-auto"
-                role="listbox">
-                <template x-for="(entry, i) in entries" :key="entry.id">
-                    <div
-                        @click="showEntry(i)"
-                        class="flex flex-col px-4 py-3 border-b border-gray-200 hover:bg-indigo-50 cursor-pointer text-sm"
-                        role="option"
-                        tabindex="0"
-                        @keydown.enter.prevent="showEntry(i)">
-                        <div class="font-semibold text-indigo-700 truncate" x-text="entry.entry?.Email || '-'"></div>
-                        <div class="text-gray-700 truncate" x-text="entry.name || '-'"></div>
-                        <div class="text-xs text-gray-500 mt-1" x-text="timeAgo(entry.date)"></div>
-                    </div>
-                </template>
-            </div> -->
         </div>
     </div>
 </div>

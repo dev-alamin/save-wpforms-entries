@@ -17,7 +17,7 @@
 <div
     x-data="entriesApp()"
     x-init="fetchForms()"
-    class="wrap aemfw-admin-page min-h-screen max-w-7xl !m-auto px-8 py-10 text-[15px] font-inter"
+    class="wrap aemfw-admin-page min-h-screen max-w-[1400px] !m-auto px-8 py-10 text-[15px] font-inter"
     role="main"
     aria-label="<?php echo esc_attr__('Advanced Entries Manager Overview', 'advanced-entries-manager-for-wpforms'); ?>">
 
