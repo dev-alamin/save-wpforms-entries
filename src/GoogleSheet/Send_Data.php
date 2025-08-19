@@ -187,12 +187,12 @@ class Send_Data
 
         if (!$entry) {
             error_log('[AEM]: No entry data found. Sorry');
-            return;
+            return false;
         }
 
         if ($entry->synced_to_gsheet) {
             error_log('[AEM]: Already synced this entry...');
-            return;
+            return false;
         }
 
         $form_id = absint($entry->form_id);
@@ -202,7 +202,7 @@ class Send_Data
         if (is_wp_error($sheet_info)) {
             error_log("[AEM] GSheet preparation failed for form $form_id: " . $sheet_info->get_error_message());
             $this->handle_sync_failure($entry_id, $entry->retry_count);
-            return;
+            return false;
         }
 
         $spreadsheet_id = $sheet_info['spreadsheet_id'];
@@ -216,7 +216,7 @@ class Send_Data
                 if ($row_count >= 1000) {
                     error_log("[AEM] GSheet row limit reached for form $form_id. Entry {$entry_id} not synced.");
                     $wpdb->update($table, ['synced_to_gsheet' => 2], ['id' => $entry_id]); // '2' can indicate 'sync_limit_reached'
-                    return;
+                    return false;
                 }
             }
         }
@@ -226,7 +226,7 @@ class Send_Data
         if (is_wp_error($row_data)) {
             error_log("[AEM] GSheet data preparation failed for entry $entry_id: " . $row_data->get_error_message());
             $this->handle_sync_failure($entry_id, $entry->retry_count);
-            return;
+            return false;
         }
 
         // Step 3: Append data to the sheet.
@@ -239,13 +239,15 @@ class Send_Data
         if (is_wp_error($response)) {
             error_log("[AEM] GSheet append failed for entry $entry_id. Error: " . $response->get_error_message());
             $this->handle_sync_failure($entry_id, $entry->retry_count);
-            return;
+            return false;
         }
 
         error_log('[AEM] Google sync is going on ' . $entry_id . ' Form ID: ' . $form_id );
 
         // Step 4: Mark as synced on success.
         $wpdb->update($table, ['synced_to_gsheet' => 1, 'retry_count' => 0], ['id' => $entry_id]);
+
+        return true;
     }
 
     /**

@@ -184,7 +184,17 @@ class Update_Entries {
      * @return WP_REST_Response|WP_Error
      */
     public function handle_sync_request(WP_REST_Request $request) {
+        $is_authorized = Helper::is_google_authorized();
+
+        if( ! $is_authorized ) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => __('You have not authorize google, please do it from settings page.', 'advanced-entries-manager-for-wpforms'),
+            ], 400);
+        }
+        
         $entry_id = absint($request['id']);
+
         if (! $entry_id) {
             return new WP_REST_Response([
                 'success' => false,
@@ -193,11 +203,19 @@ class Update_Entries {
         }
 
         $send_data = new Send_Data();
-        $send_data->process_single_entry( [ 'entry_id' => $entry_id ]);
 
-        return rest_ensure_response([
-            'success' => true,
-            'message' => __('Entry successfully sync to Google Sheet.', 'advanced-entries-manager-for-wpforms'),
-        ], 200); // OK
+        $send = $send_data->process_single_entry( [ 'entry_id' => $entry_id ]);
+
+        if( $send ) {
+            return rest_ensure_response([
+                'success' => true,
+                'message' => __('Entry successfully sync to Google Sheet.', 'advanced-entries-manager-for-wpforms'),
+            ], 200); // OK
+        } else {
+            return rest_ensure_response([
+                'success' => false,
+                'message' => __('Failed to sync entry to Google Sheet. Please check the logs.', 'advanced-entries-manager-for-wpforms'),
+            ], 500); // Internal Server Error
+        }
     }
 }

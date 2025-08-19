@@ -564,7 +564,7 @@ function formTable(form) {
                         new CustomEvent("toast", {
                             detail: {
                                 // AEMFW_I18N: Use translatable string
-                                message: aemfwStrings.syncFailed + ' ' + (data.data?.message || ""),
+                                message: aemfwStrings.syncFailed + ' ' + (data?.message || ""),
                                 type: "error",
                             },
                         })

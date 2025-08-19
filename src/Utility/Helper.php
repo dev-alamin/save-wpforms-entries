@@ -346,6 +346,18 @@ class Helper {
     }
 
     /**
+     * Checks if the user is currently authenticated with Google
+     * by verifying if a valid access token can be retrieved.
+     *
+     * This method leverages the existing get_access_token() logic.
+     *
+     * @return bool True if a valid Google access token is available, false otherwise.
+     */
+    public static function is_google_authorized() {
+        return (bool) self::get_access_token();
+    }
+
+    /**
      * Get Settings page url wihout sanitization
      *
      * @return string
