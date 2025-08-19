@@ -23,6 +23,13 @@ function formTable(form) {
         selectAll: false,
         lastCheckedIndex: null,
 
+        dropdownOpen: false, 
+        types: [
+            { key: 'email', label: 'Email' },
+            { key: 'name', label: 'Name' },
+            { key: 'id', label: 'Entry ID' }
+        ],
+
         entryModalOpen: false,
         selectedEntry: {},
         bgClasses: [
@@ -31,6 +38,14 @@ function formTable(form) {
             "aemfw-row-bg-3",
             "aemfw-row-bg-4",
         ],
+
+        // Properties for filtering from formEntriesApp
+        searchQuery: "",
+        searchType: "email",
+        filterStatus: "all",
+        onlyFavorites: false,
+        dateFrom: "",
+        dateTo: "",
 
         get paginatedEntries() {
             return this.entries;
@@ -93,6 +108,8 @@ function formTable(form) {
                     this.bulkSelected = [];
                     this.selectAll = false;
 
+                    this.fetchEntries(); 
+
                     if (action === 'delete') {
                         this.entries = this.entries.filter(e => !uniqueIds.includes(e.id));
 
@@ -145,15 +162,34 @@ function formTable(form) {
 
             this.lastCheckedIndex = index;
         },
+        // New, correct fetchEntries function, merged from formEntriesApp
         async fetchEntries() {
             this.loading = true;
-            try {
-                const query = new URLSearchParams({
-                    form_id: this.formId,
-                    page: this.currentPage,
-                    per_page: this.pageSize,
-                });
 
+            const query = new URLSearchParams({
+                form_id: this.formId,
+                page: this.currentPage,
+                per_page: this.pageSize,
+            });
+
+            if (this.searchQuery.trim() !== "") {
+                query.append("search", this.searchQuery.trim());
+                query.append("search_type", this.searchType);
+            }
+
+            if (this.filterStatus !== "all") {
+                query.append("status", this.filterStatus);
+            }
+
+            if (this.dateFrom) {
+                query.append("date_from", this.dateFrom);
+            }
+
+            if (this.dateTo) {
+                query.append("date_to", this.dateTo);
+            }
+
+            try {
                 const res = await fetch(
                     `${aemfwSettings.restUrl}aem/v1/entries?${query}`, {
                         headers: {
@@ -165,11 +201,16 @@ function formTable(form) {
 
                 const rawEntries = Array.isArray(data.entries) ? data.entries : [];
 
-                this.entries = rawEntries.map((entry) => ({
+                this.entries = this.onlyFavorites ?
+                    rawEntries.filter((e) => e.is_favorite) :
+                    rawEntries;
+
+                // Fix for the old data transformation logic
+                this.entries = this.entries.map((entry) => ({
                     ...entry,
                     email: entry.email || "",
                     is_favorite: Number(entry.is_favorite),
-                    synced_to_gsheet: Number(entry.synced),
+                    synced_to_gsheet: Number(entry.synced_to_gsheet), // Corrected property name
                     exported_to_csv: Number(entry.exported_to_csv),
                     formated_date: new Date(entry.date).toLocaleTimeString('en-US', {
                         year: 'numeric',
@@ -185,13 +226,30 @@ function formTable(form) {
                 this.totalEntries = Number(data.total) || rawEntries.length;
                 this.totalPages = Math.ceil(this.totalEntries / this.pageSize);
 
-                this.domKey = Date.now();
+                // Re-calculate the paginatedEntries if needed, though this getter is fine
+                // this.paginatedEntries = this.entries;
+
             } catch (error) {
-                // AEMFW_I18N: Use translatable string
                 console.error(aemfwStrings.fetchEntriesError, error);
             } finally {
                 this.loading = false;
             }
+        },
+
+        // Filter and pagination handlers, now correctly calling the new fetchEntries
+        handleSearchInput: _.debounce(function() {
+            this.currentPage = 1;
+            this.fetchEntries();
+        }, 500),
+
+        handleStatusChange() {
+            this.currentPage = 1;
+            this.fetchEntries();
+        },
+
+        handleDateChange() {
+            this.currentPage = 1;
+            this.fetchEntries();
         },
         toggleSelectAll(event) {
             if (event.target.checked) {
@@ -328,8 +386,8 @@ function formTable(form) {
             try {
                 const response = await fetch(
                     `${aemfwSettings.restUrl}aem/v1/entries/${
-            this.selectedEntry.id
-          }?form_id=${encodeURIComponent(this.selectedEntry.form_id)}`, {
+                    this.selectedEntry.id
+                }?form_id=${encodeURIComponent(this.selectedEntry.form_id)}`, {
                         method: "DELETE",
                         headers: {
                             "Content-Type": "application/json",
@@ -341,28 +399,33 @@ function formTable(form) {
                 const data = await response.json();
 
                 if (data.deleted) {
-                    this.entries = this.entries.filter(
-                        (e) => e.id !== this.selectedEntry.id
-                    );
+                    // Close the modal and reset the selected entry immediately
                     this.entryModalOpen = false;
                     this.selectedEntry = null;
 
-                    if (this.currentPage > this.totalPages) {
-                        this.currentPage = this.totalPages;
-                    }
+                    // This is the single, bulletproof line to refresh the UI.
+                    // It fetches the latest data from the server, which is the single source of truth.
+                    this.fetchEntries();
 
-                    this.entries = this.entries.filter((e) => e.id !== id);
-                    this.entries = [...this.entries]; // ✅ force update
-                    this.domKey = Date.now(); // fallback if needed
+                    // Dispatch a success toast message
+                    this.$dispatch("toast", {
+                        type: "success",
+                        message: aemfwStrings.entryDeletedSuccess.replace('%s', data.message),
+                    });
 
-                    console.log("Entry deleted successfully");
                 } else {
-                    // AEMFW_I18N: Use translatable string
-                    alert(aemfwStrings.deleteFailedUnknown.replace('Unknown error', data.message || "Unknown error"));
+                    // The API returned an error message
+                    this.$dispatch("toast", {
+                        type: "error",
+                        message: aemfwStrings.deleteFailedUnknown.replace('Unknown error', data.message || "Unknown error"),
+                    });
                 }
             } catch (error) {
-                // AEMFW_I18N: Use translatable string
-                alert(aemfwStrings.deleteRequestFailed);
+                // A network or other fetch error occurred
+                this.$dispatch("toast", {
+                    type: "error",
+                    message: aemfwStrings.deleteRequestFailed,
+                });
                 console.error("Delete request failed:", error);
             }
         },
@@ -775,84 +838,90 @@ function entriesApp() {
     };
 }
 
-function formEntriesApp(formId, entryCount) {
-    return {
-        entries: [],
-        total: entryCount || 0,
-        searchQuery: "",
-        filterStatus: "all",
-        onlyFavorites: false,
-        currentPage: 1,
-        perPage: 10,
-        loading: false,
-        searchType: "email",
+// function formEntriesApp(formId, entryCount) {
+//     return {
+//         entries: [],
+//         total: entryCount || 0,
+//         searchQuery: "",
+//         filterStatus: "all",
+//         onlyFavorites: false,
+//         currentPage: 1,
+//         perPage: 10,
+//         loading: false,
+//         searchType: "email",
+//         dateFrom: "", // Added
+//         dateTo: "",   // Added
 
-        async fetchEntries() {
-            this.loading = true;
+//         async fetchEntries() {
+//             this.loading = true;
 
-            let queryParams = new URLSearchParams({
-                form_id: formId,
-                page: this.currentPage,
-                per_page: this.perPage,
-            });
+//             let queryParams = new URLSearchParams({
+//                 form_id: formId,
+//                 page: this.currentPage,
+//                 per_page: this.perPage,
+//             });
 
-            if (this.searchQuery.trim() !== "") {
-                queryParams.append("search", this.searchQuery.trim());
-                queryParams.append("search_type", this.searchType.trim());
-            }
+//             if (this.searchQuery.trim() !== "") {
+//                 queryParams.append("search", this.searchQuery.trim());
+//                 queryParams.append("search_type", this.searchType.trim());
+//             }
 
-            if (this.filterStatus !== "all") {
-                queryParams.append("status", this.filterStatus);
-            }
+//             if (this.filterStatus !== "all") {
+//                 queryParams.append("status", this.filterStatus);
+//             }
 
-            try {
-                const res = await fetch(
-                    `${aemfwSettings.restUrl}aem/v1/entries?${queryParams}`, {
-                        headers: {
-                            "X-WP-Nonce": aemfwSettings.nonce,
-                        },
-                    }
-                );
-                const data = await res.json();
+//             if (this.dateFrom) {
+//                 queryParams.append("date_from", this.dateFrom);
+//             }
 
-                this.entries = this.onlyFavorites ?
-                    data.entries.filter((e) => e.is_favorite) :
-                    data.entries;
+//             if (this.dateTo) {
+//                 queryParams.append("date_to", this.dateTo);
+//             }
 
-                this.total = data.total;
-            } catch (err) {
-                console.error("Fetch failed:", err);
-            } finally {
-                this.loading = false;
-            }
-        },
+//             try {
+//                 const res = await fetch(
+//                     `${aemfwSettings.restUrl}aem/v1/entries?${queryParams}`, {
+//                         headers: {
+//                             "X-WP-Nonce": aemfwSettings.nonce,
+//                         },
+//                     }
+//                 );
+//                 const data = await res.json();
 
-        handleSearchInput() {
-            const trimmed = this.searchQuery.trim();
+//                 this.entries = this.onlyFavorites ?
+//                     data.entries.filter((e) => e.is_favorite) :
+//                     data.entries;
 
-            if (trimmed === "") {
-                this.entries = [];
-                this.loading = false;
-                return;
-            }
+//                 this.total = data.total;
+//             } catch (err) {
+//                 console.error("Fetch failed:", err);
+//             } finally {
+//                 this.loading = false;
+//             }
+//         },
 
-            this.loading = true;
-            this.fetchEntries();
-        },
-        handleStatusChange() {
-            this.currentPage = 1;
-            this.fetchEntries();
-        },
-        handleFavoriteToggle() {
-            this.currentPage = 1;
-            this.fetchEntries();
-        },
-        goToPage(pageNum) {
-            this.currentPage = pageNum;
-            this.fetchEntries();
-        },
-    };
-}
+//         handleSearchInput() {
+//             this.currentPage = 1;
+//             this.fetchEntries();
+//         },
+//         handleStatusChange() {
+//             this.currentPage = 1;
+//             this.fetchEntries();
+//         },
+//         handleFavoriteToggle() {
+//             this.currentPage = 1;
+//             this.fetchEntries();
+//         },
+//         handleDateChange() { // Added
+//             this.currentPage = 1;
+//             this.fetchEntries();
+//         },
+//         goToPage(pageNum) {
+//             this.currentPage = pageNum;
+//             this.fetchEntries();
+//         },
+//     };
+// }
 
 function toastHandler() {
     return {

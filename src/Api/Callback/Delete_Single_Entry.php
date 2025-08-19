@@ -63,12 +63,16 @@ class Delete_Single_Entry {
         if ($deleted) {
             do_action('aemfw_after_entry_delete', $id, $form_id);
 
-            return new WP_REST_Response(['deleted' => true], 200);
+            return new WP_REST_Response( [
+                'deleted' => true,
+                'message' => __( 'Entry has been deleted successfully!', 'advanced-entries-manager-for-wpforms' ),
+            ],
+                200);
         }
 
         return new WP_REST_Response([
             'deleted' => false,
-            'message' => __('Entry not found or already deleted.', 'advanced-entries-manager-for-wpforms'),
+            'message' => __('Entry not found or already deleted.', 'advanced-entries-manager-for-wpforms' ),
         ], 404);
     }
 }
