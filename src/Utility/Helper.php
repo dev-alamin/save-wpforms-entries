@@ -134,18 +134,6 @@ class Helper {
     }
 
     /**
-     * Create a WP_Error object.
-     *
-     * @param string $message
-     * @param string|int $code
-     * @param array $data
-     * @return WP_Error
-     */
-    public static function wp_error( string $message, $code = 'error', array $data = [] ): WP_Error {
-        return new WP_Error( $code, __( $message, 'forms-entries-manager' ), $data );
-    }
-
-    /**
      * Return a formatted REST response.
      *
      * @param mixed $data
@@ -265,13 +253,11 @@ class Helper {
 
         $query = "
             SELECT 
-                f.ID as form_post_id,
+                f.ID AS form_post_id,
                 f.post_title,
-                COUNT(d.form_id) as entry_count
+                (SELECT COUNT(d.form_id) FROM {$db_table} d WHERE d.form_post_id = f.ID) AS entry_count
             FROM {$posts_table} f
-            LEFT JOIN {$db_table} d ON f.ID = d.form_post_id
             WHERE f.post_type = 'wpforms' AND f.post_status = 'publish'
-            GROUP BY f.ID
             ORDER BY entry_count DESC
         ";
 

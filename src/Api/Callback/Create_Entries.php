@@ -55,8 +55,8 @@ class Create_Entries {
         $exported_to_csv  = isset($params['exported_to_csv']) ? absint($params['exported_to_csv']) : 0;
         $synced_to_gsheet = isset($params['synced_to_gsheet']) ? absint($params['synced_to_gsheet']) : 0;
         // Normalize datetime fields or set null if empty/invalid
-        $printed_at       = !empty($params['printed_at']) ? date('Y-m-d H:i:s', strtotime($params['printed_at'])) : null;
-        $resent_at        = !empty($params['resent_at']) ? date('Y-m-d H:i:s', strtotime($params['resent_at'])) : null;
+        $printed_at       = !empty($params['printed_at']) ? gmdate('Y-m-d H:i:s', strtotime($params['printed_at'])) : null;
+        $resent_at        = !empty($params['resent_at']) ? gmdate('Y-m-d H:i:s', strtotime($params['resent_at'])) : null;
 
         // Optional: capability check (uncomment if needed)
         // if ( ! current_user_can( 'manage_options' ) ) {

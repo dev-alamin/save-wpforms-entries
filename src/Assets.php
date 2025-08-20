@@ -50,12 +50,6 @@ class Assets {
                 'version' => null,
                 'in_footer' => true,
             ],
-            'fem-lodash' => [
-                'src'     => FEM_ASSETS_URL . 'admin/lodash.min.js',
-                'deps'    => [],
-                'version' => $version,
-                'in_footer' => false,
-            ],
             'fem-lottie' => [
                 'src'     => FEM_ASSETS_URL . 'admin/lottie-player.js',
                 'deps'    => [],
@@ -121,6 +115,8 @@ class Assets {
 
             wp_enqueue_script( $handle );
         }
+
+        wp_enqueue_script( 'lodash.min.js' );
 
         // Localize main admin JS
         wp_localize_script( 'fem-admin-js', 'aemfwSettings', [

@@ -4,6 +4,7 @@ namespace App\AdvancedEntryManager\Api\Callback;
 
 defined('ABSPATH') || exit;
 
+use App\AdvancedEntryManager\Core\Handle_Cache;
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
@@ -31,41 +32,51 @@ class Get_Forms {
      */
     public function get_forms()
     {
-        global $wpdb;
-        $table = Helper::get_table_name();
+        // Initialize the cache handler
+        $fem_cache = new Handle_Cache();
+        $cache_key = 'forms_summary_counts';
 
-        // Query distinct form IDs and their entry counts
-        $results = $wpdb->get_results(
-            "SELECT 
-                form_id, 
-                COUNT(*) as entry_count,
-                SUM(CASE WHEN status = 'unread' THEN 1 ELSE 0 END) as unread_count
-            FROM {$table} 
-            GROUP BY form_id",
-            OBJECT
-        );
+        // Try to get data from the cache first
+        $response = $fem_cache->get_object_cache($cache_key);
 
-        $forms = [];
+        // If cache is empty, run the database query and populate the cache
+        if (false === $response) {
+            global $wpdb;
+            $table = Helper::get_table_name();
 
-        foreach ($results as $row) {
-            $form_id = (int) $row->form_id;
+            // Query distinct form IDs and their entry counts
+            $query = $wpdb->prepare(
+                "SELECT 
+                    form_id, 
+                    COUNT(*) as entry_count,
+                    SUM(CASE WHEN status = 'unread' THEN 1 ELSE 0 END) as unread_count
+                FROM `{$table}`
+                GROUP BY form_id"
+            );
 
-            // Populate the forms array
-            $forms[] = [
-                'form_id'       => $form_id,
-                'form_title'    => get_the_title($form_id),
-                'entry_count'   => (int) $row->entry_count,
-                'number_unread' => (int) $row->unread_count
-            ];
+            $results = $wpdb->get_results($query, OBJECT);
+
+            $forms = [];
+
+            foreach ($results as $row) {
+                $form_id = (int) $row->form_id;
+
+                // Populate the forms array
+                $forms[] = [
+                    'form_id'       => $form_id,
+                    'form_title'    => get_the_title($form_id),
+                    'entry_count'   => (int) $row->entry_count,
+                    'number_unread' => (int) $row->unread_count
+                ];
+            }
+
+            // Filter the list of forms returned by get_forms()
+            $response = apply_filters('fem_get_forms', $forms);
+            
+            // Store the final processed data in the cache for 1 hour
+            $fem_cache->set_object_cache($cache_key, $response, HOUR_IN_SECONDS);
         }
-
-        /**
-         * Filter the list of forms returned by get_forms().
-         *
-         * @param array $forms List of forms with entry counts.
-         */
-        $response = apply_filters('femget_forms', $forms);
-
+        
         return rest_ensure_response( $response );
     }
 
@@ -83,9 +94,10 @@ class Get_Forms {
      * @return WP_REST_Response|WP_Error List of field keys or a WP_Error on failure.
      */
     public function get_form_fields( WP_REST_Request $request ) {
-        global $wpdb;
-
+        // Initialize the cache handler
+        $fem_cache = new Handle_Cache();
         $form_id = isset( $request['form_id'] ) ? absint( $request['form_id'] ) : 0;
+        $cache_key = 'form_' . $form_id . '_fields';
 
         if ( $form_id <= 0 ) {
             return new WP_Error(
@@ -95,12 +107,22 @@ class Get_Forms {
             );
         }
 
+        // Try to get data from the cache first
+        $cached_fields = $fem_cache->get_object_cache($cache_key);
+
+        if (false !== $cached_fields) {
+            return rest_ensure_response([
+                'fields' => $cached_fields
+            ]);
+        }
+
+        global $wpdb;
         $table = Helper::get_table_name();
 
         // Fetch a few rows to detect fields (faster than scanning all)
         $rows = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM {$table} WHERE form_id = %d LIMIT 5",
+                "SELECT * FROM `{$table}` WHERE form_id = %d LIMIT 5",
                 $form_id
             ),
             ARRAY_A
@@ -127,9 +149,14 @@ class Get_Forms {
                 }
             }
         }
+        
+        $final_fields = array_values( array_unique( array_keys( $fields ) ) );
+        
+        // Store the results in the cache for 1 hour.
+        $fem_cache->set_object_cache($cache_key, $final_fields, HOUR_IN_SECONDS);
 
         return rest_ensure_response([
-            'fields' => array_values( array_unique( array_keys( $fields ) ) )
+            'fields' => $final_fields
         ]);
     }
 }

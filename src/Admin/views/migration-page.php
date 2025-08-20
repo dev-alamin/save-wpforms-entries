@@ -47,7 +47,7 @@
                                 <path d="M13 7H7v6h6V7z" />
                                 <path fill-rule="evenodd" d="M5 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2H5zm10 12H5V5h10v10z" clip-rule="evenodd" />
                             </svg>
-                            <span><?php echo number_format_i18n($item['entry_count']); ?></span>
+                            <span><?php echo esc_html( number_format_i18n( $item['entry_count'] ) ); ?></span>
                         </div>
                     </li>
                 <?php endforeach; ?>

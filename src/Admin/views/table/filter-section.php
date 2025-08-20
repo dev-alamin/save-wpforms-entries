@@ -95,7 +95,7 @@
         </div>
     </div>
 
-    <div class="relative flex items-center md:w-[350px] sm:w-[300px]">
+    <div class="relative flex items-center md:w-[300px]">
         <div class="relative min-w-[75px] !border !border-gray-300 !border-r-0 !rounded-l-lg !rounded-tr-none !rounded-br-none">
             <button @click="dropdownOpen = !dropdownOpen"
                 class="!px-3 !py-[10px] !text-gray-800 !font-medium !hover:border-indigo-500 !transition !text-sm flex items-center gap-1"

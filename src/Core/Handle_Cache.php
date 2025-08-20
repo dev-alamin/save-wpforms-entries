@@ -4,74 +4,44 @@ namespace App\AdvancedEntryManager\Core;
 
 defined('ABSPATH') || exit;
 
-use App\AdvancedEntryManager\Utility\Helper;
-
 class Handle_Cache {
-    public function __construct()
-    {
-        // add_action( 'femafter_get_total_count', [ $this, 'clear_cache' ], 10, 2 );
-    }
-
+      
     /**
-     * Hooks into `femafter_get_total_count` to perform intelligent cache invalidation.
+     * Cache group name for object cache to avoid conflicts.
      *
-     * @param int            $total_count The total number of entries from the latest query.
-     * @param WP_REST_Request $request     The current REST API request object.
+     * @var string
      */
-    function clear_cache($total_count, $request) {
-        // Generate a unique cache key based on the request parameters.
-        // This ensures a different cache is used for each unique query (e.g., different form IDs or filters).
-        $cache_key = 'fementry_count_' . md5(serialize($request->get_params()));
-        $cached_count = get_transient($cache_key);
+    private $cache_group = 'fem_forms';
 
-        // If no cached count exists, this is the first time the query is run.
-        if ($cached_count === false) {
-            // Store the current total count in the cache for future comparison.
-            // We use a long expiration time since it's only meant to be cleared manually.
-            set_transient($cache_key, $total_count, WEEK_IN_SECONDS);
-            return;
-        }
-
-        // Compare the current total count with the cached count.
-        if ($total_count !== (int)$cached_count) {
-            // The counts do not match, which means entries have been added or deleted.
-            // We must now clear all related pagination caches to avoid inconsistent results.
-            $this->clear_all_pagination_caches();
-
-            // After clearing the caches, update the stored total count.
-            set_transient($cache_key, $total_count, WEEK_IN_SECONDS);
-        }
+    /**
+     * Sets a value in the object cache.
+     *
+     * @param string $key   The cache key to store the value under.
+     * @param mixed  $value The value to store.
+     * @param int    $ttl   The time to live in seconds.
+     * @return bool True if the value was successfully set, false otherwise.
+     */
+    public function set_object_cache($key, $value, $ttl = HOUR_IN_SECONDS) {
+        return wp_cache_set($key, $value, $this->cache_group, $ttl);
     }
 
     /**
-     * Clears the transient cache for pagination cursors.
-     * This should be hooked to entry creation, update, and deletion events.
+     * Retrieves a value from the object cache.
+     *
+     * @param string $key The cache key to retrieve.
+     * @return mixed The cached value, or false if the key does not exist.
      */
-    public function clear_pagination_cursor_cache() {
-        global $wpdb;
-        $cache_prefix = 'pagination_cursor_';
-        $delete = $wpdb->query("DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_{$cache_prefix}%' OR option_name LIKE '_transient_timeout_{$cache_prefix}%'");
-
-        if( $delete ) {
-            Helper::set_error_log( 'Cache cleared' );
-        }else {
-            Helper::set_error_log( 'Cache cannot be cleared' );
-        }
+    public function get_object_cache($key) {
+        return wp_cache_get($key, $this->cache_group);
     }
 
-    function clear_all_pagination_caches() {
-        global $wpdb;
-        
-        // Deletes all pagination cursor transients.
-        $delete_cursor_cache = $wpdb->query("DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_pagination_cursor_%' OR option_name LIKE '_transient_timeout_pagination_cursor_%'");
-
-        // It's also a good practice to clear the count cache you discussed.
-        $delete_total_count = $wpdb->query("DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_fementry_count_%' OR option_name LIKE '_transient_timeout_fementry_count_%'");
-
-        if( $delete_cursor_cache ) {
-            Helper::set_error_log( 'Cache cleared' );
-        }else {
-            Helper::set_error_log( 'Cache cannot be cleared' );
-        }
+    /**
+     * Deletes a value from the object cache.
+     *
+     * @param string $key The cache key to delete.
+     * @return bool True if the value was successfully deleted, false otherwise.
+     */
+    public function delete_object_cache($key) {
+        return wp_cache_delete($key, $this->cache_group);
     }
 }

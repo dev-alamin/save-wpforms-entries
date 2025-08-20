@@ -300,7 +300,7 @@ class Route
                                 return strtotime($param) !== false;
                             },
                             'sanitize_callback' => function ($param) {
-                                return date('Y-m-d H:i:s', strtotime($param));
+                                return gmdate('Y-m-d H:i:s', strtotime($param));
                             },
                         ],
                         'resent_at' => [
@@ -310,7 +310,7 @@ class Route
                                 return strtotime($param) !== false;
                             },
                             'sanitize_callback' => function ($param) {
-                                return date('Y-m-d H:i:s', strtotime($param));
+                                return gmdate('Y-m-d H:i:s', strtotime($param));
                             },
                         ],
                     ],
@@ -426,7 +426,7 @@ class Route
                                 if ($timestamp === false) {
                                     return null; // or a fallback date/time string
                                 }
-                                return date('Y-m-d H:i:s', $timestamp);
+                                return gmdate('Y-m-d H:i:s', $timestamp);
                             },
                         ],
                         'resent_at' => [
@@ -437,13 +437,13 @@ class Route
                             },
                             'sanitize_callback' => function ($param) {
                                 if (empty($param) || !is_string($param)) {
-                                    return null; // or return a default safe value like current date/time: date('Y-m-d H:i:s')
+                                    return null; // or return a default safe value like current date/time: gmdate('Y-m-d H:i:s')
                                 }
                                 $timestamp = strtotime($param);
                                 if ($timestamp === false) {
                                     return null; // or a fallback date/time
                                 }
-                                return date('Y-m-d H:i:s', $timestamp);
+                                return gmdate('Y-m-d H:i:s', $timestamp);
                             },
                         ],
                     ],
