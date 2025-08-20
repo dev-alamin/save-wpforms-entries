@@ -1,6 +1,9 @@
 <?php
 
 namespace App\AdvancedEntryManager\Scheduler\Actions;
+
+defined('ABSPATH') || exit;
+
 use App\AdvancedEntryManager\Api\Callback\Export_Entries;
 
 class Export_Entries_Action {

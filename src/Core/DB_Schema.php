@@ -12,6 +12,8 @@
 
 namespace App\AdvancedEntryManager\Core;
 
+defined('ABSPATH') || exit;
+
 class DB_Schema
 {
     /**

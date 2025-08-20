@@ -1,13 +1,6 @@
 <div class="mt-4 flex justify-center items-center gap-1 text-gray-700 text-sm font-medium select-none mb-4">
     <p class="!mr-3">
-        <?php
-        // We prepare the strings for both singular and plural forms in PHP
-        // and pass them to Alpine.js.
-        $singular_string = esc_js( __( 'Entry found:', 'advanced-entries-manager-for-wpforms' ) );
-        $plural_string = esc_js( __( 'Entries found:', 'advanced-entries-manager-for-wpforms' ) );
-        ?>
-        <span x-text="totalEntries > 1 ? '<?php echo $plural_string; ?>' : '<?php echo $singular_string; ?>'"></span>
-        <span x-text="totalEntries"></span>
+        <span class="bg-blue-100 text-blue-700 px-4 py-3 rounded-full font-bold" x-text="totalEntries"></span>
     </p>
     <!-- Previous -->
     <button

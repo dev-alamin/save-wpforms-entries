@@ -2,6 +2,8 @@
 
 namespace App\AdvancedEntryManager\Utility;
 
+defined('ABSPATH') || exit;
+
 use WP_Error;
 use WP_REST_Response;
 use App\AdvancedEntryManager\Utility\DB;

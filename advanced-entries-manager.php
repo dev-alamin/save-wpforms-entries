@@ -92,11 +92,11 @@ if( ! defined( 'AEMFW_TABLE_NAME' ) ) {
  * This is where the proxy server of google authorization will be handled
  */
 if( ! defined( 'AEMFW_PROXY_BASE_URL' ) ) {
-    define( 'AEMFW_PROXY_BASE_URL', trailingslashit( 'https://api.almn.me' ) );
+    define( 'AEMFW_PROXY_BASE_URL', trailingslashit( 'https://backend.entriesmanager.com' ) );
 }
 
 if( ! defined( 'AEMFW_GOOGLE_PROXY_URL' ) ) {
-    define( 'AEMFW_GOOGLE_PROXY_URL', 'https://api.almn.me/oauth/init' );
+    define( 'AEMFW_GOOGLE_PROXY_URL', 'https://backend.entriesmanager.com/oauth/init' );
 }
 
 /**

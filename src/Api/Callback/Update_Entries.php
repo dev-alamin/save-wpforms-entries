@@ -2,7 +2,8 @@
 
 namespace App\AdvancedEntryManager\Api\Callback;
 
-use App\AdvancedEntryManager\Api\Route;
+defined('ABSPATH') || exit;
+
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;

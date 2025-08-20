@@ -2,6 +2,8 @@
 
 namespace App\AdvancedEntryManager\Scheduler\Actions;
 
+defined('ABSPATH') || exit;
+
 use App\AdvancedEntryManager\Api\Callback\Migrate;
 
 class Migrate_Batch_Action {

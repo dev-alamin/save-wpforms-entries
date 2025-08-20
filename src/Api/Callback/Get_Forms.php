@@ -2,7 +2,8 @@
 
 namespace App\AdvancedEntryManager\Api\Callback;
 
-use App\AdvancedEntryManager\Api\Route;
+defined('ABSPATH') || exit;
+
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
@@ -63,7 +64,9 @@ class Get_Forms {
          *
          * @param array $forms List of forms with entry counts.
          */
-        return rest_ensure_response(apply_filters('aemfw_get_forms', $forms));
+        $response = apply_filters('aemfw_get_forms', $forms);
+
+        return rest_ensure_response( $response );
     }
 
     /**

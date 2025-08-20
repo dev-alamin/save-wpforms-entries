@@ -1,4 +1,8 @@
-<?php do_action('aemfw_before_entries_ui'); ?>
+<?php
+defined('ABSPATH') || exit;
+
+do_action('aemfw_before_entries_ui'); 
+?>
 
 <div
     x-data="toastHandler()"

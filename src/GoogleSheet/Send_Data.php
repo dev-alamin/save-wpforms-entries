@@ -2,6 +2,8 @@
 
 namespace App\AdvancedEntryManager\GoogleSheet;
 
+defined('ABSPATH') || exit;
+
 use App\AdvancedEntryManager\Utility\Helper;
 use WP_Error;
 

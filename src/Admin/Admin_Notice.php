@@ -2,6 +2,8 @@
 
 namespace App\AdvancedEntryManager\Admin;
 
+defined('ABSPATH') || exit;
+
 use App\AdvancedEntryManager\Utility\Helper;
 
 class Admin_Notice

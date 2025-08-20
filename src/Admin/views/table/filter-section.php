@@ -100,7 +100,7 @@
             <button @click="dropdownOpen = !dropdownOpen"
                 class="!px-3 !py-[10px] !text-gray-800 !font-medium !hover:border-indigo-500 !transition !text-sm flex items-center gap-1"
                 type="button"
-                aria-label="Select search type">
+                aria-label="<?php esc_attr_e('Select search type', 'advanced-entries-manager-for-wpforms'); ?>">
                 <span x-text="searchType"></span>
                 <svg class="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" stroke-width="2"
                     viewBox="0 0 24 24">

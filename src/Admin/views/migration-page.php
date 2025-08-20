@@ -1,3 +1,4 @@
+<?php defined('ABSPATH') || exit; ?>
 <div x-data="migrationHandler()" x-init="init()"
     class="wrap aemfw-admin-page min-h-screen !max-w-7xl !m-auto bg-white px-8 py-10 text-[15px] font-inter text-gray-800 space-y-10">
 

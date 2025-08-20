@@ -2,8 +2,9 @@
 
 namespace App\AdvancedEntryManager\Core;
 
+defined('ABSPATH') || exit;
+
 use App\AdvancedEntryManager\Utility\Helper;
-use WPForms\Admin\Builder\Help;
 
 class Handle_Cache {
     public function __construct()

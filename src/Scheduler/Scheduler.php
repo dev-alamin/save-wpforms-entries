@@ -2,6 +2,8 @@
 
 namespace App\AdvancedEntryManager\Scheduler;
 
+defined('ABSPATH') || exit;
+
 use App\AdvancedEntryManager\Utility\Helper;
 
 class Scheduler

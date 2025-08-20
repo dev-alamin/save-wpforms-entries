@@ -2,6 +2,7 @@
 
 namespace App\AdvancedEntryManager;
 
+defined('ABSPATH') || exit;
 /**
  * Class Assets
  *
@@ -34,7 +35,7 @@ class Assets {
             'aemfw-admin-js' => [
                 'src'     => AEMFW_ASSETS_URL . 'admin/admin.js',
                 'deps'    => [],
-                'version' => $version,
+                'version' => filemtime( AEMFW_PATH . 'admin/admin.js' ),
                 'in_footer' => true,
             ],
             'aemfw-collapse' => [
@@ -76,7 +77,7 @@ class Assets {
             'aemfw-admin-css' => [
                 'src'     => AEMFW_ASSETS_URL . 'admin/admin.css',
                 'deps'    => [],
-                'version' => $version,
+                'version' => filemtime( AEMFW_PATH . 'admin/admin.css' ),
             ],
         ];
     }

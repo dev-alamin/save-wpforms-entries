@@ -2,6 +2,8 @@
 
 namespace App\AdvancedEntryManager\Api;
 
+defined('ABSPATH') || exit;
+
 use WP_REST_Server;
 use App\AdvancedEntryManager\Api\Callback\Bulk_Action;
 use App\AdvancedEntryManager\Api\Callback\Get_Entries;
@@ -165,8 +167,7 @@ class Route
                 'data' => [
                     'methods'  => WP_REST_Server::READABLE,
                     'callback' => [$this->get_entries, 'get_entries'],
-                    // 'permission_callback' => $this->permission_callback_by_method(WP_REST_Server::READABLE),
-                    'permission_callback' => '__return_true',
+                    'permission_callback' => $this->permission_callback_by_method(WP_REST_Server::READABLE),
                     'args' => [
                         'per_page' => [
                             'description'       => __('Number of entries per page.', 'advanced-entries-manager-for-wpforms'),
@@ -317,14 +318,14 @@ class Route
             ],
 
             // Route: GET /single - Get a single form metadata (alias)
-            [
-                'route' => '/entries/(?P<id>\d+)',
-                'data'  => [
-                    'methods'             => WP_REST_Server::READABLE,
-                    'callback'            => [$this->get_forms, 'get_forms'],
-                    'permission_callback' => $this->permission_callback_by_method(WP_REST_Server::READABLE),
-                ],
-            ],
+            // [
+            //     'route' => '/forms/(?P<id>\d+)',
+            //     'data'  => [
+            //         'methods'             => WP_REST_Server::READABLE,
+            //         'callback'            => [$this->get_forms, 'get_forms'],
+            //         'permission_callback' => $this->permission_callback_by_method(WP_REST_Server::READABLE),
+            //     ],
+            // ],
 
             // Route: GET /forms - Get all form metadata
             [
@@ -646,8 +647,7 @@ class Route
                 'data' => [
                     'methods'  => WP_REST_Server::READABLE,
                     'callback' => [$this->export_entries, 'get_export_progress'],
-                    // 'permission_callback' => $this->permission_callback_by_method( WP_REST_Server::READABLE ),
-                    'permission_callback' => '__return_true',
+                    'permission_callback' => $this->permission_callback_by_method( WP_REST_Server::READABLE ),
                 ]
             ],
             [

@@ -1,3 +1,4 @@
+<?php defined('ABSPATH') || exit; ?>
 <div
     x-show="setError || Object.keys(forms).length === 0 && !loading" x-cloak
     class="flex flex-col items-center justify-center mt-20 space-y-6 text-gray-600 bg-indigo-50 rounded-lg">

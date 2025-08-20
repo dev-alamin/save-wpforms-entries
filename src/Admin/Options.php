@@ -1,6 +1,9 @@
 <?php
 
 namespace App\AdvancedEntryManager\Admin;
+
+defined('ABSPATH') || exit;
+
 /**
  * Class Options
  *

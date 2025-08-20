@@ -2,6 +2,8 @@
 
 namespace App\AdvancedEntryManager\Admin;
 
+defined('ABSPATH') || exit;
+
 use App\AdvancedEntryManager\Assets;
 use App\AdvancedEntryManager\Admin\Options;
 use App\AdvancedEntryManager\Admin\Menu;
@@ -11,8 +13,7 @@ use App\AdvancedEntryManager\GoogleSheet\Send_Data;
 
 /**
  * Class Admin
- * 
- * Handles all admin-related functionalities including
+ * * Handles all admin-related functionalities including
  * menu registration, settings registration, asset enqueuing,
  * and admin UI rendering for WPForms Entries plugin.
  */
@@ -55,10 +56,13 @@ class Admin {
     protected $send_data;
 
     /**
-     * Constructor.
+     * Initializes and manages all admin-related functionalities by instantiating and connecting various services.
      *
-     * Hooks into WordPress admin actions to initialize the admin menu,
-     * enqueue assets, register settings, and hide update notices on plugin pages.
+     * @param Assets       $assets       The assets handler.
+     * @param Options      $options      The options handler.
+     * @param Menu         $menu         The menu handler.
+     * @param Admin_Notice $admin_notice The admin notice handler.
+     * @param Send_Data    $send_data    The data sender for Google Sheets.
      */
     public function __construct(
     Assets $assets,

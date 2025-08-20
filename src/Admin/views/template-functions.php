@@ -1,4 +1,5 @@
 <?php
+defined('ABSPATH') || exit;
 
 function bulk_action_items()
 {

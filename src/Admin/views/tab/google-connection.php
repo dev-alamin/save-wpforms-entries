@@ -4,23 +4,6 @@
             <?php
             use App\AdvancedEntryManager\Utility\Helper;
             esc_html_e('Google Account Connection', 'advanced-entries-manager-for-wpforms');
-
-            if (isset($_GET['aem_start_sync'])) {
-                $send_data = new \App\AdvancedEntryManager\GoogleSheet\Send_Data();
-                // $count = $send_data->enqueue_unsynced_entries(2);
-                // $send_data->process_single_entry([ 'entry_id' => 18 ] );
-                $ids = [
-                    18
-                ];
-
-                // foreach( $ids as $id ) {
-                //     $send_data->process_single_entry( ['entry_id' => $id ] );
-                // }
-
-                // $send_data->unsync_entry( 4254567 );
-
-                // $send_data->unsync_entry_from_sheet(18);
-            }
             ?>
         </h3>
         <?php if ($access_token): ?>
