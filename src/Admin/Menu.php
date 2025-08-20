@@ -77,32 +77,32 @@ class Menu {
         $legacy_table_exists = Helper::table_exists( $table);
 
         add_menu_page(
-            __('WPForms Entries', 'forms-entries-manager'),
-            __('WPForms Entries', 'forms-entries-manager'),
+            __('Forms Entries', 'forms-entries-manager'),
+            __('Forms Entries', 'forms-entries-manager'),
             'manage_options',
-            'fem-entries',
+            'forms-entries-manager',
             [$this, 'render_page'],
             'dashicons-feedback',
             25
         );
 
         add_submenu_page(
-            'fem-entries',
+            'forms-entries-manager',
             __('WPForms Entry Sync Settings', 'forms-entries-manager'),
             __('Settings', 'forms-entries-manager'),
             'manage_options',
-            'fem-settings',
+            'form-entries-settings',
             [$this, 'render_settings_page'],
             65
         );
 
         if ( $legacy_table_exists && ! Helper::get_option( 'migration_complete' )  ) :
             add_submenu_page(
-                'fem-entries',
+                'forms-entries-manager',
                 __('Migration', 'forms-entries-manager'),
                 __('Migration', 'forms-entries-manager'),
                 'manage_options',
-                'fem-migration',
+                'form-entries-migration',
                 [ $this, 'render_migration_page' ]
             );
         endif;

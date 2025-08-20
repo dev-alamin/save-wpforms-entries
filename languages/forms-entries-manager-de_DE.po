@@ -175,7 +175,7 @@ msgstr "Löschen"
 msgid "Advanced Entries Manager Settings"
 msgstr "Erweiterte Eintragsmanager-Einstellungen"
 
-msgid "Browse and manage form entries submitted by users. Click on a form to view its submissions, \n                mark entries as read/unread, or delete them as needed."
+msgid "Browse and manage form entries submitted by users. Click on a form to view its submissions, mark entries as read/unread, or delete them as needed."
 msgstr "Durchsuchen und Verwalten von Formulareinträgen, die von Benutzern eingereicht wurden. Klicken Sie auf ein Formular, um seine Einsendungen anzuzeigen, Einträge als gelesen/ungelesen zu markieren oder sie bei Bedarf zu löschen."
 
 msgid "Google Sync"
@@ -548,3 +548,18 @@ msgstr "Abgelaufen"
 
 msgid "Less than a minute"
 msgstr "Weniger als eine Minute"
+
+msgid "Email"
+msgstr "E-Mail"
+
+msgid "Name"
+msgstr "Name"
+
+msgid "Entry ID"
+msgstr "Eintrags-ID"
+
+msgid "🔍 Search by %s..."
+msgstr "🔍 Suche nach %s..."
+
+msgid "Powered by"
+msgstr "Unterstützt von"

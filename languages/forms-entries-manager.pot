@@ -3,13 +3,13 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Forms Entries Manager 1.0.0\n"
-"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/advanced-entries-manager-for-wpforms\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/forms-entries-manager\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-08-20T15:29:09+00:00\n"
+"POT-Creation-Date: 2025-08-20T18:16:03+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.10.0\n"
 "X-Domain: forms-entries-manager\n"
@@ -79,7 +79,7 @@ msgstr ""
 
 #: src/Admin/Admin_Notice.php:170
 #: src/Assets.php:140
-#: src/Assets.php:151
+#: src/Assets.php:161
 msgid "Dismiss"
 msgstr ""
 
@@ -142,7 +142,7 @@ msgstr ""
 
 #: src/Admin/views/migration-page.php:8
 #: src/Assets.php:137
-#: src/Assets.php:148
+#: src/Assets.php:158
 msgid "Migrate from WPFormsDB"
 msgstr ""
 
@@ -172,7 +172,7 @@ msgstr ""
 
 #: src/Admin/views/migration-page.php:85
 #: src/Assets.php:139
-#: src/Assets.php:150
+#: src/Assets.php:160
 msgid "Start Migration"
 msgstr ""
 
@@ -444,10 +444,12 @@ msgid "All Statuses"
 msgstr ""
 
 #: src/Admin/views/table/filter-section.php:72
+#: src/Admin/views/view-entries.php:237
 msgid "Read"
 msgstr ""
 
 #: src/Admin/views/table/filter-section.php:73
+#: src/Admin/views/view-entries.php:237
 msgid "Unread"
 msgstr ""
 
@@ -513,69 +515,77 @@ msgid "Advanced Entries Manager Overview"
 msgstr ""
 
 #: src/Admin/views/view-entries.php:36
-msgid ""
-"Browse and manage form entries submitted by users. Click on a form to view its submissions, \n"
-"            mark entries as read/unread, or delete them as needed."
+msgid "Browse and manage form entries submitted by users. Click on a form to view its submissions, mark entries as read/unread, or delete them as needed."
 msgstr ""
 
-#: src/Admin/views/view-entries.php:118
+#: src/Admin/views/view-entries.php:117
 msgid "ID:"
 msgstr ""
 
-#: src/Admin/views/view-entries.php:122
+#: src/Admin/views/view-entries.php:121
 msgid "Entries:"
 msgstr ""
 
-#: src/Admin/views/view-entries.php:127
+#: src/Admin/views/view-entries.php:126
 msgid "Total number of entries"
 msgstr ""
 
-#: src/Admin/views/view-entries.php:135
+#: src/Admin/views/view-entries.php:134
 msgid "Number of unread entries"
 msgstr ""
 
-#: src/Admin/views/view-entries.php:136
+#: src/Admin/views/view-entries.php:135
 msgid "Total number of unread entries"
 msgstr ""
 
-#: src/Admin/views/view-entries.php:137
+#: src/Admin/views/view-entries.php:136
 msgid "Unread:"
 msgstr ""
 
-#: src/Admin/views/view-entries.php:145
+#: src/Admin/views/view-entries.php:144
 msgid "Click to view entries"
 msgstr ""
 
-#: src/Admin/views/view-entries.php:148
+#: src/Admin/views/view-entries.php:147
 msgid "Hide entries"
 msgstr ""
 
-#: src/Admin/views/view-entries.php:172
+#: src/Admin/views/view-entries.php:171
 msgid "Entries table for form"
 msgstr ""
 
-#: src/Admin/views/view-entries.php:191
+#: src/Admin/views/view-entries.php:190
+#: src/Assets.php:148
+#: src/Assets.php:196
 #: src/GoogleSheet/Send_Data.php:273
 #: src/GoogleSheet/Send_Data.php:329
 msgid "Email"
 msgstr ""
 
-#: src/Admin/views/view-entries.php:193
+#: src/Admin/views/view-entries.php:192
 msgid "Date"
 msgstr ""
 
-#: src/Admin/views/view-entries.php:197
+#: src/Admin/views/view-entries.php:196
 #: src/GoogleSheet/Send_Data.php:286
 #: src/GoogleSheet/Send_Data.php:332
 msgid "Status"
 msgstr ""
 
-#: src/Admin/views/view-entries.php:200
+#: src/Admin/views/view-entries.php:199
 msgid "Actions"
 msgstr ""
 
-#: src/Admin/views/view-entries.php:225
+#: src/Admin/views/view-entries.php:224
 msgid "Click for details"
+msgstr ""
+
+#: src/Admin/views/view-entries.php:300
+msgid "Powered by"
+msgstr ""
+
+#: src/Admin/views/view-entries.php:300
+msgid "Advanced Entries Manager"
 msgstr ""
 
 #: src/Api/Callback/Bulk_Action.php:39
@@ -823,134 +833,155 @@ msgid "Entry ID to update."
 msgstr ""
 
 #: src/Assets.php:138
-#: src/Assets.php:149
+#: src/Assets.php:159
 msgid "We found data in the legacy"
 msgstr ""
 
 #: src/Assets.php:138
-#: src/Assets.php:149
+#: src/Assets.php:159
 msgid "table. You can migrate all your entries into our advanced manager in just a few clicks."
 msgstr ""
 
-#: src/Assets.php:153
+#: src/Assets.php:149
+#: src/Assets.php:197
+#: src/GoogleSheet/Send_Data.php:272
+#: src/GoogleSheet/Send_Data.php:326
+msgid "Name"
+msgstr ""
+
+#: src/Assets.php:150
+#: src/Assets.php:198
+#: src/GoogleSheet/Send_Data.php:270
+#: src/GoogleSheet/Send_Data.php:320
+msgid "Entry ID"
+msgstr ""
+
+#: src/Assets.php:163
 msgid "✅ CSV exported successfully!"
 msgstr ""
 
-#: src/Assets.php:154
+#: src/Assets.php:164
 msgid "✅ Saved changes successfully!"
 msgstr ""
 
-#: src/Assets.php:155
+#: src/Assets.php:165
 msgid "✅ Settings saved successfully!"
 msgstr ""
 
-#: src/Assets.php:158
+#: src/Assets.php:168
 msgid "just now"
 msgstr ""
 
 #. translators: %d is the number of minutes ago
-#: src/Assets.php:160
+#: src/Assets.php:170
 msgid "%d minute ago"
 msgid_plural "%d minutes ago"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d is the number of hours ago
-#: src/Assets.php:162
+#: src/Assets.php:172
 msgid "%d hour ago"
 msgid_plural "%d hours ago"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Assets.php:163
+#: src/Assets.php:173
 msgid "Yesterday"
 msgstr ""
 
-#: src/Assets.php:166
+#: src/Assets.php:176
 msgid "Note is too long. Please limit to 1000 characters."
 msgstr ""
 
-#: src/Assets.php:167
+#: src/Assets.php:177
 msgid "Failed to delete entry: Unknown error"
 msgstr ""
 
-#: src/Assets.php:168
+#: src/Assets.php:178
 msgid "Delete request failed. Check console for details."
 msgstr ""
 
-#: src/Assets.php:169
+#: src/Assets.php:179
 msgid "A network error occurred. Please try again."
 msgstr ""
 
-#: src/Assets.php:170
+#: src/Assets.php:180
 msgid "❌ Entry not found in the list."
 msgstr ""
 
-#: src/Assets.php:171
+#: src/Assets.php:181
 msgid "Bulk action failed:"
 msgstr ""
 
-#: src/Assets.php:172
+#: src/Assets.php:182
 msgid "Failed to start export."
 msgstr ""
 
-#: src/Assets.php:173
+#: src/Assets.php:183
 msgid "Failed to fetch export progress."
 msgstr ""
 
-#: src/Assets.php:174
+#: src/Assets.php:184
 msgid "Please select a form before exporting."
 msgstr ""
 
-#: src/Assets.php:175
+#: src/Assets.php:185
 msgid "Invalid CSV content."
 msgstr ""
 
-#: src/Assets.php:176
+#: src/Assets.php:186
 msgid "Export complete! Your download should start shortly."
 msgstr ""
 
-#: src/Assets.php:177
+#: src/Assets.php:187
 msgid "Failed to fetch forms:"
 msgstr ""
 
-#: src/Assets.php:178
+#: src/Assets.php:188
 msgid "Failed to fetch entries:"
 msgstr ""
 
-#: src/Assets.php:179
+#: src/Assets.php:189
 msgid "Failed to fetch form fields. Please try again."
 msgstr ""
 
-#: src/Assets.php:180
+#: src/Assets.php:190
 msgid "❌ Unexpected error occurred."
 msgstr ""
 
-#: src/Assets.php:181
+#: src/Assets.php:191
 msgid "Entry synchronization Done!"
 msgstr ""
 
-#: src/Assets.php:182
+#: src/Assets.php:192
 msgid "❌ Synchronization failed."
 msgstr ""
 
-#: src/Assets.php:183
+#: src/Assets.php:193
 msgid "❌ Save failed."
 msgstr ""
 
-#: src/GoogleSheet/Send_Data.php:270
-#: src/GoogleSheet/Send_Data.php:320
-msgid "Entry ID"
+#. translators: %s is the text for id, name or email
+#: src/Assets.php:195
+msgid "🔍 Search by %s..."
+msgstr ""
+
+#: src/Assets.php:199
+msgid "Copy Entry"
+msgstr ""
+
+#: src/Assets.php:200
+msgid "Copied!"
+msgstr ""
+
+#: src/Assets.php:201
+msgid "Copy all to clipboard"
 msgstr ""
 
 #: src/GoogleSheet/Send_Data.php:271
 #: src/GoogleSheet/Send_Data.php:323
 msgid "Submission Date"
-msgstr ""
-
-#: src/GoogleSheet/Send_Data.php:272
-#: src/GoogleSheet/Send_Data.php:326
-msgid "Name"
 msgstr ""
 
 #: src/GoogleSheet/Send_Data.php:287

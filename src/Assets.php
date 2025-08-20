@@ -90,9 +90,9 @@ class Assets {
      */
     public function register_assets( $hook ) {
         if ( ! in_array( $hook, [
-            'toplevel_page_fem-entries',
-            'wpforms-entries_page_fem-settings',
-            'wpforms-entries_page_fem-migration',
+            'toplevel_page_forms-entries-manager',
+            'forms-entries_page_form-entries-settings',
+            'forms-entries_page_form-entries-migration',
         ], true ) ) {
             return;
         }
@@ -143,7 +143,17 @@ class Assets {
 
         wp_localize_script(
             'fem-admin-js',
-            'aemfwStrings',
+            'searchDropdownString',
+            array(
+                'emailLabel' => esc_html__('Email', 'forms-entries-manager'),
+                'nameLabel' => esc_html__('Name', 'forms-entries-manager'),
+                'entryIdLabel' => esc_html__('Entry ID', 'forms-entries-manager'),
+            ),
+        );
+
+        wp_localize_script(
+            'fem-admin-js',
+            'femStrings',
             array(
                 'title'       => __('Migrate from WPFormsDB', 'forms-entries-manager'),
                 'message'     => __('We found data in the legacy', 'forms-entries-manager') . ' <code>wpforms_db</code> ' . __('table. You can migrate all your entries into our advanced manager in just a few clicks.', 'forms-entries-manager'),
@@ -163,24 +173,32 @@ class Assets {
                 'timeAgoYesterday'        => __('Yesterday', 'forms-entries-manager'),
 
                 // Errors & Warnings
-                'noteTooLong'             => __('Note is too long. Please limit to 1000 characters.', 'forms-entries-manager'),
-                'deleteFailedUnknown'     => __('Failed to delete entry: Unknown error', 'forms-entries-manager'),
-                'deleteRequestFailed'     => __('Delete request failed. Check console for details.', 'forms-entries-manager'),
-                'networkError'            => __('A network error occurred. Please try again.', 'forms-entries-manager'),
-                'entryNotFound'           => __('❌ Entry not found in the list.', 'forms-entries-manager'),
-                'bulkActionFailed'        => __('Bulk action failed:', 'forms-entries-manager'),
-                'exportFailed'            => __('Failed to start export.', 'forms-entries-manager'),
-                'exportProgressFailed'    => __('Failed to fetch export progress.', 'forms-entries-manager'),
-                'exportSelectForm'        => __('Please select a form before exporting.', 'forms-entries-manager'),
-                'exportInvalidCSV'        => __('Invalid CSV content.', 'forms-entries-manager'),
-                'exportComplete'          => __('Export complete! Your download should start shortly.', 'forms-entries-manager'),
-                'fetchFormsError'         => __('Failed to fetch forms:', 'forms-entries-manager'),
-                'fetchEntriesError'       => __('Failed to fetch entries:', 'forms-entries-manager'),
-                'fetchFieldsError'        => __('Failed to fetch form fields. Please try again.', 'forms-entries-manager'),
-                'unexpectedError'         => __('❌ Unexpected error occurred.', 'forms-entries-manager'),
-                'syncDone'                => __('Entry synchronization Done!', 'forms-entries-manager'),
-                'syncFailed'              => __('❌ Synchronization failed.', 'forms-entries-manager'),
-                'saveFailed'              => __('❌ Save failed.', 'forms-entries-manager'),
+                'noteTooLong'          => __('Note is too long. Please limit to 1000 characters.', 'forms-entries-manager'),
+                'deleteFailedUnknown'  => __('Failed to delete entry: Unknown error', 'forms-entries-manager'),
+                'deleteRequestFailed'  => __('Delete request failed. Check console for details.', 'forms-entries-manager'),
+                'networkError'         => __('A network error occurred. Please try again.', 'forms-entries-manager'),
+                'entryNotFound'        => __('❌ Entry not found in the list.', 'forms-entries-manager'),
+                'bulkActionFailed'     => __('Bulk action failed:', 'forms-entries-manager'),
+                'exportFailed'         => __('Failed to start export.', 'forms-entries-manager'),
+                'exportProgressFailed' => __('Failed to fetch export progress.', 'forms-entries-manager'),
+                'exportSelectForm'     => __('Please select a form before exporting.', 'forms-entries-manager'),
+                'exportInvalidCSV'     => __('Invalid CSV content.', 'forms-entries-manager'),
+                'exportComplete'       => __('Export complete! Your download should start shortly.', 'forms-entries-manager'),
+                'fetchFormsError'      => __('Failed to fetch forms:', 'forms-entries-manager'),
+                'fetchEntriesError'    => __('Failed to fetch entries:', 'forms-entries-manager'),
+                'fetchFieldsError'     => __('Failed to fetch form fields. Please try again.', 'forms-entries-manager'),
+                'unexpectedError'      => __('❌ Unexpected error occurred.', 'forms-entries-manager'),
+                'syncDone'             => __('Entry synchronization Done!', 'forms-entries-manager'),
+                'syncFailed'           => __('❌ Synchronization failed.', 'forms-entries-manager'),
+                'saveFailed'           => __('❌ Save failed.', 'forms-entries-manager'),
+                /* translators: %s is the text for id, name or email */
+                'searchPlaceholder' => esc_html__('🔍 Search by %s...', 'forms-entries-manager'),
+                'emailLabel' => esc_html__('Email', 'forms-entries-manager'),
+                'nameLabel' => esc_html__('Name', 'forms-entries-manager'),
+                'entryIdLabel' => esc_html__('Entry ID', 'forms-entries-manager'),
+                'copyToClipboard' => esc_html__('Copy Entry', 'forms-entries-manager'),
+                'copiedMessage' => esc_html__('Copied!', 'forms-entries-manager'),
+                'copyTitle' => esc_attr__('Copy all to clipboard', 'forms-entries-manager'),
             )
         );
     }

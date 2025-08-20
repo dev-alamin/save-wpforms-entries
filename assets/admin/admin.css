@@ -1,14 +1,14 @@
 /* Make admin page body match our custom design */
-body.toplevel_page_fem-entries #screen-meta,
-body.toplevel_page_fem-entries #wpfooter,
-body.toplevel_page_fem-entries .notice:not(.notice-error.aem-notice) {
+body.toplevel_page_forms-entries-manager #screen-meta,
+body.toplevel_page_forms-entries-manager #wpfooter,
+body.toplevel_page_forms-entries-manager .notice:not(.notice-error.aem-notice) {
     display: none;
 }
 
 
-body.toplevel_page_fem-entries,
-body.wpforms-entries_page_fem-settings,
-body.wpforms-entries_page_fem-migration  {
+body.toplevel_page_forms-entries-manager,
+body.forms-entries_page_form-entries-settings,
+body.forms-entries_page_form-entries-migration  {
 	background: #DDD !important;
     background-repeat: no-repeat;
     background-size: cover;

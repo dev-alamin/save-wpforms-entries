@@ -34,7 +34,7 @@
                 <button
                     @click="copyEntryToClipboard"
                     class="flex items-center gap-2 text-indigo-600 hover:text-indigo-800 bg-slate-200 cursor-pointer rounded p-1 !text-lg font-semibold transition"
-                    title="Copy all to clipboard">
+                    :title="femStrings.copyTitle">
                     <template x-if="copied">
                         <span class="text-green-600">
                             <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1f1f1f">
@@ -49,7 +49,7 @@
                             </svg>
                         </span>
                     </template>
-                    <span x-text="copied ? 'Copied!' : 'Copy Entry'"></span>
+                    <span x-text="copied ? femStrings.copiedMessage : femStrings.copyToClipboard"></span>
                 </button>
             </div>
 

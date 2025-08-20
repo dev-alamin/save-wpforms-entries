@@ -33,8 +33,7 @@ do_action('fembefore_entries_ui');
         </h1>
         <p class="text-gray-200 !text-[15px] leading-relaxed">
             <?php
-            esc_html_e('Browse and manage form entries submitted by users. Click on a form to view its submissions, 
-            mark entries as read/unread, or delete them as needed.', 'forms-entries-manager');
+            esc_html_e('Browse and manage form entries submitted by users. Click on a form to view its submissions, mark entries as read/unread, or delete them as needed.', 'forms-entries-manager');
             ?>
         </p>
     </div>
@@ -232,10 +231,10 @@ do_action('fembefore_entries_ui');
 
                                 <div class="text-center whitespace-nowrap" x-text="timeAgo(entry.date)" :title="entry.date"></div>
                                 <div class="text-center">
-                                    <span
-                                        class="inline-block px-3 py-1 rounded-full text-xs font-semibold"
-                                        :class="entry.status === 'unread' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'"
-                                        x-text="entry.status.charAt(0).toUpperCase() + entry.status.slice(1)"></span>
+                                <span
+                                    class="inline-block px-3 py-1 rounded-full text-xs font-semibold"
+                                    :class="entry.status === 'unread' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'"
+                                    x-text="entry.status === 'unread' ? '<?php echo esc_html__('Unread', 'forms-entries-manager'); ?>' : '<?php echo esc_html__('Read', 'forms-entries-manager'); ?>'"></span>
                                 </div>
                                 <?php include __DIR__ . '/table/action-column.php'; ?>
                             </div>
@@ -298,7 +297,7 @@ do_action('fembefore_entries_ui');
             <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
         </svg>
         <span>
-            Powered by <a href="https://entriesmanager.com/" target="_blank" rel="noopener noreferrer" class="font-semibold text-indigo-600 hover:text-indigo-700 transition">Advanced Entries Manager</a>
+            <?php esc_html_e( 'Powered by', 'forms-entries-manager' ); ?> <a href="https://entriesmanager.com/" target="_blank" rel="noopener noreferrer" class="font-semibold text-indigo-600 hover:text-indigo-700 transition"><?php echo esc_html( 'Advanced Entries Manager' ); ?></a>
         </span>
     </div>
     <!-- Powered by message ends -->
