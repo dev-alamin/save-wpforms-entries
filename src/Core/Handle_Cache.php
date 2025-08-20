@@ -9,11 +9,11 @@ use App\AdvancedEntryManager\Utility\Helper;
 class Handle_Cache {
     public function __construct()
     {
-        // add_action( 'aemfw_after_get_total_count', [ $this, 'clear_cache' ], 10, 2 );
+        // add_action( 'femafter_get_total_count', [ $this, 'clear_cache' ], 10, 2 );
     }
 
     /**
-     * Hooks into `aemfw_after_get_total_count` to perform intelligent cache invalidation.
+     * Hooks into `femafter_get_total_count` to perform intelligent cache invalidation.
      *
      * @param int            $total_count The total number of entries from the latest query.
      * @param WP_REST_Request $request     The current REST API request object.
@@ -21,7 +21,7 @@ class Handle_Cache {
     function clear_cache($total_count, $request) {
         // Generate a unique cache key based on the request parameters.
         // This ensures a different cache is used for each unique query (e.g., different form IDs or filters).
-        $cache_key = 'aemfw_entry_count_' . md5(serialize($request->get_params()));
+        $cache_key = 'fementry_count_' . md5(serialize($request->get_params()));
         $cached_count = get_transient($cache_key);
 
         // If no cached count exists, this is the first time the query is run.
@@ -66,7 +66,7 @@ class Handle_Cache {
         $delete_cursor_cache = $wpdb->query("DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_pagination_cursor_%' OR option_name LIKE '_transient_timeout_pagination_cursor_%'");
 
         // It's also a good practice to clear the count cache you discussed.
-        $delete_total_count = $wpdb->query("DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_aemfw_entry_count_%' OR option_name LIKE '_transient_timeout_aemfw_entry_count_%'");
+        $delete_total_count = $wpdb->query("DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_fementry_count_%' OR option_name LIKE '_transient_timeout_fementry_count_%'");
 
         if( $delete_cursor_cache ) {
             Helper::set_error_log( 'Cache cleared' );

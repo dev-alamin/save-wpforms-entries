@@ -19,7 +19,7 @@ class Create_Entries {
      * Handle creation of a new WPForms entry saved into custom DB table using rest.
      *
      * This method accepts a REST POST request and stores form entry data into
-     * the custom `aemfw_entries_manager` table. It supports metadata like read status,
+     * the custom `fem_entries_manager` table. It supports metadata like read status,
      * favorite flag, export/sync tracking, and internal notes.
      *
      * @param WP_REST_Request $request The incoming REST request with form entry data.
@@ -29,10 +29,10 @@ class Create_Entries {
     public function create_entries(WP_REST_Request $request)
     {
         global $wpdb;
-        $table = Helper::get_table_name(); // e.g., 'aemfw_entries_manager'
+        $table = Helper::get_table_name(); // e.g., 'fem_entries_manager'
 
         // Temp off
-        // return rest_ensure_response( ['success' => false, 'message' => __('This endpoint is temporarily disabled.', 'advanced-entries-manager-for-wpforms')] );
+        // return rest_ensure_response( ['success' => false, 'message' => __('This endpoint is temporarily disabled.', 'forms-entries-manager')] );
 
         // Get parameters from JSON body
         $params = $request->get_json_params();
@@ -44,7 +44,7 @@ class Create_Entries {
         if (!$form_id || !is_array($entry)) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => __('Invalid or missing form_id or entry data.', 'advanced-entries-manager-for-wpforms'),
+                'message' => __('Invalid or missing form_id or entry data.', 'forms-entries-manager'),
             ], 400);
         }
 
@@ -62,7 +62,7 @@ class Create_Entries {
         // if ( ! current_user_can( 'manage_options' ) ) {
         //     return new WP_REST_Response([
         //         'success' => false,
-        //         'message' => __( 'Insufficient permissions to create entry.', 'advanced-entries-manager-for-wpforms' ),
+        //         'message' => __( 'Insufficient permissions to create entry.', 'forms-entries-manager' ),
         //     ], 403);
         // }
 
@@ -74,7 +74,7 @@ class Create_Entries {
          * @param array           $params  Full request parameters.
          * @param WP_REST_Request $request REST request object.
          */
-        do_action('aemfw_before_entry_create', $form_id, $entry, $params, $request);
+        do_action('fembefore_entry_create', $form_id, $entry, $params, $request);
 
         // Prepare data for DB insert
         $data = [
@@ -109,7 +109,7 @@ class Create_Entries {
         if ($inserted === false) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => __('Database insert failed.', 'advanced-entries-manager-for-wpforms'),
+                'message' => __('Database insert failed.', 'forms-entries-manager'),
             ], 500);
         }
 
@@ -122,11 +122,11 @@ class Create_Entries {
          * @param array           $params   Full request parameters.
          * @param WP_REST_Request $request  REST request object.
          */
-        do_action('aemfw_after_entry_create', $wpdb->insert_id, $form_id, $entry, $params, $request);
+        do_action('femafter_entry_create', $wpdb->insert_id, $form_id, $entry, $params, $request);
 
         return new WP_REST_Response([
             'success'  => true,
-            'message'  => __('Entry created successfully.', 'advanced-entries-manager-for-wpforms'),
+            'message'  => __('Entry created successfully.', 'forms-entries-manager'),
             'entry_id' => $wpdb->insert_id,
         ], 201);
     }

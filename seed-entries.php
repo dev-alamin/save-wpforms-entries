@@ -2,7 +2,7 @@
 // Run this file using: wp eval-file seed.php --allow-root
 global $wpdb;
 
-$table        = $wpdb->prefix . 'aemfw_entries';
+$table        = $wpdb->prefix . 'fem_entries';
 $form_id      = 131;
 $batch_size   = 500;
 $total        = 1000000;

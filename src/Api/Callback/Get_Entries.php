@@ -16,7 +16,7 @@ use WP_Error;
  */
 class Get_Entries {
     /**
-     * Retrieves all entries from the aemfw table.
+     * Retrieves all entries from the fem table.
      *
      * Fetches all rows from the custom entries table, decodes the entry data,
      * and groups entries by form ID.
@@ -95,7 +95,7 @@ class Get_Entries {
         }
 
         $where = 'WHERE ' . implode(' AND ', $where_clauses);
-        $where = apply_filters('aemfw_get_entries_where', $where, $params, $request);
+        $where = apply_filters('femget_entries_where', $where, $params, $request);
 
         // First, get the total count. This query is still needed for pagination button rendering.
         $count_sql = $wpdb->prepare(
@@ -160,9 +160,9 @@ class Get_Entries {
             ];
         }
 
-        $data = apply_filters('aemfw_get_entries_data', $data, $results, $request);
+        $data = apply_filters('femget_entries_data', $data, $results, $request);
 
-        do_action('aemfw_after_get_total_count', $total_count, $request);
+        do_action('femafter_get_total_count', $total_count, $request);
 
         $response = rest_ensure_response([
             'entries'    => $data,
@@ -171,6 +171,6 @@ class Get_Entries {
             'per_page'   => $per_page,
         ]);
 
-        return apply_filters('aemfw_get_entries_response', $response, $request);
+        return apply_filters('femget_entries_response', $response, $request);
     }
 }

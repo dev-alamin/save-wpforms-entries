@@ -20,7 +20,7 @@ class Export_Entries
     /**
      * Plugin Prefix
      */
-    const AEM_PREFIX = 'aemfw_';
+    const AEM_PREFIX = 'fem';
 
     /**
      * The hook used by Action Scheduler to process a single batch.
@@ -60,16 +60,16 @@ class Export_Entries
     public function start_export_job(WP_REST_Request $request)
     {
         if (!class_exists('ActionScheduler')) {
-            return new WP_Error('missing_scheduler', __('Action Scheduler is required but not available.', 'advanced-entries-manager-for-wpforms'), ['status' => 500]);
+            return new WP_Error('missing_scheduler', __('Action Scheduler is required but not available.', 'forms-entries-manager'), ['status' => 500]);
         }
 
         $form_id = absint($request->get_param('form_id'));
         if (!$form_id) {
-            return new WP_Error('missing_form_id', __('A valid Form ID is required.', 'advanced-entries-manager-for-wpforms'), ['status' => 400]);
+            return new WP_Error('missing_form_id', __('A valid Form ID is required.', 'forms-entries-manager'), ['status' => 400]);
         }
 
         global $wpdb;
-        $target_table = Helper::get_table_name(); // e.g., 'aemfw_entries_manager'
+        $target_table = Helper::get_table_name(); // e.g., 'fem_entries_manager'
 
         // Build query to count total entries based on filters
         $query_args = [];
@@ -97,7 +97,7 @@ class Export_Entries
         if ($total_entries === 0) {
             return new WP_Error(
                 'no_entries',
-                __('No entries found for the selected criteria.', 'advanced-entries-manager-for-wpforms'),
+                __('No entries found for the selected criteria.', 'forms-entries-manager'),
                 ['status' => 404]
             );
         }
@@ -153,7 +153,7 @@ class Export_Entries
 
         return rest_ensure_response([
             'success'       => true,
-            'message'       => __('CSV export has been successfully queued.', 'advanced-entries-manager-for-wpforms'),
+            'message'       => __('CSV export has been successfully queued.', 'forms-entries-manager'),
             'job_id'        => $job_id,
             'total_entries' => $total_entries,
         ]);
@@ -352,12 +352,12 @@ class Export_Entries
     {
         $job_id = sanitize_key($request->get_param('job_id'));
         if (!$job_id) {
-            return new WP_Error('missing_job_id', __('Job ID is required.', 'advanced-entries-manager-for-wpforms'), ['status' => 400]);
+            return new WP_Error('missing_job_id', __('Job ID is required.', 'forms-entries-manager'), ['status' => 400]);
         }
 
         $job_state = Helper::get_transient(self::JOB_TRANSIENT_PREFIX . $job_id);
         if (false === $job_state) {
-            return new WP_Error('invalid_job', __('Export job not found or has expired.', 'advanced-entries-manager-for-wpforms'), ['status' => 404]);
+            return new WP_Error('invalid_job', __('Export job not found or has expired.', 'forms-entries-manager'), ['status' => 404]);
         }
 
         $progress = 0;
@@ -489,7 +489,7 @@ class Export_Entries
 
         if (!is_dir($temp_path)) {
             if (!wp_mkdir_p($temp_path)) {
-                return new WP_Error('dir_creation_failed', __('Could not create temporary export directory.', 'advanced-entries-manager-for-wpforms'));
+                return new WP_Error('dir_creation_failed', __('Could not create temporary export directory.', 'forms-entries-manager'));
             }
         }
 
@@ -515,7 +515,7 @@ class Export_Entries
         // Sanitize the job ID from the request
         $job_id = sanitize_key($request->get_param('job_id'));
         if (empty($job_id)) {
-            return new WP_Error('missing_job_id', __('Job ID is required.', 'advanced-entries-manager-for-wpforms'), ['status' => 400]);
+            return new WP_Error('missing_job_id', __('Job ID is required.', 'forms-entries-manager'), ['status' => 400]);
         }
 
         // Get the job state from the transient
@@ -524,13 +524,13 @@ class Export_Entries
 
         // Check if the job exists and is complete
         if (false === $job_state || $job_state['status'] !== 'complete') {
-            return new WP_Error('invalid_job', __('Export job not found or not yet complete.', 'advanced-entries-manager-for-wpforms'), ['status' => 404]);
+            return new WP_Error('invalid_job', __('Export job not found or not yet complete.', 'forms-entries-manager'), ['status' => 404]);
         }
 
         // Check if a file path is set
         $file_path = $job_state['file_path'];
         if (empty($file_path) || !file_exists($file_path)) {
-            return new WP_Error('file_not_found', __('Export file not found on the server.', 'advanced-entries-manager-for-wpforms'), ['status' => 404]);
+            return new WP_Error('file_not_found', __('Export file not found on the server.', 'forms-entries-manager'), ['status' => 404]);
         }
 
         // --- All checks passed. Now serve the file ---
@@ -562,7 +562,7 @@ class Export_Entries
         // Sanitize the job ID from the request
         $job_id = sanitize_key($request->get_param('job_id'));
         if (empty($job_id)) {
-            return new WP_Error('missing_job_id', __('Job ID is required.', 'advanced-entries-manager-for-wpforms'), ['status' => 400]);
+            return new WP_Error('missing_job_id', __('Job ID is required.', 'forms-entries-manager'), ['status' => 400]);
         }
 
         // Get the job state from the transient
@@ -571,7 +571,7 @@ class Export_Entries
 
         // Check if the job exists and is complete
         if (false === $job_state || $job_state['status'] !== 'complete') {
-            return new WP_Error('invalid_job', __('Export job not found or not yet complete.', 'advanced-entries-manager-for-wpforms'), ['status' => 404]);
+            return new WP_Error('invalid_job', __('Export job not found or not yet complete.', 'forms-entries-manager'), ['status' => 404]);
         }
 
         // Check if a file path is set
@@ -579,16 +579,16 @@ class Export_Entries
         if (empty($file_path) || !file_exists($file_path)) {
             // File is already gone, which is fine
             Helper::delete_transient($transient_key); // Clean up the transient
-            return new WP_REST_Response(['success' => true, 'message' => __('File was already deleted.', 'advanced-entries-manager-for-wpforms')], 200);
+            return new WP_REST_Response(['success' => true, 'message' => __('File was already deleted.', 'forms-entries-manager')], 200);
         }
 
         // Delete the file
         if (unlink($file_path)) {
             // Delete the transient as well
             Helper::delete_transient($transient_key);
-            return new WP_REST_Response(['success' => true, 'message' => __('Export file deleted successfully.', 'advanced-entries-manager-for-wpforms')], 200);
+            return new WP_REST_Response(['success' => true, 'message' => __('Export file deleted successfully.', 'forms-entries-manager')], 200);
         } else {
-            return new WP_Error('delete_failed', __('Failed to delete the export file.', 'advanced-entries-manager-for-wpforms'), ['status' => 500]);
+            return new WP_Error('delete_failed', __('Failed to delete the export file.', 'forms-entries-manager'), ['status' => 500]);
         }
     }
 
@@ -597,7 +597,7 @@ class Export_Entries
         if (empty($entries)) {
             return new \WP_Error(
                 'no_data',
-                __('No data found.', 'advanced-entries-manager-for-wpforms'),
+                __('No data found.', 'forms-entries-manager'),
                 ['status' => 404]
             );
         }

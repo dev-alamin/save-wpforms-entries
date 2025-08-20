@@ -10,10 +10,10 @@ use App\AdvancedEntryManager\Utility\DB;
 
 class Helper {
 
-    const OPTION_PREFIX = 'aemfw_';
+    const OPTION_PREFIX = 'fem';
 
     /**
-     * Set AEM Transient
+     * Set FEM Transient
      * 
      * @param string $key
      * @param mixed $value
@@ -23,18 +23,18 @@ class Helper {
     }
 
     /**
-     * Get AEMFWP Table
+     * Get FEM Table
      * 
      * @return string
      */
     public static function get_table_name(): string {
         global $wpdb;
-        // return $wpdb->prefix . AEMFW_TABLE_NAME;
+        // return $wpdb->prefix . FEM_TABLE_NAME;
         return $wpdb->prefix . 'aemfw_entries';
     }
 
     /**
-     * Get AEM Transient
+     * Get FEM Transient
      * 
      * @param string $key
      * @return mixed
@@ -44,7 +44,7 @@ class Helper {
     }
 
     /**
-     * Delete AEM Transient
+     * Delete FEM Transient
      * 
      * @param string $key
      */
@@ -53,19 +53,19 @@ class Helper {
     }
 
     /**
-     * Set AEM Error Log
+     * Set FEM Error Log
      * 
      * @param mixed $data
      */
     public static function set_error_log( $data ): void {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             $output = is_scalar( $data ) ? $data : print_r( $data, true );
-            error_log( "[AEM] " . $output );
+            error_log( "[Forms Entries Manager] " . $output );
         }
     }
 
     /**
-     * Get AEM Error Log
+     * Get FEM Error Log
      * 
      * @return array
      */
@@ -142,7 +142,7 @@ class Helper {
      * @return WP_Error
      */
     public static function wp_error( string $message, $code = 'error', array $data = [] ): WP_Error {
-        return new WP_Error( $code, __( $message, 'advanced-entries-manager-for-wpforms' ), $data );
+        return new WP_Error( $code, __( $message, 'forms-entries-manager' ), $data );
     }
 
     /**
@@ -207,7 +207,7 @@ class Helper {
     public static function log( $data, string $label = 'DEBUG' ): void {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             $output = is_scalar( $data ) ? $data : print_r( $data, true );
-            error_log( "[AEM][$label] " . $output );
+            error_log( "[FEM][$label] " . $output );
         }
     }
 
@@ -323,7 +323,7 @@ class Helper {
         }
 
         // Else: Refresh via POST request to proxy's REST endpoint
-        $response = wp_remote_post( AEMFW_PROXY_BASE_URL . 'wp-json/aemfw/v1/refresh', [
+        $response = wp_remote_post( FEM_PROXY_BASE_URL . 'wp-json/fem/v1/refresh', [
             'headers' => ['Content-Type' => 'application/json'],
             'body'    => json_encode([
                 'site' => self::get_settings_page_url(),
@@ -365,7 +365,7 @@ class Helper {
      * @return string
      */
     public static function get_settings_page_url(){
-        return admin_url( 'admin.php?page=aemfw-settings');
+        return admin_url( 'admin.php?page=fem-settings');
     }
 
     /**
@@ -389,7 +389,7 @@ class Helper {
      */
     public static function seconds_to_human_readable(int $seconds): string {
         if ($seconds <= 0) {
-            return esc_html__('Expired', 'advanced-entries-manager-for-wpforms');
+            return esc_html__('Expired', 'forms-entries-manager');
         }
 
         $h = floor($seconds / 3600);
@@ -399,7 +399,7 @@ class Helper {
             return trim(($h ? $h . 'h ' : '') . ($m ? $m . 'm' : ''));
         }
 
-        return esc_html__('Less than a minute', 'advanced-entries-manager-for-wpforms');
+        return esc_html__('Less than a minute', 'forms-entries-manager');
     }
 
     /**
@@ -412,7 +412,7 @@ class Helper {
     {
         // For demonstration, we assume a constant is defined in the Pro version.
         // In a real plugin, this constant would be defined in the main plugin file of the Pro version.
-        // Example: define('AEMFW_PRO_VERSION', true);
-        return defined('AEMFW_PRO_VERSION') && AEMFW_PRO_VERSION;
+        // Example: define('FEM_PRO_VERSION', true);
+        return defined('FEM_PRO_VERSION') && FEM_PRO_VERSION;
     }
 }

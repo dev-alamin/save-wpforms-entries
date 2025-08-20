@@ -1,5 +1,5 @@
 {
-    "name": "amin/advanced-entries-manager-for-wpforms",
+    "name": "amin/forms-entries-manager",
     "require": {
         "woocommerce/action-scheduler": "^3.9"
     },

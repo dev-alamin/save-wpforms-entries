@@ -23,41 +23,41 @@ class Assets {
      * @return array
      */
     public function get_scripts() {
-        $version = defined('AEMFW_VERSION') ? AEMFW_VERSION : time();
+        $version = defined('FEM_VERSION') ? FEM_VERSION : time();
 
         return [
-            'aemfw-tailwind-css' => [
-                'src'     => AEMFW_ASSETS_URL . 'admin/tailwind.min.js',
+            'fem-tailwind-css' => [
+                'src'     => FEM_ASSETS_URL . 'admin/tailwind.min.js',
                 'deps'    => [],
                 'version' => $version,
                 'in_footer' => false,
             ],
-            'aemfw-admin-js' => [
-                'src'     => AEMFW_ASSETS_URL . 'admin/admin.js',
+            'fem-admin-js' => [
+                'src'     => FEM_ASSETS_URL . 'admin/admin.js',
                 'deps'    => [],
-                'version' => filemtime( AEMFW_PATH . 'admin/admin.js' ),
+                'version' => filemtime( FEM_PATH . 'assets/admin/admin.js' ),
                 'in_footer' => true,
             ],
-            'aemfw-collapse' => [
-                'src'     => AEMFW_ASSETS_URL . 'admin/collapse.js',
+            'fem-collapse' => [
+                'src'     => FEM_ASSETS_URL . 'admin/collapse.js',
                 'deps'    => [],
                 'version' => null,
                 'in_footer' => true,
             ],
-            'aemfw-alpine' => [
-                'src'     => AEMFW_ASSETS_URL . 'admin/alpine.min.js',
-                'deps'    => ['aemfw-collapse'],
+            'fem-alpine' => [
+                'src'     => FEM_ASSETS_URL . 'admin/alpine.min.js',
+                'deps'    => ['fem-collapse'],
                 'version' => null,
                 'in_footer' => true,
             ],
-            'aemfw-lodash' => [
-                'src'     => AEMFW_ASSETS_URL . 'admin/lodash.min.js',
+            'fem-lodash' => [
+                'src'     => FEM_ASSETS_URL . 'admin/lodash.min.js',
                 'deps'    => [],
                 'version' => $version,
                 'in_footer' => false,
             ],
-            'aemfw-lottie' => [
-                'src'     => AEMFW_ASSETS_URL . 'admin/lottie-player.js',
+            'fem-lottie' => [
+                'src'     => FEM_ASSETS_URL . 'admin/lottie-player.js',
                 'deps'    => [],
                 'version' => '5.12.0',
                 'in_footer' => false,
@@ -71,13 +71,13 @@ class Assets {
      * @return array
      */
     public function get_styles() {
-        $version = defined('AEMFW_VERSION') ? AEMFW_VERSION : time();
+        $version = defined('FEM_VERSION') ? FEM_VERSION : time();
 
         return [
-            'aemfw-admin-css' => [
-                'src'     => AEMFW_ASSETS_URL . 'admin/admin.css',
+            'fem-admin-css' => [
+                'src'     => FEM_ASSETS_URL . 'admin/admin.css',
                 'deps'    => [],
-                'version' => filemtime( AEMFW_PATH . 'admin/admin.css' ),
+                'version' => filemtime( FEM_PATH . 'assets/admin/admin.css' ),
             ],
         ];
     }
@@ -90,9 +90,9 @@ class Assets {
      */
     public function register_assets( $hook ) {
         if ( ! in_array( $hook, [
-            'toplevel_page_aemfw-entries',
-            'wpforms-entries_page_aemfw-settings',
-            'wpforms-entries_page_aemfw-migration',
+            'toplevel_page_fem-entries',
+            'wpforms-entries_page_fem-settings',
+            'wpforms-entries_page_fem-migration',
         ], true ) ) {
             return;
         }
@@ -123,64 +123,64 @@ class Assets {
         }
 
         // Localize main admin JS
-        wp_localize_script( 'aemfw-admin-js', 'aemfwSettings', [
+        wp_localize_script( 'fem-admin-js', 'aemfwSettings', [
             'restUrl'  => esc_url_raw( rest_url() ),
             'nonce'    => wp_create_nonce( 'wp_rest' ),
-            'perPage'  => get_option( 'aemfw_entries_per_page', 20 ),
+            'perPage'  => get_option( 'fem_entries_per_page', 20 ),
             'ajax_url' => admin_url( 'admin-ajax.php' ),
         ] );
 
         wp_localize_script(
-            'aemfw-admin-js',
+            'fem-admin-js',
             'aemfwMigrationNotice',
             array(
-                'title'       => __('Migrate from WPFormsDB', 'advanced-entries-manager-for-wpforms'),
-                'message'     => __('We found data in the legacy', 'advanced-entries-manager-for-wpforms') . ' <code>wpforms_db</code> ' . __('table. You can migrate all your entries into our advanced manager in just a few clicks.', 'advanced-entries-manager-for-wpforms'),
-                'start'       => __('Start Migration', 'advanced-entries-manager-for-wpforms'),
-                'dismissAlt'  => __('Dismiss', 'advanced-entries-manager-for-wpforms'),
+                'title'       => __('Migrate from WPFormsDB', 'forms-entries-manager'),
+                'message'     => __('We found data in the legacy', 'forms-entries-manager') . ' <code>wpforms_db</code> ' . __('table. You can migrate all your entries into our advanced manager in just a few clicks.', 'forms-entries-manager'),
+                'start'       => __('Start Migration', 'forms-entries-manager'),
+                'dismissAlt'  => __('Dismiss', 'forms-entries-manager'),
             )
         );
 
         wp_localize_script(
-            'aemfw-admin-js',
+            'fem-admin-js',
             'aemfwStrings',
             array(
-                'title'       => __('Migrate from WPFormsDB', 'advanced-entries-manager-for-wpforms'),
-                'message'     => __('We found data in the legacy', 'advanced-entries-manager-for-wpforms') . ' <code>wpforms_db</code> ' . __('table. You can migrate all your entries into our advanced manager in just a few clicks.', 'advanced-entries-manager-for-wpforms'),
-                'start'       => __('Start Migration', 'advanced-entries-manager-for-wpforms'),
-                'dismissAlt'  => __('Dismiss', 'advanced-entries-manager-for-wpforms'),
+                'title'       => __('Migrate from WPFormsDB', 'forms-entries-manager'),
+                'message'     => __('We found data in the legacy', 'forms-entries-manager') . ' <code>wpforms_db</code> ' . __('table. You can migrate all your entries into our advanced manager in just a few clicks.', 'forms-entries-manager'),
+                'start'       => __('Start Migration', 'forms-entries-manager'),
+                'dismissAlt'  => __('Dismiss', 'forms-entries-manager'),
                 // General Messages
-                'csvExportedSuccess'      => __('✅ CSV exported successfully!', 'advanced-entries-manager-for-wpforms'),
-                'entryUpdatedSuccess'     => __('✅ %s entries updated successfully!', 'advanced-entries-manager-for-wpforms'),
-                'entryDeletedSuccess'     => __('✅ %s', 'advanced-entries-manager-for-wpforms'),
-                'changesSavedSuccess'     => __('✅ Saved changes successfully!', 'advanced-entries-manager-for-wpforms'),
-                'settingsSavedSuccess'    => __('✅ Settings saved successfully!', 'advanced-entries-manager-for-wpforms'),
+                'csvExportedSuccess'      => __('✅ CSV exported successfully!', 'forms-entries-manager'),
+                'entryUpdatedSuccess'     => __('✅ %s entries updated successfully!', 'forms-entries-manager'),
+                'entryDeletedSuccess'     => __('✅ %s', 'forms-entries-manager'),
+                'changesSavedSuccess'     => __('✅ Saved changes successfully!', 'forms-entries-manager'),
+                'settingsSavedSuccess'    => __('✅ Settings saved successfully!', 'forms-entries-manager'),
 
                 // Time ago
-                'timeAgoJustNow'          => __('just now', 'advanced-entries-manager-for-wpforms'),
-                'timeAgoMinutes'          => _n('%d minute ago', '%d minutes ago', 0, 'advanced-entries-manager-for-wpforms'), // Use a plural-aware function
-                'timeAgoHours'            => _n('%d hour ago', '%d hours ago', 0, 'advanced-entries-manager-for-wpforms'),
-                'timeAgoYesterday'        => __('Yesterday', 'advanced-entries-manager-for-wpforms'),
+                'timeAgoJustNow'          => __('just now', 'forms-entries-manager'),
+                'timeAgoMinutes'          => _n('%d minute ago', '%d minutes ago', 0, 'forms-entries-manager'), // Use a plural-aware function
+                'timeAgoHours'            => _n('%d hour ago', '%d hours ago', 0, 'forms-entries-manager'),
+                'timeAgoYesterday'        => __('Yesterday', 'forms-entries-manager'),
 
                 // Errors & Warnings
-                'noteTooLong'             => __('Note is too long. Please limit to 1000 characters.', 'advanced-entries-manager-for-wpforms'),
-                'deleteFailedUnknown'     => __('Failed to delete entry: Unknown error', 'advanced-entries-manager-for-wpforms'),
-                'deleteRequestFailed'     => __('Delete request failed. Check console for details.', 'advanced-entries-manager-for-wpforms'),
-                'networkError'            => __('A network error occurred. Please try again.', 'advanced-entries-manager-for-wpforms'),
-                'entryNotFound'           => __('❌ Entry not found in the list.', 'advanced-entries-manager-for-wpforms'),
-                'bulkActionFailed'        => __('Bulk action failed:', 'advanced-entries-manager-for-wpforms'),
-                'exportFailed'            => __('Failed to start export.', 'advanced-entries-manager-for-wpforms'),
-                'exportProgressFailed'    => __('Failed to fetch export progress.', 'advanced-entries-manager-for-wpforms'),
-                'exportSelectForm'        => __('Please select a form before exporting.', 'advanced-entries-manager-for-wpforms'),
-                'exportInvalidCSV'        => __('Invalid CSV content.', 'advanced-entries-manager-for-wpforms'),
-                'exportComplete'          => __('Export complete! Your download should start shortly.', 'advanced-entries-manager-for-wpforms'),
-                'fetchFormsError'         => __('Failed to fetch forms:', 'advanced-entries-manager-for-wpforms'),
-                'fetchEntriesError'       => __('Failed to fetch entries:', 'advanced-entries-manager-for-wpforms'),
-                'fetchFieldsError'        => __('Failed to fetch form fields. Please try again.', 'advanced-entries-manager-for-wpforms'),
-                'unexpectedError'         => __('❌ Unexpected error occurred.', 'advanced-entries-manager-for-wpforms'),
-                'syncDone'                => __('Entry synchronization Done!', 'advanced-entries-manager-for-wpforms'),
-                'syncFailed'              => __('❌ Synchronization failed.', 'advanced-entries-manager-for-wpforms'),
-                'saveFailed'              => __('❌ Save failed.', 'advanced-entries-manager-for-wpforms'),
+                'noteTooLong'             => __('Note is too long. Please limit to 1000 characters.', 'forms-entries-manager'),
+                'deleteFailedUnknown'     => __('Failed to delete entry: Unknown error', 'forms-entries-manager'),
+                'deleteRequestFailed'     => __('Delete request failed. Check console for details.', 'forms-entries-manager'),
+                'networkError'            => __('A network error occurred. Please try again.', 'forms-entries-manager'),
+                'entryNotFound'           => __('❌ Entry not found in the list.', 'forms-entries-manager'),
+                'bulkActionFailed'        => __('Bulk action failed:', 'forms-entries-manager'),
+                'exportFailed'            => __('Failed to start export.', 'forms-entries-manager'),
+                'exportProgressFailed'    => __('Failed to fetch export progress.', 'forms-entries-manager'),
+                'exportSelectForm'        => __('Please select a form before exporting.', 'forms-entries-manager'),
+                'exportInvalidCSV'        => __('Invalid CSV content.', 'forms-entries-manager'),
+                'exportComplete'          => __('Export complete! Your download should start shortly.', 'forms-entries-manager'),
+                'fetchFormsError'         => __('Failed to fetch forms:', 'forms-entries-manager'),
+                'fetchEntriesError'       => __('Failed to fetch entries:', 'forms-entries-manager'),
+                'fetchFieldsError'        => __('Failed to fetch form fields. Please try again.', 'forms-entries-manager'),
+                'unexpectedError'         => __('❌ Unexpected error occurred.', 'forms-entries-manager'),
+                'syncDone'                => __('Entry synchronization Done!', 'forms-entries-manager'),
+                'syncFailed'              => __('❌ Synchronization failed.', 'forms-entries-manager'),
+                'saveFailed'              => __('❌ Save failed.', 'forms-entries-manager'),
             )
         );
     }

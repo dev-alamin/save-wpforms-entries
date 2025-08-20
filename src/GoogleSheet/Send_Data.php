@@ -25,7 +25,7 @@ class Send_Data
         $auth_code = sanitize_text_field($_GET['oauth_proxy_code']);
 
         // Exchange the one-time auth code for real tokens
-        $response = wp_remote_post(AEMFW_PROXY_BASE_URL . 'wp-json/aemfw/v1/token', [
+        $response = wp_remote_post(FEM_PROXY_BASE_URL . 'wp-json/fem/v1/token', [
             'headers' => ['Content-Type' => 'application/json'],
             'body'    => json_encode([
                 'auth_code' => $auth_code,
@@ -33,7 +33,7 @@ class Send_Data
         ]);
 
         if (is_wp_error($response)) {
-            error_log('[aemfw] Token exchange failed: ' . $response->get_error_message());
+            error_log('[fem] Token exchange failed: ' . $response->get_error_message());
             return;
         }
 
@@ -43,7 +43,7 @@ class Send_Data
             Helper::update_option('google_access_token', sanitize_text_field($body['access_token']));
             Helper::update_option('google_token_expires', time() + intval($body['expires_in'] ?? 3600));
             // Optional: Store refresh token too if ever needed on client (rare)
-            wp_safe_redirect(admin_url('admin.php?page=aemfw-settings&connected=true'));
+            wp_safe_redirect(admin_url('admin.php?page=fem-settings&connected=true'));
             exit;
         }
 
@@ -267,10 +267,10 @@ class Send_Data
         }
 
         $headers = [
-            __('Entry ID', 'advanced-entries-manager-for-wpforms'),
-            __('Submission Date', 'advanced-entries-manager-for-wpforms'),
-            __( 'Name', 'advanced-entries-manager-for-wpforms' ),
-            __( 'Email', 'advanced-entries-manager-for-wpforms' )
+            __('Entry ID', 'forms-entries-manager'),
+            __('Submission Date', 'forms-entries-manager'),
+            __( 'Name', 'forms-entries-manager' ),
+            __( 'Email', 'forms-entries-manager' )
         ];
         
         // **BUG FIX**: Directly get headers from WPForms form fields
@@ -283,8 +283,8 @@ class Send_Data
             }
         }
 
-        $headers[] = __('Status', 'advanced-entries-manager-for-wpforms');
-        $headers[] = __('Note', 'advanced-entries-manager-for-wpforms');
+        $headers[] = __('Status', 'forms-entries-manager');
+        $headers[] = __('Note', 'forms-entries-manager');
 
         Helper::update_option("gsheet_headers_{$form_id}", $headers);
 
@@ -317,22 +317,22 @@ class Send_Data
             $value = '';
 
             switch ($header_title) {
-                case __('Entry ID', 'advanced-entries-manager-for-wpforms'):
+                case __('Entry ID', 'forms-entries-manager'):
                     $value = $entry->id;
                     break;
-                case __('Submission Date', 'advanced-entries-manager-for-wpforms'):
+                case __('Submission Date', 'forms-entries-manager'):
                     $value = get_date_from_gmt($entry->created_at, 'Y-m-d H:i:s');
                     break;
-                case __( 'Name', 'advanced-entries-manager-for-wpforms' ):
+                case __( 'Name', 'forms-entries-manager' ):
                     $value = $entry->name;
                     break;
-                case __( 'Email', 'advanced-entries-manager-for-wpforms' ):
+                case __( 'Email', 'forms-entries-manager' ):
                     $value = $entry->email;
                     break;
-                case __('Status', 'advanced-entries-manager-for-wpforms'):
+                case __('Status', 'forms-entries-manager'):
                     $value = $entry->status ?? '';
                     break;
-                case __('Note', 'advanced-entries-manager-for-wpforms'):
+                case __('Note', 'forms-entries-manager'):
                     $value = $entry->note ?? '';
                     break;
                 default:
@@ -368,7 +368,7 @@ class Send_Data
             $wpdb->update($table, ['retry_count' => $current_retry_count + 1], ['id' => $entry_id]);
             // Schedule retry with exponential backoff
             $delay = 60 * pow(2, $current_retry_count); // 1 min, 2 min, 4 min, etc.
-            as_schedule_single_action(time() + $delay, 'aemfw_process_gsheet_entry', ['entry_id' => $entry_id]);
+            as_schedule_single_action(time() + $delay, 'femprocess_gsheet_entry', ['entry_id' => $entry_id]);
         } else {
             error_log("[AEM] Max retry limit reached for entry ID $entry_id. Sync abandoned.");
             // Optionally, mark as failed in the DB
@@ -446,8 +446,8 @@ class Send_Data
             $scheduled_time = $now + ($index * $delay_between);
 
             // Check if already scheduled to avoid duplicates
-            if (!as_next_scheduled_action('aemfw_process_gsheet_entry', ['entry_id' => $entry->id])) {
-                as_schedule_single_action($scheduled_time, 'aemfw_process_gsheet_entry', ['entry_id' => $entry->id]);
+            if (!as_next_scheduled_action('femprocess_gsheet_entry', ['entry_id' => $entry->id])) {
+                as_schedule_single_action($scheduled_time, 'femprocess_gsheet_entry', ['entry_id' => $entry->id]);
             }
         }
 

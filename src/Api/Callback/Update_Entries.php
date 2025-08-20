@@ -38,7 +38,7 @@ class Update_Entries {
         if (!$id || !$form_id) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => __('Missing or invalid entry ID or form ID.', 'advanced-entries-manager-for-wpforms'),
+                'message' => __('Missing or invalid entry ID or form ID.', 'forms-entries-manager'),
             ], 400);
         }
 
@@ -96,7 +96,7 @@ class Update_Entries {
         if (empty($data)) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => __('No valid fields provided for update.', 'advanced-entries-manager-for-wpforms'),
+                'message' => __('No valid fields provided for update.', 'forms-entries-manager'),
             ], 400);
         }
 
@@ -107,7 +107,7 @@ class Update_Entries {
          * @param array           $data    Data to update (column => value).
          * @param WP_REST_Request $request Full REST request object.
          */
-        do_action('aemfw_before_entry_update', $id, $data, $request);
+        do_action('fembefore_entry_update', $id, $data, $request);
 
         // Perform DB update
         $updated = $wpdb->update(
@@ -121,7 +121,7 @@ class Update_Entries {
         if ($updated === false) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => __('Database update failed.', 'advanced-entries-manager-for-wpforms'),
+                'message' => __('Database update failed.', 'forms-entries-manager'),
             ], 500);
         }
 
@@ -132,11 +132,11 @@ class Update_Entries {
          * @param array           $data    Data that was updated.
          * @param WP_REST_Request $request Full REST request object.
          */
-        do_action('aemfw_after_entry_update', $id, $data, $request);
+        do_action('femafter_entry_update', $id, $data, $request);
 
         return new WP_REST_Response([
             'success'        => true,
-            'message'        => __('Entry updated successfully.', 'advanced-entries-manager-for-wpforms'),
+            'message'        => __('Entry updated successfully.', 'forms-entries-manager'),
             'updated_fields' => array_keys($data),
             'entry_id'       => $id,
         ], 200);
@@ -153,7 +153,7 @@ class Update_Entries {
         if (! $entry_id) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => __('Invalid or missing entry ID.', 'advanced-entries-manager-for-wpforms'),
+                'message' => __('Invalid or missing entry ID.', 'forms-entries-manager'),
             ], 400);
         }
 
@@ -168,13 +168,13 @@ class Update_Entries {
         } elseif (! $result) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => __('Failed to unsync entry from Google Sheet.', 'advanced-entries-manager-for-wpforms'),
+                'message' => __('Failed to unsync entry from Google Sheet.', 'forms-entries-manager'),
             ], 500); // Internal Server Error
         }
 
         return new WP_REST_Response([
             'success' => true,
-            'message' => __('Entry successfully unsynced from Google Sheet.', 'advanced-entries-manager-for-wpforms'),
+            'message' => __('Entry successfully unsynced from Google Sheet.', 'forms-entries-manager'),
         ], 200); // OK
     }
 
@@ -190,7 +190,7 @@ class Update_Entries {
         if( ! $is_authorized ) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => __('You have not authorize google, please do it from settings page.', 'advanced-entries-manager-for-wpforms'),
+                'message' => __('You have not authorize google, please do it from settings page.', 'forms-entries-manager'),
             ], 400);
         }
         
@@ -199,7 +199,7 @@ class Update_Entries {
         if (! $entry_id) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => __('Invalid or missing entry ID.', 'advanced-entries-manager-for-wpforms'),
+                'message' => __('Invalid or missing entry ID.', 'forms-entries-manager'),
             ], 400);
         }
 
@@ -210,12 +210,12 @@ class Update_Entries {
         if( $send ) {
             return rest_ensure_response([
                 'success' => true,
-                'message' => __('Entry successfully sync to Google Sheet.', 'advanced-entries-manager-for-wpforms'),
+                'message' => __('Entry successfully sync to Google Sheet.', 'forms-entries-manager'),
             ], 200); // OK
         } else {
             return rest_ensure_response([
                 'success' => false,
-                'message' => __('Failed to sync entry to Google Sheet. Please check the logs.', 'advanced-entries-manager-for-wpforms'),
+                'message' => __('Failed to sync entry to Google Sheet. Please check the logs.', 'forms-entries-manager'),
             ], 500); // Internal Server Error
         }
     }

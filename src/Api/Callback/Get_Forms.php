@@ -64,7 +64,7 @@ class Get_Forms {
          *
          * @param array $forms List of forms with entry counts.
          */
-        $response = apply_filters('aemfw_get_forms', $forms);
+        $response = apply_filters('femget_forms', $forms);
 
         return rest_ensure_response( $response );
     }
@@ -76,7 +76,7 @@ class Get_Forms {
      * entry, typically to allow users to customize export settings (e.g., include/exclude columns).
      *
      * ## Example Request:
-     * GET /wp-json/aemfw/v1/form-fields?form_id=123
+     * GET /wp-json/fem/v1/form-fields?form_id=123
      *
      * @param WP_REST_Request $request The REST request object containing 'form_id'.
      *
@@ -89,8 +89,8 @@ class Get_Forms {
 
         if ( $form_id <= 0 ) {
             return new WP_Error(
-                'aemfw_invalid_form_id',
-                __( 'Invalid or missing form ID.', 'advanced-entries-manager-for-wpforms' ),
+                'feminvalid_form_id',
+                __( 'Invalid or missing form ID.', 'forms-entries-manager' ),
                 [ 'status' => 400 ]
             );
         }

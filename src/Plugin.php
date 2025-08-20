@@ -62,24 +62,24 @@ class Plugin
 
         $this->load_core_classes();
 
-        register_activation_hook(AEMFW_PLUGIN_BASE_FILE, function () {
+        register_activation_hook(FEM_PLUGIN_BASE_FILE, function () {
             DB_Schema::create_table();
 
             (new Capabilities())->add_cap();
 
-            if (!as_has_scheduled_action('aemfw_daily_sync')) {
-                as_schedule_recurring_action(strtotime('tomorrow 2am'), DAY_IN_SECONDS, 'aemfw_daily_sync');
+            if (!as_has_scheduled_action('femdaily_sync')) {
+                as_schedule_recurring_action(strtotime('tomorrow 2am'), DAY_IN_SECONDS, 'femdaily_sync');
             }
 
-            if (! as_next_scheduled_action('aemfw_every_five_minute_sync')) {
-                as_schedule_recurring_action(time(), MINUTE_IN_SECONDS * 5, 'aemfw_every_five_minute_sync');
+            if (! as_next_scheduled_action('femevery_five_minute_sync')) {
+                as_schedule_recurring_action(time(), MINUTE_IN_SECONDS * 5, 'femevery_five_minute_sync');
             }
         });
 
-        register_deactivation_hook(AEMFW_PLUGIN_BASE_FILE, function () {
+        register_deactivation_hook(FEM_PLUGIN_BASE_FILE, function () {
             (new Capabilities())->remove_cap();
 
-            as_unschedule_all_actions('aemfw_every_five_minute_sync');
+            as_unschedule_all_actions('femevery_five_minute_sync');
         });
     }
 
@@ -107,7 +107,7 @@ class Plugin
      */
     public function early_init()
     {
-        load_plugin_textdomain('advanced-entries-manager-for-wpforms', false, dirname(plugin_basename(__FILE__)) . '/languages');
+        load_plugin_textdomain('forms-entries-manager', false, dirname(plugin_basename(__FILE__)) . '/languages');
     }
 
     /**

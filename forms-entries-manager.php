@@ -1,28 +1,27 @@
 <?php
 /**
- * Plugin Name: Advanced Entries Manager for WPFroms
+ * Plugin Name: Forms Entries Manager
  * Plugin URI:  https://entriesmanager.com/
- * Description: The ultimate dashboard to manage, search, and sync WPForms entries like a pro.
+ * Description: The ultimate dashboard to manage, search, and sync entries from WPForms, Contact Form 7, and more.
  * Version:     1.0.0
  * Author:      Md. Al Amin
  * Author URI:  https://almn.me
- * Text Domain: advanced-entries-manager-for-wpforms
+ * Text Domain: forms-entries-manager
  * Domain Path: /languages
  * License:     GPL-2.0+
  * License URI: http://www.gnu.org/licenses/gpl-2.0.txt
  *
  * Requires at least: 5.4
  * Requires PHP: 7.0
- * Requires Plugins: WPForms Lite
  *
- * @package     advanced-entries-manager
+ * @package     forms-entries-manager
  * @author      Md. Al Amin
  * @copyright   Al Amin
  * @license     GPL-2.0+
  *
  * @wordpress-plugin
  *
- * Prefix:     aemfw
+ * Prefix:     fem
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -36,8 +35,8 @@ require_once __DIR__ . '/vendor/autoload.php';
  * If WP_DEBUG_LOG is enabled, it uses the current timestamp; otherwise, it uses a fixed version number.
  */
 
-if( ! defined( 'AEMFW_VERSION' ) ) {
-    define( 'AEMFW_VERSION', WP_DEBUG_LOG ? time() : '1.0.0' );
+if( ! defined( 'FEM_VERSION' ) ) {
+    define( 'FEM_VERSION', WP_DEBUG_LOG ? time() : '1.0.0' );
 }
 
 /**
@@ -45,8 +44,8 @@ if( ! defined( 'AEMFW_VERSION' ) ) {
  * 
  * This is used to include files and for various plugin functionalities.
  */
-if( ! defined( 'AEMFW_PATH' ) ) {
-    define( 'AEMFW_PATH', plugin_dir_path( __FILE__ ) );
+if( ! defined( 'FEM_PATH' ) ) {
+    define( 'FEM_PATH', plugin_dir_path( __FILE__ ) );
 }
 
 /**
@@ -54,8 +53,8 @@ if( ! defined( 'AEMFW_PATH' ) ) {
  * 
  * This is used to load assets and for various plugin functionalities.
  */
-if( ! defined( 'AEMFW_URL' ) ) {
-    define( 'AEMFW_URL', plugin_dir_url( __FILE__ ) );
+if( ! defined( 'FEM_URL' ) ) {
+    define( 'FEM_URL', plugin_dir_url( __FILE__ ) );
 }
 
 /**
@@ -63,8 +62,8 @@ if( ! defined( 'AEMFW_URL' ) ) {
  * 
  * This is used to load CSS, JS, and other assets from the plugin directory.
  */
-if( ! defined( 'AEMFW_ASSETS_URL' ) ) {
-    define( 'AEMFW_ASSETS_URL', AEMFW_URL . 'assets/' );
+if( ! defined( 'FEM_ASSETS_URL' ) ) {
+    define( 'FEM_ASSETS_URL', FEM_URL . 'assets/' );
 }
 
 /**
@@ -72,8 +71,8 @@ if( ! defined( 'AEMFW_ASSETS_URL' ) ) {
  * 
  * This is used to ensure that the plugin's prefix is consistent across the plugin.
  */
-if( ! defined( 'AEMFW_PREFIX' ) ) {
-    define( 'AEMFW_PREFIX', 'AEMFW_' );
+if( ! defined( 'FEM_PREFIX' ) ) {
+    define( 'FEM_PREFIX', 'FEM_' );
 }
 
 /**
@@ -82,8 +81,8 @@ if( ! defined( 'AEMFW_PREFIX' ) ) {
  * This is used to ensure the table name is consistent across the plugin.
  * It is also used in the database handler to create and access the custom entries table.
  */
-if( ! defined( 'AEMFW_TABLE_NAME' ) ) {
-    define( 'AEMFW_TABLE_NAME', 'aemfw_entries_manager' );
+if( ! defined( 'FEM_TABLE_NAME' ) ) {
+    define( 'FEM_TABLE_NAME', 'fem_entries_manager' );
 }
 
 /**
@@ -91,12 +90,12 @@ if( ! defined( 'AEMFW_TABLE_NAME' ) ) {
  * 
  * This is where the proxy server of google authorization will be handled
  */
-if( ! defined( 'AEMFW_PROXY_BASE_URL' ) ) {
-    define( 'AEMFW_PROXY_BASE_URL', trailingslashit( 'https://backend.entriesmanager.com' ) );
+if( ! defined( 'FEM_PROXY_BASE_URL' ) ) {
+    define( 'FEM_PROXY_BASE_URL', trailingslashit( 'https://backend.entriesmanager.com' ) );
 }
 
-if( ! defined( 'AEMFW_GOOGLE_PROXY_URL' ) ) {
-    define( 'AEMFW_GOOGLE_PROXY_URL', 'https://backend.entriesmanager.com/oauth/init' );
+if( ! defined( 'FEM_GOOGLE_PROXY_URL' ) ) {
+    define( 'FEM_GOOGLE_PROXY_URL', 'https://backend.entriesmanager.com/oauth/init' );
 }
 
 /**
@@ -105,9 +104,9 @@ if( ! defined( 'AEMFW_GOOGLE_PROXY_URL' ) ) {
  * This is used to ensure that the plugin's base path is consistent across the plugin.
  * It is also used in the plugin's main file to ensure that the plugin is loaded correctly
  */
-define( 'AEMFW_PLUGIN_BASE', plugin_basename( __FILE__ ) );
+define( 'FEM_PLUGIN_BASE', plugin_basename( __FILE__ ) );
 
-define( 'AEMFW_PLUGIN_BASE_FILE', __FILE__ );
+define( 'FEM_PLUGIN_BASE_FILE', __FILE__ );
 
 use App\AdvancedEntryManager\Plugin;
 
@@ -116,9 +115,9 @@ use App\AdvancedEntryManager\Plugin;
  *
  * This function is called to start the plugin and set up necessary components.
  */
-function aemfw_init() {
+function feminit() {
     return Plugin::init();
 }
 
 // Kick-off the plugin initialization
-aemfw_init();
+feminit();

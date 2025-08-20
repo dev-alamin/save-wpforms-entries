@@ -170,7 +170,7 @@ class Route
                     'permission_callback' => $this->permission_callback_by_method(WP_REST_Server::READABLE),
                     'args' => [
                         'per_page' => [
-                            'description'       => __('Number of entries per page.', 'advanced-entries-manager-for-wpforms'),
+                            'description'       => __('Number of entries per page.', 'forms-entries-manager'),
                             'type'              => 'integer',
                             'default'           => 20,
                             'sanitize_callback' => 'absint',
@@ -179,25 +179,25 @@ class Route
                             },
                         ],
                         'page' => [
-                            'description'       => __('Page number.', 'advanced-entries-manager-for-wpforms'),
+                            'description'       => __('Page number.', 'forms-entries-manager'),
                             'type'              => 'integer',
                             'default'           => 1,
                             'sanitize_callback' => 'absint',
                         ],
                         'form_id' => [
-                            'description'       => __('Limit entries to a specific form ID.', 'advanced-entries-manager-for-wpforms'),
+                            'description'       => __('Limit entries to a specific form ID.', 'forms-entries-manager'),
                             'type'              => 'integer',
                             'required'          => false,
                             'sanitize_callback' => 'absint',
                         ],
                         'search' => [
-                            'description'       => __('Search within entry values.', 'advanced-entries-manager-for-wpforms'),
+                            'description'       => __('Search within entry values.', 'forms-entries-manager'),
                             'type'              => 'string',
                             'required'          => false,
                             'sanitize_callback' => 'sanitize_text_field',
                         ],
                         'status' => [
-                            'description'       => __('Filter by read/unread status.', 'advanced-entries-manager-for-wpforms'),
+                            'description'       => __('Filter by read/unread status.', 'forms-entries-manager'),
                             'type'              => 'string',
                             'validate_callback' => function ($value) {
                                 return in_array($value, ['read', 'unread', '', null], true);
@@ -205,7 +205,7 @@ class Route
                             'required'          => false,
                         ],
                         'date_from' => [
-                            'description'       => __('Filter by submission start date (YYYY-MM-DD)', 'advanced-entries-manager-for-wpforms'),
+                            'description'       => __('Filter by submission start date (YYYY-MM-DD)', 'forms-entries-manager'),
                             'type'              => 'string',
                             'required'          => false,
                             'sanitize_callback' => 'sanitize_text_field',
@@ -214,7 +214,7 @@ class Route
                             },
                         ],
                         'date_to' => [
-                            'description'       => __('Filter by submission end date (YYYY-MM-DD)', 'advanced-entries-manager-for-wpforms'),
+                            'description'       => __('Filter by submission end date (YYYY-MM-DD)', 'forms-entries-manager'),
                             'type'              => 'string',
                             'required'          => false,
                             'sanitize_callback' => 'sanitize_text_field',
@@ -235,7 +235,7 @@ class Route
                     'permission_callback' => $this->permission_callback_by_method(WP_REST_Server::CREATABLE),
                     'args' => [
                         'form_id' => [
-                            'description'       => __('Form ID for the entry.', 'advanced-entries-manager-for-wpforms'),
+                            'description'       => __('Form ID for the entry.', 'forms-entries-manager'),
                             'required'          => true,
                             'validate_callback' => function ($param) {
                                 return is_string($param) || is_numeric($param);
@@ -243,14 +243,14 @@ class Route
                             'sanitize_callback' => 'sanitize_text_field',
                         ],
                         'entry' => [
-                            'description'       => __('Entry data as an associative array.', 'advanced-entries-manager-for-wpforms'),
+                            'description'       => __('Entry data as an associative array.', 'forms-entries-manager'),
                             'required'          => true,
                             'validate_callback' => function ($param) {
                                 return is_array($param);
                             },
                         ],
                         'status' => [
-                            'description'       => __('Read/unread status for the entry.', 'advanced-entries-manager-for-wpforms'),
+                            'description'       => __('Read/unread status for the entry.', 'forms-entries-manager'),
                             'required'          => false,
                             'validate_callback' => function ($param) {
                                 return in_array($param, ['unread', 'read'], true);
@@ -259,7 +259,7 @@ class Route
                             'default'           => 'unread',
                         ],
                         'is_favorite' => [
-                            'description'       => __('Mark entry as favorite (0 or 1).', 'advanced-entries-manager-for-wpforms'),
+                            'description'       => __('Mark entry as favorite (0 or 1).', 'forms-entries-manager'),
                             'required'          => false,
                             'validate_callback' => function ($param) {
                                 return is_numeric($param) && in_array($param, [0, 1], true);
@@ -268,7 +268,7 @@ class Route
                             'default'           => 0,
                         ],
                         'note' => [
-                            'description'       => __('Internal note for the entry (max 500 words).', 'advanced-entries-manager-for-wpforms'),
+                            'description'       => __('Internal note for the entry (max 500 words).', 'forms-entries-manager'),
                             'required'          => false,
                             'validate_callback' => function ($param) {
                                 return is_string($param) && str_word_count($param) <= 500;
@@ -276,7 +276,7 @@ class Route
                             'sanitize_callback' => 'sanitize_text_field',
                         ],
                         'exported_to_csv' => [
-                            'description'       => __('Exported to CSV flag (0 or 1).', 'advanced-entries-manager-for-wpforms'),
+                            'description'       => __('Exported to CSV flag (0 or 1).', 'forms-entries-manager'),
                             'required'          => false,
                             'validate_callback' => function ($param) {
                                 return is_numeric($param) && in_array($param, [0, 1], true);
@@ -285,7 +285,7 @@ class Route
                             'default'           => 0,
                         ],
                         'synced_to_gsheet' => [
-                            'description'       => __('Synced to Google Sheet flag (0 or 1).', 'advanced-entries-manager-for-wpforms'),
+                            'description'       => __('Synced to Google Sheet flag (0 or 1).', 'forms-entries-manager'),
                             'required'          => false,
                             'validate_callback' => function ($param) {
                                 return is_numeric($param) && in_array($param, [0, 1], true);
@@ -294,7 +294,7 @@ class Route
                             'default'           => 0,
                         ],
                         'printed_at' => [
-                            'description'       => __('Printed at datetime (Y-m-d H:i:s).', 'advanced-entries-manager-for-wpforms'),
+                            'description'       => __('Printed at datetime (Y-m-d H:i:s).', 'forms-entries-manager'),
                             'required'          => false,
                             'validate_callback' => function ($param) {
                                 return strtotime($param) !== false;
@@ -304,7 +304,7 @@ class Route
                             },
                         ],
                         'resent_at' => [
-                            'description'       => __('Resent at datetime (Y-m-d H:i:s).', 'advanced-entries-manager-for-wpforms'),
+                            'description'       => __('Resent at datetime (Y-m-d H:i:s).', 'forms-entries-manager'),
                             'required'          => false,
                             'validate_callback' => function ($param) {
                                 return strtotime($param) !== false;
@@ -346,7 +346,7 @@ class Route
                     'permission_callback' => $this->permission_callback_by_method(WP_REST_Server::EDITABLE),
                     'args' => [
                         'id' => [
-                            'description'       => __('Entry ID to update.', 'advanced-entries-manager-for-wpforms'),
+                            'description'       => __('Entry ID to update.', 'forms-entries-manager'),
                             'required'          => true,
                             'sanitize_callback' => 'absint',
                             'validate_callback' => function ($param) {
@@ -354,7 +354,7 @@ class Route
                             },
                         ],
                         'form_id' => [
-                            'description'       => __('Form ID for the entry.', 'advanced-entries-manager-for-wpforms'),
+                            'description'       => __('Form ID for the entry.', 'forms-entries-manager'),
                             'required'          => true,
                             'sanitize_callback' => 'absint',
                             'validate_callback' => function ($param) {
@@ -362,14 +362,14 @@ class Route
                             },
                         ],
                         'entry' => [
-                            'description'       => __('Entry data as an associative array.', 'advanced-entries-manager-for-wpforms'),
+                            'description'       => __('Entry data as an associative array.', 'forms-entries-manager'),
                             'required'          => false,
                             'validate_callback' => function ($param) {
                                 return is_array($param);
                             },
                         ],
                         'status' => [
-                            'description'       => __('Read/unread status for the entry.', 'advanced-entries-manager-for-wpforms'),
+                            'description'       => __('Read/unread status for the entry.', 'forms-entries-manager'),
                             'required'          => false,
                             'validate_callback' => function ($param) {
                                 return in_array($param, ['unread', 'read'], true);
@@ -378,7 +378,7 @@ class Route
                             'default'           => 'unread',
                         ],
                         'note' => [
-                            'description'       => __('Internal note for the entry (max 500 words).', 'advanced-entries-manager-for-wpforms'),
+                            'description'       => __('Internal note for the entry (max 500 words).', 'forms-entries-manager'),
                             'required'          => false,
                             'validate_callback' => function ($param) {
                                 return is_string($param) && str_word_count($param) <= 500;
@@ -386,7 +386,7 @@ class Route
                             'sanitize_callback' => 'sanitize_text_field',
                         ],
                         'is_favorite' => [
-                            'description'       => __('Mark entry as favorite (0 or 1).', 'advanced-entries-manager-for-wpforms'),
+                            'description'       => __('Mark entry as favorite (0 or 1).', 'forms-entries-manager'),
                             'required'          => false,
                             'validate_callback' => function ($param) {
                                 return is_numeric($param) && in_array($param, [0, 1], true);
@@ -395,7 +395,7 @@ class Route
                             'default'           => 0,
                         ],
                         'exported_to_csv' => [
-                            'description'       => __('Exported to CSV flag (0 or 1).', 'advanced-entries-manager-for-wpforms'),
+                            'description'       => __('Exported to CSV flag (0 or 1).', 'forms-entries-manager'),
                             'required'          => false,
                             'validate_callback' => function ($param) {
                                 return is_numeric($param) && in_array($param, [0, 1], true);
@@ -404,7 +404,7 @@ class Route
                             'default'           => 0,
                         ],
                         'synced_to_gsheet' => [
-                            'description'       => __('Synced to Google Sheet flag (0 or 1).', 'advanced-entries-manager-for-wpforms'),
+                            'description'       => __('Synced to Google Sheet flag (0 or 1).', 'forms-entries-manager'),
                             'required'          => false,
                             'validate_callback' => function ($param) {
                                 return is_numeric($param) && in_array($param, [0, 1], true);
@@ -413,7 +413,7 @@ class Route
                             'default'           => 0,
                         ],
                         'printed_at' => [
-                            'description'       => __('Printed at datetime (Y-m-d H:i:s).', 'advanced-entries-manager-for-wpforms'),
+                            'description'       => __('Printed at datetime (Y-m-d H:i:s).', 'forms-entries-manager'),
                             'required'          => false,
                             'validate_callback' => function ($param) {
                                 return strtotime($param) !== false;
@@ -430,7 +430,7 @@ class Route
                             },
                         ],
                         'resent_at' => [
-                            'description'       => __('Resent at datetime (Y-m-d H:i:s).', 'advanced-entries-manager-for-wpforms'),
+                            'description'       => __('Resent at datetime (Y-m-d H:i:s).', 'forms-entries-manager'),
                             'required'          => false,
                             'validate_callback' => function ($param) {
                                 return strtotime($param) !== false;
@@ -675,7 +675,7 @@ class Route
          * This filter can be used to extend the existing routes
          * or to add new routes for custom functionality.
          */
-        $data = apply_filters('aemfw_api_routes', $data);
+        $data = apply_filters('femapi_routes', $data);
 
         return $data;
     }
@@ -709,13 +709,13 @@ class Route
     private function permission_callback_by_method(string $method)
     {
         $map = [
-            WP_REST_Server::CREATABLE => 'can_create_aemfw_entries',
-            WP_REST_Server::EDITABLE  => 'can_edit_aemfw_entries',
-            WP_REST_Server::DELETABLE => 'can_delete_aemfw_entries',
-            WP_REST_Server::READABLE  => 'can_view_aemfw_entries',
+            WP_REST_Server::CREATABLE => 'can_create_fem_entries',
+            WP_REST_Server::EDITABLE  => 'can_edit_fem_entries',
+            WP_REST_Server::DELETABLE => 'can_delete_fem_entries',
+            WP_REST_Server::READABLE  => 'can_view_fem_entries',
         ];
 
-        $capability = $map[$method] ?? 'can_manage_aemfw_entries';
+        $capability = $map[$method] ?? 'can_manage_fem_entries';
 
         return function () use ($capability) {
             return current_user_can($capability) && is_user_logged_in();

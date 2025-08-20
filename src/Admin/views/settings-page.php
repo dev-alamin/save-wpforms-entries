@@ -24,21 +24,21 @@ $sheet_tab = Helper::get_option('google_sheet_tab', 'Sheet1');
 </div>
 
 
-<div class="wrap aemfw-admin-page min-h-screen max-w-7xl !m-auto bg-gray-50 px-8 py-10 text-[15px] font-inter text-gray-800 space-y-10 !m-auto"
+<div class="wrap fem-admin-page min-h-screen max-w-7xl !m-auto bg-gray-50 px-8 py-10 text-[15px] font-inter text-gray-800 space-y-10 !m-auto"
     x-data="settingsForm()">
     <div class="mb-8 bg-slate-700 text-white px-4 py-2 rounded-lg">
         <h1 class="!text-4xl !font-extrabold !text-indigo-100 !tracking-tight mb-2 flex items-center gap-3">
-            📋 <span><?php esc_html_e('Advanced Entries Manager Settings', 'advanced-entries-manager-for-wpforms'); ?></span>
+            📋 <span><?php esc_html_e('Advanced Entries Manager Settings', 'forms-entries-manager'); ?></span>
         </h1>
         <p class="text-gray-200 !text-[15px] leading-relaxed">
             <?php
             esc_html_e('Browse and manage form entries submitted by users. Click on a form to view its submissions, 
-                mark entries as read/unread, or delete them as needed.', 'advanced-entries-manager-for-wpforms');
+                mark entries as read/unread, or delete them as needed.', 'forms-entries-manager');
             ?>
         </p>
     </div>
 
-    <div x-data="{ tab: 'google' }" class="aemfw-settings-tabs mb-10">
+    <div x-data="{ tab: 'google' }" class="fem-settings-tabs mb-10">
         <!-- Tab Control Navigation -->
         <nav class="flex flex-wrap gap-3 border-b border-indigo-200 text-sm font-medium">
             <button
@@ -52,7 +52,7 @@ $sheet_tab = Helper::get_option('google_sheet_tab', 'Sheet1');
                         <path d="M160-160v-80h110l-16-14q-52-46-73-105t-21-119q0-111 66.5-197.5T400-790v84q-72 26-116 88.5T240-478q0 45 17 87.5t53 78.5l10 10v-98h80v240H160Zm400-10v-84q72-26 116-88.5T720-482q0-45-17-87.5T650-648l-10-10v98h-80v-240h240v80H690l16 14q49 49 71.5 106.5T800-482q0 111-66.5 197.5T560-170Z"/>
                     </svg>
                 </span>
-                <?php esc_html_e( 'Google Sync', 'advanced-entries-manager-for-wpforms' ); ?>
+                <?php esc_html_e( 'Google Sync', 'forms-entries-manager' ); ?>
             </button>
 
             <button
@@ -66,7 +66,7 @@ $sheet_tab = Helper::get_option('google_sheet_tab', 'Sheet1');
                         <path d="M480-480ZM202-65l-56-57 118-118h-90v-80h226v226h-80v-89L202-65Zm278-15v-80h240v-440H520v-200H240v400h-80v-400q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H480Z"/>
                     </svg>
                 </span>
-                <?php esc_html_e( 'Advanced Export', 'advanced-entries-manager-for-wpforms' ); ?>
+                <?php esc_html_e( 'Advanced Export', 'forms-entries-manager' ); ?>
             </button>
 
             <button
@@ -80,11 +80,11 @@ $sheet_tab = Helper::get_option('google_sheet_tab', 'Sheet1');
                         <path d="M440-280h80l12-60q12-5 22.5-10.5T576-364l58 18 40-68-46-40q2-14 2-26t-2-26l46-40-40-68-58 18q-11-8-21.5-13.5T532-620l-12-60h-80l-12 60q-12 5-22.5 10.5T384-596l-58-18-40 68 46 40q-2 14-2 26t2 26l-46 40 40 68 58-18q11 8 21.5 13.5T428-340l12 60Zm40-120q-33 0-56.5-23.5T400-480q0-33 23.5-56.5T480-560q33 0 56.5 23.5T560-480q0 33-23.5 56.5T480-400ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Zm0-560v560-560Z"/>
                     </svg>
                 </span>
-                <?php esc_html_e( 'General Settings', 'advanced-entries-manager-for-wpforms' ); ?>
+                <?php esc_html_e( 'General Settings', 'forms-entries-manager' ); ?>
             </button>
         </nav>
 
-        <form id="aemfw-settings-form" @submit.prevent="saveSettings" class="space-y-6">
+        <form id="fem-settings-form" @submit.prevent="saveSettings" class="space-y-6">
             <div x-show="tab === 'google'">
                 <!-- ✅ Connected Notice -->
                 <?php include __DIR__ . '/tab/google-connection.php'; ?>
@@ -105,7 +105,7 @@ $sheet_tab = Helper::get_option('google_sheet_tab', 'Sheet1');
                     stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
-                <?php echo esc_html__('Save Changes', 'advanced-entries-manager-for-wpforms'); ?>
+                <?php echo esc_html__('Save Changes', 'forms-entries-manager'); ?>
             </button>
 
             <p x-text="message" class="text-sm mt-2 text-green-600 font-medium"></p>

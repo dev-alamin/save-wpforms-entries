@@ -1,7 +1,7 @@
 <?php
 defined('ABSPATH') || exit;
 
-do_action('aemfw_before_entries_ui'); 
+do_action('fembefore_entries_ui'); 
 ?>
 
 <div
@@ -21,20 +21,20 @@ do_action('aemfw_before_entries_ui');
 <div
     x-data="entriesApp()"
     x-init="fetchForms()"
-    class="wrap aemfw-admin-page min-h-screen max-w-7xl !m-auto px-8 py-10 text-[15px] font-inter"
+    class="wrap fem-admin-page min-h-screen max-w-7xl !m-auto px-8 py-10 text-[15px] font-inter"
     role="main"
-    aria-label="<?php echo esc_attr__('Advanced Entries Manager Overview', 'advanced-entries-manager-for-wpforms'); ?>">
+    aria-label="<?php echo esc_attr__('Advanced Entries Manager Overview', 'forms-entries-manager'); ?>">
 
-    <?php do_action('aemfw_before_entries_ui_header'); ?>
+    <?php do_action('fembefore_entries_ui_header'); ?>
     <!-- Header -->
     <div class="mb-8 bg-slate-700 text-white px-4 py-2 rounded-lg">
         <h1 class="!text-4xl !font-extrabold !text-indigo-100 !tracking-tight mb-2 flex items-center gap-3">
-            📋 <span><?php esc_html_e('Advanced Entries Manager Overview', 'advanced-entries-manager-for-wpforms'); ?></span>
+            📋 <span><?php esc_html_e('Advanced Entries Manager Overview', 'forms-entries-manager'); ?></span>
         </h1>
         <p class="text-gray-200 !text-[15px] leading-relaxed">
             <?php
             esc_html_e('Browse and manage form entries submitted by users. Click on a form to view its submissions, 
-            mark entries as read/unread, or delete them as needed.', 'advanced-entries-manager-for-wpforms');
+            mark entries as read/unread, or delete them as needed.', 'forms-entries-manager');
             ?>
         </p>
     </div>
@@ -65,7 +65,7 @@ do_action('aemfw_before_entries_ui');
 
                 <div class="flex gap-2">
                     <button
-                        @click="window.location.href = '<?php echo esc_url(admin_url('admin.php?page=aemfw-migration')); ?>'"
+                        @click="window.location.href = '<?php echo esc_url(admin_url('admin.php?page=fem-migration')); ?>'"
                         class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md transition">
                         <!-- Material Icon: rocket_launch -->
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
@@ -115,16 +115,16 @@ do_action('aemfw_before_entries_ui');
                         <h2 class="text-xl sm:text-2xl font-semibold text-gray-800 !m-2" x-text="form.form_title"></h2>
                         <p class="text-xs sm:text-sm text-gray-600 font-medium flex items-center gap-2 mt-1 !m-0">
                             <span class="bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full font-bold">
-                                <?php esc_html_e('ID:', 'advanced-entries-manager-for-wpforms'); ?> <span x-text="form.form_id"></span>
+                                <?php esc_html_e('ID:', 'forms-entries-manager'); ?> <span x-text="form.form_id"></span>
                             </span>
 
                             <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold">
-                                <?php esc_html_e('Entries:', 'advanced-entries-manager-for-wpforms'); ?>
+                                <?php esc_html_e('Entries:', 'forms-entries-manager'); ?>
                                 <span
                                     x-text="formatNumber(form.entry_count)"
                                     :title="formatFullNumber(form.entry_count)"
                                     class="cursor-help"
-                                    aria-label="<?php esc_attr_e('Total number of entries', 'advanced-entries-manager-for-wpforms'); ?>">
+                                    aria-label="<?php esc_attr_e('Total number of entries', 'forms-entries-manager'); ?>">
                                 </span>
                             </span>
 
@@ -132,9 +132,9 @@ do_action('aemfw_before_entries_ui');
                                 class="px-2 py-0.5 rounded-full font-bold"
                                 :class="{ 'bg-orange-100 text-orange-700': form.number_unread > 0, 'bg-gray-100 text-gray-500': form.number_unread === 0 }"
                                 x-show="form.number_unread > 0"
-                                title="<?php esc_attr_e('Number of unread entries', 'advanced-entries-manager-for-wpforms'); ?>"
-                                aria-label="<?php esc_attr_e('Total number of unread entries', 'advanced-entries-manager-for-wpforms'); ?>">
-                                <?php esc_html_e('Unread:', 'advanced-entries-manager-for-wpforms'); ?> <span x-text="form.number_unread"></span>
+                                title="<?php esc_attr_e('Number of unread entries', 'forms-entries-manager'); ?>"
+                                aria-label="<?php esc_attr_e('Total number of unread entries', 'forms-entries-manager'); ?>">
+                                <?php esc_html_e('Unread:', 'forms-entries-manager'); ?> <span x-text="form.number_unread"></span>
                             </span>
                         </p>
                     </div>
@@ -142,10 +142,10 @@ do_action('aemfw_before_entries_ui');
 
                 <div class="text-sm font-medium flex items-center gap-1 px-2 py-1 rounded-md text-indigo-700 transition cursor-pointer select-none mb-4 sm:mb-0 sm:mt-0 w-full sm:w-auto justify-center sm:justify-start">
                     <span x-show="!open" class="group-hover:underline" aria-hidden="true">
-                        <?php esc_html_e('Click to view entries', 'advanced-entries-manager-for-wpforms'); ?>
+                        <?php esc_html_e('Click to view entries', 'forms-entries-manager'); ?>
                     </span>
                     <span x-show="open" class="group-hover:underline" aria-hidden="true">
-                        <?php esc_html_e('Hide entries', 'advanced-entries-manager-for-wpforms'); ?>
+                        <?php esc_html_e('Hide entries', 'forms-entries-manager'); ?>
                     </span>
                     <svg :class="open ? 'rotate-180' : ''"
                         class="w-4 h-4 transition-transform duration-300"
@@ -169,7 +169,7 @@ do_action('aemfw_before_entries_ui');
                 :id="'entries-table-' + form.form_id"
                 role="region"
                 aria-live="polite"
-                aria-label="<?php esc_attr_e('Entries table for form', 'advanced-entries-manager-for-wpforms'); ?>"
+                aria-label="<?php esc_attr_e('Entries table for form', 'forms-entries-manager'); ?>"
                 class="overflow-x-auto">
                 <div class="bg-white shadow-md rounded-xl overflow-hidden border border-gray-200 min-w-[600px]">
                     <?php include __DIR__ . '/table/filter-section.php'; ?>
@@ -188,16 +188,16 @@ do_action('aemfw_before_entries_ui');
                                 class="cursor-pointer" />
                         </div>
 
-                        <div role="columnheader"><?php esc_html_e('Email', 'advanced-entries-manager-for-wpforms'); ?></div>
+                        <div role="columnheader"><?php esc_html_e('Email', 'forms-entries-manager'); ?></div>
                         <div role="columnheader" class="text-center cursor-pointer select-none flex items-center justify-center gap-1" @click="sortByDate">
-                            <span><?php esc_html_e('Date', 'advanced-entries-manager-for-wpforms'); ?></span>
+                            <span><?php esc_html_e('Date', 'forms-entries-manager'); ?></span>
                             <span x-text="sortAsc ? '⬆️' : '⬇️'"></span>
                         </div>
                         <div role="columnheader" class="text-center cursor-pointer select-none flex items-center justify-center gap-1" @click="sortByStatus">
-                            <span><?php esc_html_e('Status', 'advanced-entries-manager-for-wpforms'); ?></span>
+                            <span><?php esc_html_e('Status', 'forms-entries-manager'); ?></span>
                             <span x-text="sortAscStatus ? '⬆️' : '⬇️'"></span>
                         </div>
-                        <div role="columnheader" class="text-right"><?php esc_html_e('Actions', 'advanced-entries-manager-for-wpforms'); ?></div>
+                        <div role="columnheader" class="text-right"><?php esc_html_e('Actions', 'forms-entries-manager'); ?></div>
                     </div>
 
                     <div class="relative min-h-60">
@@ -222,7 +222,7 @@ do_action('aemfw_before_entries_ui');
 
                                 <div
                                     class="cursor-pointer truncate flex items-center gap-2"
-                                    title="<?php echo esc_attr__('Click for details', 'advanced-entries-manager-for-wpforms'); ?>"
+                                    title="<?php echo esc_attr__('Click for details', 'forms-entries-manager'); ?>"
                                     @click="showEntry(i)">
                                     <span x-text="entry.email || '-'"></span>
                                     <span
@@ -247,7 +247,7 @@ do_action('aemfw_before_entries_ui');
                             x-transition
                             class="absolute inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-sm">
                             <lottie-player
-                                src="<?php echo esc_url(AEMFW_URL . 'assets/admin/lottie/loading.json'); ?>"
+                                src="<?php echo esc_url(FEM_URL . 'assets/admin/lottie/loading.json'); ?>"
                                 background="transparent"
                                 speed="1"
                                 class="w-auto h-auto"
@@ -272,7 +272,7 @@ do_action('aemfw_before_entries_ui');
     <!-- Before loading the forms, show a loading state -->
     <div x-show="loading" class="flex items-center justify-center min-h-60">
         <lottie-player
-            src="<?php echo esc_url(AEMFW_URL . 'assets/admin/lottie/loading.json'); ?>"
+            src="<?php echo esc_url(FEM_URL . 'assets/admin/lottie/loading.json'); ?>"
             background="transparent"
             speed="1"
             class="w-auto h-auto"
@@ -304,4 +304,4 @@ do_action('aemfw_before_entries_ui');
     <!-- Powered by message ends -->
 
 </div>
-<?php do_action('aemfw_after_entries_ui'); ?>
+<?php do_action('femafter_entries_ui'); ?>

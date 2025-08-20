@@ -61,8 +61,8 @@ class Scheduler
                 'offset'         => $i * $batch_size,
             ];
 
-            if (! as_next_scheduled_action('aemfw_export_csv_batch', [$args])) {
-                as_schedule_single_action(time() + ($i * 15), 'aemfw_export_csv_batch', [$args], 'aemfw_export_csv_group');
+            if (! as_next_scheduled_action('femexport_csv_batch', [$args])) {
+                as_schedule_single_action(time() + ($i * 15), 'femexport_csv_batch', [$args], 'femexport_csv_group');
             }
         }
     }

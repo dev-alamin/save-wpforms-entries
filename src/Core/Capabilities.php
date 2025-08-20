@@ -33,11 +33,11 @@ class Capabilities {
         }
 
         $capabilities = [
-            'can_create_aemfw_entries',
-            'can_edit_aemfw_entries',
-            'can_delete_aemfw_entries',
-            'can_view_aemfw_entries',
-            'can_manage_aemfw_entries',
+            'can_create_fem_entries',
+            'can_edit_fem_entries',
+            'can_delete_fem_entries',
+            'can_view_fem_entries',
+            'can_manage_fem_entries',
         ];
 
         foreach( $capabilities as $cap ) {
@@ -62,11 +62,11 @@ class Capabilities {
         }
 
         $capabilities = [
-            'can_create_aemfw_entries',
-            'can_edit_aemfw_entries',
-            'can_delete_aemfw_entries',
-            'can_view_aemfw_entries',
-            'can_manage_aemfw_entries',
+            'can_create_fem_entries',
+            'can_edit_fem_entries',
+            'can_delete_fem_entries',
+            'can_view_fem_entries',
+            'can_manage_fem_entries',
         ];
 
         foreach( $capabilities as $cap ) {

@@ -7,7 +7,7 @@
  * Provides methods to retrieve the table name and to create the required database table
  * for storing form entries, including metadata such as status, notes, export/sync flags, and timestamps.
  *
- * @package aemfw
+ * @package fem
  */
 
 namespace App\AdvancedEntryManager\Core;
@@ -78,7 +78,7 @@ class DB_Schema
          * @param string $sql The SQL query to create the entries table.
          * @return string Modified SQL query.
          */
-        $sql = apply_filters('aemfw_create_entries_table_sql', $sql);
+        $sql = apply_filters('femcreate_entries_table_sql', $sql);
 
         dbDelta($sql);
     }

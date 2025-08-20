@@ -17,23 +17,23 @@ class Export_Entries_Action {
 
         add_action(Export_Entries::FINALIZE_HOOK, [$this->export_entries, 'finalize_export_file'], 10, 1);
 
-        add_action('aemfw_daily_cleanup', [ $this, 'aemfw_clean_old_exports' ]);
+        add_action('femdaily_cleanup', [ $this, 'femclean_old_exports' ]);
 
-        if ( ! wp_next_scheduled( 'aemfw_daily_cleanup' ) ) {
-            wp_schedule_event( time(), 'daily', 'aemfw_daily_cleanup' );
+        if ( ! wp_next_scheduled( 'femdaily_cleanup' ) ) {
+            wp_schedule_event( time(), 'daily', 'femdaily_cleanup' );
         }
     }
 
     /**
-     * Removes old CSV export files from the 'aemfw_exports' directory.
+     * Removes old CSV export files from the 'femexports' directory.
      *
-     * This method scans the 'aemfw_exports' folder within the WordPress uploads directory
+     * This method scans the 'femexports' folder within the WordPress uploads directory
      * and deletes any CSV files that are older than 2 days based on their last modification time.
      *
      * @return void
      */
-    public function aemfw_clean_old_exports() {
-        $dir = wp_upload_dir()['basedir'] . '/aemfw_exports';
+    public function femclean_old_exports() {
+        $dir = wp_upload_dir()['basedir'] . '/femexports';
         foreach (glob($dir . '/*.csv') as $file) {
             if (filemtime($file) < strtotime('-2 days')) {
                 unlink($file);

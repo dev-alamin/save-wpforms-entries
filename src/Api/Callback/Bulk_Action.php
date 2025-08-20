@@ -36,7 +36,7 @@ class Bulk_Action
         if (!is_array($ids) || empty($ids)) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => __('Invalid or missing entry IDs.', 'advanced-entries-manager-for-wpforms'),
+                'message' => __('Invalid or missing entry IDs.', 'forms-entries-manager'),
             ], 400);
         }
 
@@ -48,7 +48,7 @@ class Bulk_Action
         if (!in_array($action, $valid_actions, true)) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => __('Invalid action provided.', 'advanced-entries-manager-for-wpforms'),
+                'message' => __('Invalid action provided.', 'forms-entries-manager'),
             ], 400);
         }
 
@@ -122,8 +122,8 @@ class Bulk_Action
         return rest_ensure_response([
             'success' => true,
             'message' => $action === 'delete'
-                ? sprintf(_n('%d entry deleted.', '%d entries deleted.', count($deleted_ids), 'advanced-entries-manager-for-wpforms'), count($deleted_ids))
-                : sprintf(_n('%d entry updated.', '%d entries updated.', count($updated_ids), 'advanced-entries-manager-for-wpforms'), count($updated_ids)),
+                ? sprintf(_n('%d entry deleted.', '%d entries deleted.', count($deleted_ids), 'forms-entries-manager'), count($deleted_ids))
+                : sprintf(_n('%d entry updated.', '%d entries updated.', count($updated_ids), 'forms-entries-manager'), count($updated_ids)),
             'deleted_ids' => $deleted_ids,
             'updated_ids' => $updated_ids,
             'affected' => $affected,
@@ -134,7 +134,7 @@ class Bulk_Action
      * Export selected WPForms entries as a CSV file download.
      *
      * This method handles a REST API POST request, expecting an array of entry IDs 
-     * under the 'ids' parameter. It fetches entries from the custom `aemfw_entries_manager` table,
+     * under the 'ids' parameter. It fetches entries from the custom `fem_entries_manager` table,
      * unserializes the stored entry data, and outputs it as a CSV file.
      * 
      * The CSV file includes an 'id' column as the first column, followed by the entry data keys.
@@ -151,17 +151,17 @@ class Bulk_Action
         $ids = $request->get_param('ids');
 
         if (empty($ids) || !is_array($ids)) {
-            return new \WP_Error('invalid_data', __('No entries selected.', 'advanced-entries-manager-for-wpforms'), ['status' => 400]);
+            return new \WP_Error('invalid_data', __('No entries selected.', 'forms-entries-manager'), ['status' => 400]);
         }
 
         // Prepare placeholders for SQL IN clause
         $placeholders = implode(',', array_fill(0, count($ids), '%d'));
-        $table = Helper::get_table_name(); // e.g., 'aemfw_entries_manager'
+        $table = Helper::get_table_name(); // e.g., 'fem_entries_manager'
         $query = "SELECT * FROM {$table} WHERE id IN ($placeholders)";
         $entries = $wpdb->get_results($wpdb->prepare($query, $ids), ARRAY_A);
 
         if (empty($entries)) {
-            return new \WP_Error('no_data', __('No data found.', 'advanced-entries-manager-for-wpforms'), ['status' => 404]);
+            return new \WP_Error('no_data', __('No data found.', 'forms-entries-manager'), ['status' => 404]);
         }
 
         // Set headers for CSV file download

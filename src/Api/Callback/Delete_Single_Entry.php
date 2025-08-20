@@ -41,20 +41,20 @@ class Delete_Single_Entry {
         if (! $id || ! $form_id) {
             return new WP_REST_Response([
                 'deleted' => false,
-                'message' => __('Missing required parameters.', 'advanced-entries-manager-for-wpforms'),
+                'message' => __('Missing required parameters.', 'forms-entries-manager'),
             ], 400);
         }
 
         if (! current_user_can('manage_options')) {
             return new WP_REST_Response([
                 'deleted' => false,
-                'message' => __('You are not allowed to delete entries.', 'advanced-entries-manager-for-wpforms'),
+                'message' => __('You are not allowed to delete entries.', 'forms-entries-manager'),
             ], 403);
         }
 
-        do_action('aemfw_before_entry_delete', $id, $form_id);
+        do_action('fembefore_entry_delete', $id, $form_id);
 
-        $table = Helper::get_table_name(); // e.g., 'aemfw_entries_manager'
+        $table = Helper::get_table_name(); // e.g., 'fem_entries_manager'
         $deleted = $wpdb->delete(
             $table,
             ['id' => $id, 'form_id' => $form_id],
@@ -62,18 +62,18 @@ class Delete_Single_Entry {
         );
 
         if ($deleted) {
-            do_action('aemfw_after_entry_delete', $id, $form_id);
+            do_action('femafter_entry_delete', $id, $form_id);
 
             return new WP_REST_Response( [
                 'deleted' => true,
-                'message' => __( 'Entry has been deleted successfully!', 'advanced-entries-manager-for-wpforms' ),
+                'message' => __( 'Entry has been deleted successfully!', 'forms-entries-manager' ),
             ],
                 200);
         }
 
         return new WP_REST_Response([
             'deleted' => false,
-            'message' => __('Entry not found or already deleted.', 'advanced-entries-manager-for-wpforms' ),
+            'message' => __('Entry not found or already deleted.', 'forms-entries-manager' ),
         ], 404);
     }
 }
