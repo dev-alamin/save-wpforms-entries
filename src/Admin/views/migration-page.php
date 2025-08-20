@@ -1,5 +1,5 @@
 <div x-data="migrationHandler()" x-init="init()"
-    class="wrap aemfw-admin-page min-h-screen !max-w-[1400px] !m-auto bg-white px-8 py-10 text-[15px] font-inter text-gray-800 space-y-10">
+    class="wrap aemfw-admin-page min-h-screen !max-w-7xl !m-auto bg-white px-8 py-10 text-[15px] font-inter text-gray-800 space-y-10">
 
     <!-- Header -->
     <div class="mb-8 bg-slate-700 !text-white px-4 py-2 rounded-lg">

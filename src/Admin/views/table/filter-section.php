@@ -19,7 +19,7 @@
             }
         }'
         x-cloak>
-        <div class="relative w-60">
+        <div class="relative w-50">
             <button
                 type="button"
                 @click="showBulkMenu = !showBulkMenu"
@@ -62,7 +62,7 @@
 
     <div class="flex items-center gap-4">
         <div class="relative md:w-[150px]">
-            <label for="status-filter" class="sr-only">Filter by Status</label>
+            <label for="status-filter" class="sr-only"><?php esc_html_e( 'Filter by Status', 'advanced-entries-manager-for-wpforms' ); ?></label>
             <select
                 id="status-filter"
                 x-model="filterStatus"
@@ -75,7 +75,7 @@
         </div>
 
         <div class="relative md:w-[150px]">
-            <label for="date-from-filter" class="sr-only">Date From</label>
+            <label for="date-from-filter" class="sr-only"><?php esc_html_e( 'Date From', 'advanced-entries-manager-for-wpforms' ); ?></label>
             <input
                 id="date-from-filter"
                 type="date"
@@ -85,7 +85,7 @@
         </div>
 
         <div class="relative md:w-[150px]">
-            <label for="date-to-filter" class="sr-only">Date To</label>
+            <label for="date-to-filter" class="sr-only"><?php esc_html_e( 'Date To', 'advanced-entries-manager-for-wpforms' ); ?></label>
             <input
                 id="date-to-filter"
                 type="date"
@@ -95,8 +95,8 @@
         </div>
     </div>
 
-    <div class="relative flex items-center md:w-[450px] sm:w-[300px]">
-        <div class="relative min-w-[95px] !border !border-gray-300 !border-r-0 !rounded-l-lg !rounded-tr-none !rounded-br-none">
+    <div class="relative flex items-center md:w-[350px] sm:w-[300px]">
+        <div class="relative min-w-[75px] !border !border-gray-300 !border-r-0 !rounded-l-lg !rounded-tr-none !rounded-br-none">
             <button @click="dropdownOpen = !dropdownOpen"
                 class="!px-3 !py-[10px] !text-gray-800 !font-medium !hover:border-indigo-500 !transition !text-sm flex items-center gap-1"
                 type="button"
