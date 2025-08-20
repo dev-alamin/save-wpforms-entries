@@ -151,15 +151,15 @@ class Assets {
                 'dismissAlt'  => __('Dismiss', 'forms-entries-manager'),
                 // General Messages
                 'csvExportedSuccess'      => __('✅ CSV exported successfully!', 'forms-entries-manager'),
-                'entryUpdatedSuccess'     => __('✅ %s entries updated successfully!', 'forms-entries-manager'),
-                'entryDeletedSuccess'     => __('✅ %s', 'forms-entries-manager'),
                 'changesSavedSuccess'     => __('✅ Saved changes successfully!', 'forms-entries-manager'),
                 'settingsSavedSuccess'    => __('✅ Settings saved successfully!', 'forms-entries-manager'),
 
                 // Time ago
                 'timeAgoJustNow'          => __('just now', 'forms-entries-manager'),
-                'timeAgoMinutes'          => _n('%d minute ago', '%d minutes ago', 0, 'forms-entries-manager'), // Use a plural-aware function
-                'timeAgoHours'            => _n('%d hour ago', '%d hours ago', 0, 'forms-entries-manager'),
+                /* translators: %d is the number of minutes ago */
+                'timeAgoMinutes' => _n('%d minute ago', '%d minutes ago', 0, 'forms-entries-manager'),
+                /* translators: %d is the number of hours ago */
+                'timeAgoHours'   => _n('%d hour ago', '%d hours ago', 0, 'forms-entries-manager'),
                 'timeAgoYesterday'        => __('Yesterday', 'forms-entries-manager'),
 
                 // Errors & Warnings

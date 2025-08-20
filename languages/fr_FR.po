@@ -1,0 +1,965 @@
+# Copyright (C) 2025 Md. Al Amin
+# This file is distributed under the GPL-2.0+.
+msgid ""
+msgstr ""
+"Project-Id-Version: Forms Entries Manager 1.0.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/advanced-entries-"
+"manager-for-wpforms\n"
+"Last-Translator: Al Amin <a100lamin@gmail.com>\n"
+"Language-Team: German <translation-team-de@lists.sourceforge.net>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2025-08-20T15:29:09+00:00\n"
+"PO-Revision-Date: 2025-08-20 22:18+0600\n"
+"X-Generator: WP-CLI 2.10.0\n"
+"X-Domain: forms-entries-manager\n"
+"Language: de\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. Plugin Name of the plugin
+#: forms-entries-manager.php
+msgid "Forms Entries Manager"
+msgstr ""
+
+#. Plugin URI of the plugin
+#: forms-entries-manager.php
+msgid "https://entriesmanager.com/"
+msgstr ""
+
+#. Description of the plugin
+#: forms-entries-manager.php
+msgid ""
+"The ultimate dashboard to manage, search, and sync entries from WPForms, "
+"Contact Form 7, and more."
+msgstr ""
+
+#. Author of the plugin
+#: forms-entries-manager.php
+msgid "Md. Al Amin"
+msgstr ""
+
+#. Author URI of the plugin
+#: forms-entries-manager.php
+msgid "https://almn.me"
+msgstr ""
+
+#: src/Admin/Admin_Notice.php:38 src/Admin/Menu.php:92
+msgid "Settings"
+msgstr ""
+
+#: src/Admin/Admin_Notice.php:44
+msgid "Docs"
+msgstr ""
+
+#: src/Admin/Admin_Notice.php:50
+msgid "Upgrade PRO"
+msgstr ""
+
+#: src/Admin/Admin_Notice.php:69
+msgid ""
+"🚫 Your site is blocking REST API access required by Advanced Entries "
+"Manager. Please whitelist /wp-json/aem/entries/v1/* to ensure full "
+"functionality."
+msgstr ""
+
+#: src/Admin/Admin_Notice.php:100
+msgid ""
+"Your site is blocking the REST API endpoints required by Advanced Entries "
+"Manager. Please whitelist <code>/wp-json/wpforms/entries/v1/*</code> in your "
+"firewall or security plugin (e.g., Wordfence, Sucuri) to ensure full "
+"functionality."
+msgstr ""
+
+#: src/Admin/Admin_Notice.php:111
+msgid "Dismiss REST API alert"
+msgstr ""
+
+#. translators: %s: documentation URL
+#: src/Admin/Admin_Notice.php:149
+msgid ""
+"Need help managing entries or exporting them to Google Sheets? <a "
+"href=\"%s\" class=\"text-blue-600 hover:underline font-medium\" "
+"target=\"_blank\" rel=\"noopener noreferrer\">Visit the documentation</a>."
+msgstr ""
+
+#: src/Admin/Admin_Notice.php:160
+msgid "Collapse details"
+msgstr ""
+
+#: src/Admin/Admin_Notice.php:160
+msgid "Expand details"
+msgstr ""
+
+#: src/Admin/Admin_Notice.php:170 src/Assets.php:140 src/Assets.php:151
+msgid "Dismiss"
+msgstr ""
+
+#: src/Admin/Admin_Notice.php:187
+msgid "Getting Started Guide"
+msgstr ""
+
+#: src/Admin/Admin_Notice.php:195
+msgid "View Full Entry in Modal"
+msgstr ""
+
+#: src/Admin/Admin_Notice.php:203
+msgid "Bulk Actions & Filters"
+msgstr ""
+
+#: src/Admin/Admin_Notice.php:211
+msgid "CSV Export & Field Exclusion"
+msgstr ""
+
+#: src/Admin/Admin_Notice.php:219
+msgid "Comment on Entries"
+msgstr ""
+
+#: src/Admin/Admin_Notice.php:227
+msgid "Print Friendly Entries"
+msgstr ""
+
+#: src/Admin/Admin_Notice.php:235
+msgid "Sync to Google Sheets"
+msgstr ""
+
+#: src/Admin/Admin_Notice.php:243
+msgid "Entry Migration Guide"
+msgstr ""
+
+#: src/Admin/Menu.php:80 src/Admin/Menu.php:81
+msgid "WPForms Entries"
+msgstr ""
+
+#: src/Admin/Menu.php:91
+msgid "WPForms Entry Sync Settings"
+msgstr ""
+
+#: src/Admin/Menu.php:102 src/Admin/Menu.php:103
+msgid "Migration"
+msgstr ""
+
+#: src/Admin/views/empty-page.php:16
+msgid "No Entries Found"
+msgstr ""
+
+#: src/Admin/views/empty-page.php:21
+msgid ""
+"Looks like you haven't received any submissions yet.\n"
+"            <br class='hidden sm:block'>Sit back and relax — \n"
+"            we’ll show the entries here as soon as they arrive! 📨"
+msgstr ""
+
+#: src/Admin/views/migration-page.php:8 src/Assets.php:137 src/Assets.php:148
+msgid "Migrate from WPFormsDB"
+msgstr ""
+
+#: src/Admin/views/migration-page.php:11
+msgid ""
+"Easily migrate your old WPFormsDB entries to take full advantage of our "
+"advanced features."
+msgstr ""
+
+#: src/Admin/views/migration-page.php:18
+msgid "Total Entries:"
+msgstr ""
+
+#: src/Admin/views/migration-page.php:31
+msgid "Migration Overview"
+msgstr ""
+
+#: src/Admin/views/migration-page.php:59
+msgid ""
+"⚠️ You have a large dataset. We recommend using a batch size of 100 or less "
+"to avoid timeouts."
+msgstr ""
+
+#: src/Admin/views/migration-page.php:64
+msgid "Batch Size:"
+msgstr ""
+
+#: src/Admin/views/migration-page.php:70
+msgid "50"
+msgstr ""
+
+#: src/Admin/views/migration-page.php:85 src/Assets.php:139 src/Assets.php:150
+msgid "Start Migration"
+msgstr ""
+
+#: src/Admin/views/migration-page.php:90
+msgid "View Migration Progress"
+msgstr ""
+
+#: src/Admin/views/migration-page.php:102
+msgid "Migration is running. See Progress"
+msgstr ""
+
+#: src/Admin/views/migration-page.php:115
+msgid "Stop Migration"
+msgstr ""
+
+#: src/Admin/views/migration-page.php:127
+msgid "Migration Completed!"
+msgstr ""
+
+#: src/Admin/views/migration-page.php:134
+msgid "Migration Progress"
+msgstr ""
+
+#: src/Admin/views/migration-page.php:137
+msgid "Migrating Entries:"
+msgstr ""
+
+#: src/Admin/views/migration-page.php:143
+msgid "Estimated time left:"
+msgstr ""
+
+#: src/Admin/views/migration-page.php:148
+msgid "Progress:"
+msgstr ""
+
+#: src/Admin/views/migration-page.php:164
+msgid "Migration Log"
+msgstr ""
+
+#: src/Admin/views/modal.php:29
+msgid "Entry Details"
+msgstr ""
+
+#: src/Admin/views/modal.php:31 src/Admin/views/modal.php:67
+msgid "-"
+msgstr ""
+
+#: src/Admin/views/modal.php:100
+msgid "Close Note"
+msgstr ""
+
+#: src/Admin/views/modal.php:102 src/Admin/views/table/action-column.php:38
+msgid "Edit Note"
+msgstr ""
+
+#: src/Admin/views/modal.php:103 src/Admin/views/table/action-column.php:39
+msgid "Add Note"
+msgstr ""
+
+#: src/Admin/views/modal.php:120
+msgid "Your Note"
+msgstr ""
+
+#: src/Admin/views/modal.php:128
+msgid "Write something helpful for this entry…"
+msgstr ""
+
+#: src/Admin/views/modal.php:133
+msgid "Max 1000 characters. Avoid sensitive data."
+msgstr ""
+
+#: src/Admin/views/modal.php:144
+msgid "Saved Note"
+msgstr ""
+
+#: src/Admin/views/modal.php:144
+msgid "Save Note"
+msgstr ""
+
+#: src/Admin/views/modal.php:158 src/Admin/views/template-functions.php:14
+msgid "Mark as Read"
+msgstr ""
+
+#: src/Admin/views/modal.php:161
+msgid "Mark as unread"
+msgstr ""
+
+#: src/Admin/views/modal.php:168
+msgid "Delete"
+msgstr ""
+
+#: src/Admin/views/settings-page.php:31
+msgid "Advanced Entries Manager Settings"
+msgstr ""
+
+#: src/Admin/views/settings-page.php:35
+msgid ""
+"Browse and manage form entries submitted by users. Click on a form to view "
+"its submissions, \n"
+"                mark entries as read/unread, or delete them as needed."
+msgstr ""
+
+#: src/Admin/views/settings-page.php:55
+msgid "Google Sync"
+msgstr ""
+
+#: src/Admin/views/settings-page.php:69
+msgid "Advanced Export"
+msgstr ""
+
+#: src/Admin/views/settings-page.php:83
+msgid "General Settings"
+msgstr ""
+
+#: src/Admin/views/settings-page.php:108
+msgid "Save Changes"
+msgstr ""
+
+#: src/Admin/views/tab/csv-export.php:8
+msgid "Select Form"
+msgstr ""
+
+#: src/Admin/views/tab/csv-export.php:14
+msgid "-- Select a Form --"
+msgstr ""
+
+#: src/Admin/views/tab/csv-export.php:25
+#: src/Admin/views/table/filter-section.php:78
+msgid "Date From"
+msgstr ""
+
+#: src/Admin/views/tab/csv-export.php:32
+#: src/Admin/views/table/filter-section.php:88
+msgid "Date To"
+msgstr ""
+
+#: src/Admin/views/tab/csv-export.php:42
+msgid "Exclude Columns (Optional)"
+msgstr ""
+
+#: src/Admin/views/tab/csv-export.php:62 src/Admin/views/tab/csv-export.php:66
+msgid "Start Exporting"
+msgstr ""
+
+#: src/Admin/views/tab/csv-export.php:83
+msgid "Download Export File"
+msgstr ""
+
+#: src/Admin/views/tab/csv-export.php:83
+msgid "See Export Progress"
+msgstr ""
+
+#: src/Admin/views/tab/csv-export.php:91
+msgid "Delete Export File"
+msgstr ""
+
+#: src/Admin/views/tab/csv-export.php:108
+msgid "Export Progress"
+msgstr ""
+
+#: src/Admin/views/tab/csv-export.php:117
+msgid ""
+"The export is currently in progress. You can close this window and it will "
+"continue in the background."
+msgstr ""
+
+#: src/Admin/views/tab/csv-export.php:129
+msgid "Entries Processed"
+msgstr ""
+
+#: src/Admin/views/tab/csv-export.php:136
+msgid "Close"
+msgstr ""
+
+#: src/Admin/views/tab/general-settings.php:2
+msgid "📄 Pagination Settings"
+msgstr ""
+
+#: src/Admin/views/tab/general-settings.php:4
+msgid "Set how many entries are shown per page in the admin UI."
+msgstr ""
+
+#: src/Admin/views/tab/general-settings.php:9
+msgid "Entries per Page"
+msgstr ""
+
+#: src/Admin/views/tab/google-connection.php:6
+msgid "Google Account Connection"
+msgstr ""
+
+#: src/Admin/views/tab/google-connection.php:18
+msgid "Connected to Google Sheets"
+msgstr ""
+
+#: src/Admin/views/tab/google-connection.php:22
+#: src/Admin/views/tab/google-connection.php:49
+msgid "Reconnect or switch Google Account"
+msgstr ""
+
+#: src/Admin/views/tab/google-connection.php:23
+msgid "Switch Account"
+msgstr ""
+
+#: src/Admin/views/tab/google-connection.php:26
+msgid "Live data sync is active. Streaming enabled ✅"
+msgstr ""
+
+#: src/Admin/views/tab/google-connection.php:32
+msgid ""
+"Your WPForms submissions are now syncing automatically with your Google "
+"Sheets in real-time. This connection allows you to streamline your data "
+"collection and analysis."
+msgstr ""
+
+#: src/Admin/views/tab/google-connection.php:43
+msgid "Token expires in:"
+msgstr ""
+
+#: src/Admin/views/tab/google-connection.php:50
+msgid "Reconnect"
+msgstr ""
+
+#: src/Admin/views/tab/google-connection.php:56
+msgid ""
+"To start syncing WPForms entries with Google Sheets, please connect your "
+"Google account. This will enable live synchronization and easy data "
+"management."
+msgstr ""
+
+#: src/Admin/views/tab/google-connection.php:65
+msgid "Connect with Google"
+msgstr ""
+
+#: src/Admin/views/table/action-column.php:3
+msgid "Mark as Read/Unread"
+msgstr ""
+
+#: src/Admin/views/table/action-column.php:18
+#: src/Admin/views/template-functions.php:24
+msgid "Mark as Favorite"
+msgstr ""
+
+#: src/Admin/views/table/action-column.php:57
+msgid "Sync to Google Sheet"
+msgstr ""
+
+#: src/Admin/views/table/action-column.php:72
+msgid "Print Entry"
+msgstr ""
+
+#: src/Admin/views/table/action-column.php:81
+msgid "Export as CSV"
+msgstr ""
+
+#: src/Admin/views/table/action-column.php:91
+msgid "View Details"
+msgstr ""
+
+#: src/Admin/views/table/filter-section.php:18
+msgid "Select Action"
+msgstr ""
+
+#: src/Admin/views/table/filter-section.php:59
+msgid "Apply"
+msgstr ""
+
+#: src/Admin/views/table/filter-section.php:65
+msgid "Filter by Status"
+msgstr ""
+
+#: src/Admin/views/table/filter-section.php:71
+msgid "All Statuses"
+msgstr ""
+
+#: src/Admin/views/table/filter-section.php:72
+msgid "Read"
+msgstr ""
+
+#: src/Admin/views/table/filter-section.php:73
+msgid "Unread"
+msgstr ""
+
+#: src/Admin/views/table/filter-section.php:103
+msgid "Select search type"
+msgstr ""
+
+#: src/Admin/views/table/filter-section.php:136
+msgid "No matching entries found."
+msgstr ""
+
+#: src/Admin/views/table/filter-section.php:144
+msgid "Searching..."
+msgstr ""
+
+#: src/Admin/views/table/pagination.php:10
+msgid "Previous Page"
+msgstr ""
+
+#: src/Admin/views/table/pagination.php:25
+msgid "Go to page"
+msgstr ""
+
+#: src/Admin/views/table/pagination.php:38
+msgid "Next Page"
+msgstr ""
+
+#: src/Admin/views/table/pagination.php:44
+msgid "Go to"
+msgstr ""
+
+#: src/Admin/views/table/pagination.php:58
+msgid "Jump to page number"
+msgstr ""
+
+#: src/Admin/views/template-functions.php:9
+msgid "Export CSV"
+msgstr ""
+
+#: src/Admin/views/template-functions.php:19
+msgid "Mark as Unread"
+msgstr ""
+
+#: src/Admin/views/template-functions.php:29
+msgid "Unmark Favorite"
+msgstr ""
+
+#: src/Admin/views/template-functions.php:34
+msgid "Mark as Spam"
+msgstr ""
+
+#: src/Admin/views/template-functions.php:39
+msgid "Unmark Spam"
+msgstr ""
+
+#: src/Admin/views/template-functions.php:44
+msgid "Delete Entries"
+msgstr ""
+
+#: src/Admin/views/view-entries.php:26 src/Admin/views/view-entries.php:32
+msgid "Advanced Entries Manager Overview"
+msgstr ""
+
+#: src/Admin/views/view-entries.php:36
+msgid ""
+"Browse and manage form entries submitted by users. Click on a form to view "
+"its submissions, \n"
+"            mark entries as read/unread, or delete them as needed."
+msgstr ""
+
+#: src/Admin/views/view-entries.php:118
+msgid "ID:"
+msgstr ""
+
+#: src/Admin/views/view-entries.php:122
+msgid "Entries:"
+msgstr ""
+
+#: src/Admin/views/view-entries.php:127
+msgid "Total number of entries"
+msgstr ""
+
+#: src/Admin/views/view-entries.php:135
+msgid "Number of unread entries"
+msgstr ""
+
+#: src/Admin/views/view-entries.php:136
+msgid "Total number of unread entries"
+msgstr ""
+
+#: src/Admin/views/view-entries.php:137
+msgid "Unread:"
+msgstr ""
+
+#: src/Admin/views/view-entries.php:145
+msgid "Click to view entries"
+msgstr ""
+
+#: src/Admin/views/view-entries.php:148
+msgid "Hide entries"
+msgstr ""
+
+#: src/Admin/views/view-entries.php:172
+msgid "Entries table for form"
+msgstr ""
+
+#: src/Admin/views/view-entries.php:191 src/GoogleSheet/Send_Data.php:273
+#: src/GoogleSheet/Send_Data.php:329
+msgid "Email"
+msgstr ""
+
+#: src/Admin/views/view-entries.php:193
+msgid "Date"
+msgstr ""
+
+#: src/Admin/views/view-entries.php:197 src/GoogleSheet/Send_Data.php:286
+#: src/GoogleSheet/Send_Data.php:332
+msgid "Status"
+msgstr ""
+
+#: src/Admin/views/view-entries.php:200
+msgid "Actions"
+msgstr ""
+
+#: src/Admin/views/view-entries.php:225
+msgid "Click for details"
+msgstr ""
+
+#: src/Api/Callback/Bulk_Action.php:39
+msgid "Invalid or missing entry IDs."
+msgstr ""
+
+#: src/Api/Callback/Bulk_Action.php:51
+msgid "Invalid action provided."
+msgstr ""
+
+#. translators: %d is the number of deleted entries
+#: src/Api/Callback/Bulk_Action.php:127
+msgid "%d entry deleted."
+msgid_plural "%d entries deleted."
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %d is the number of updated entries
+#: src/Api/Callback/Bulk_Action.php:137
+msgid "%d entry updated."
+msgid_plural "%d entries updated."
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/Api/Callback/Bulk_Action.php:172
+msgid "No entries selected."
+msgstr ""
+
+#: src/Api/Callback/Bulk_Action.php:182 src/Api/Callback/Export_Entries.php:600
+msgid "No data found."
+msgstr ""
+
+#: src/Api/Callback/Create_Entries.php:47
+msgid "Invalid or missing form_id or entry data."
+msgstr ""
+
+#: src/Api/Callback/Create_Entries.php:112
+msgid "Database insert failed."
+msgstr ""
+
+#: src/Api/Callback/Create_Entries.php:129
+msgid "Entry created successfully."
+msgstr ""
+
+#: src/Api/Callback/Delete_Single_Entry.php:44
+msgid "Missing required parameters."
+msgstr ""
+
+#: src/Api/Callback/Delete_Single_Entry.php:51
+msgid "You are not allowed to delete entries."
+msgstr ""
+
+#: src/Api/Callback/Delete_Single_Entry.php:69
+msgid "Entry has been deleted successfully!"
+msgstr ""
+
+#: src/Api/Callback/Delete_Single_Entry.php:76
+msgid "Entry not found or already deleted."
+msgstr ""
+
+#: src/Api/Callback/Export_Entries.php:63
+msgid "Action Scheduler is required but not available."
+msgstr ""
+
+#: src/Api/Callback/Export_Entries.php:68
+msgid "A valid Form ID is required."
+msgstr ""
+
+#: src/Api/Callback/Export_Entries.php:100
+msgid "No entries found for the selected criteria."
+msgstr ""
+
+#: src/Api/Callback/Export_Entries.php:156
+msgid "CSV export has been successfully queued."
+msgstr ""
+
+#: src/Api/Callback/Export_Entries.php:355
+#: src/Api/Callback/Export_Entries.php:518
+#: src/Api/Callback/Export_Entries.php:565
+msgid "Job ID is required."
+msgstr ""
+
+#: src/Api/Callback/Export_Entries.php:360
+msgid "Export job not found or has expired."
+msgstr ""
+
+#: src/Api/Callback/Export_Entries.php:492
+msgid "Could not create temporary export directory."
+msgstr ""
+
+#: src/Api/Callback/Export_Entries.php:527
+#: src/Api/Callback/Export_Entries.php:574
+msgid "Export job not found or not yet complete."
+msgstr ""
+
+#: src/Api/Callback/Export_Entries.php:533
+msgid "Export file not found on the server."
+msgstr ""
+
+#: src/Api/Callback/Export_Entries.php:582
+msgid "File was already deleted."
+msgstr ""
+
+#: src/Api/Callback/Export_Entries.php:589
+msgid "Export file deleted successfully."
+msgstr ""
+
+#: src/Api/Callback/Export_Entries.php:591
+msgid "Failed to delete the export file."
+msgstr ""
+
+#: src/Api/Callback/Get_Forms.php:93
+msgid "Invalid or missing form ID."
+msgstr ""
+
+#: src/Api/Callback/Migrate.php:31
+msgid "Action Scheduler not available"
+msgstr ""
+
+#: src/Api/Callback/Migrate.php:36
+msgid "Migration is already in progress."
+msgstr ""
+
+#: src/Api/Callback/Migrate.php:60
+msgid "Migration started in background."
+msgstr ""
+
+#: src/Api/Callback/Update_Entries.php:41
+msgid "Missing or invalid entry ID or form ID."
+msgstr ""
+
+#: src/Api/Callback/Update_Entries.php:99
+msgid "No valid fields provided for update."
+msgstr ""
+
+#: src/Api/Callback/Update_Entries.php:124
+msgid "Database update failed."
+msgstr ""
+
+#: src/Api/Callback/Update_Entries.php:139
+msgid "Entry updated successfully."
+msgstr ""
+
+#: src/Api/Callback/Update_Entries.php:156
+#: src/Api/Callback/Update_Entries.php:202
+msgid "Invalid or missing entry ID."
+msgstr ""
+
+#: src/Api/Callback/Update_Entries.php:171
+msgid "Failed to unsync entry from Google Sheet."
+msgstr ""
+
+#: src/Api/Callback/Update_Entries.php:177
+msgid "Entry successfully unsynced from Google Sheet."
+msgstr ""
+
+#: src/Api/Callback/Update_Entries.php:193
+msgid "You have not authorize google, please do it from settings page."
+msgstr ""
+
+#: src/Api/Callback/Update_Entries.php:213
+msgid "Entry successfully sync to Google Sheet."
+msgstr ""
+
+#: src/Api/Callback/Update_Entries.php:218
+msgid "Failed to sync entry to Google Sheet. Please check the logs."
+msgstr ""
+
+#: src/Api/Route.php:173
+msgid "Number of entries per page."
+msgstr ""
+
+#: src/Api/Route.php:182
+msgid "Page number."
+msgstr ""
+
+#: src/Api/Route.php:188
+msgid "Limit entries to a specific form ID."
+msgstr ""
+
+#: src/Api/Route.php:194
+msgid "Search within entry values."
+msgstr ""
+
+#: src/Api/Route.php:200
+msgid "Filter by read/unread status."
+msgstr ""
+
+#: src/Api/Route.php:208
+msgid "Filter by submission start date (YYYY-MM-DD)"
+msgstr ""
+
+#: src/Api/Route.php:217
+msgid "Filter by submission end date (YYYY-MM-DD)"
+msgstr ""
+
+#: src/Api/Route.php:238 src/Api/Route.php:357
+msgid "Form ID for the entry."
+msgstr ""
+
+#: src/Api/Route.php:246 src/Api/Route.php:365
+msgid "Entry data as an associative array."
+msgstr ""
+
+#: src/Api/Route.php:253 src/Api/Route.php:372
+msgid "Read/unread status for the entry."
+msgstr ""
+
+#: src/Api/Route.php:262 src/Api/Route.php:389
+msgid "Mark entry as favorite (0 or 1)."
+msgstr ""
+
+#: src/Api/Route.php:271 src/Api/Route.php:381
+msgid "Internal note for the entry (max 500 words)."
+msgstr ""
+
+#: src/Api/Route.php:279 src/Api/Route.php:398
+msgid "Exported to CSV flag (0 or 1)."
+msgstr ""
+
+#: src/Api/Route.php:288 src/Api/Route.php:407
+msgid "Synced to Google Sheet flag (0 or 1)."
+msgstr ""
+
+#: src/Api/Route.php:297 src/Api/Route.php:416
+msgid "Printed at datetime (Y-m-d H:i:s)."
+msgstr ""
+
+#: src/Api/Route.php:307 src/Api/Route.php:433
+msgid "Resent at datetime (Y-m-d H:i:s)."
+msgstr ""
+
+#: src/Api/Route.php:349
+msgid "Entry ID to update."
+msgstr ""
+
+#: src/Assets.php:138 src/Assets.php:149
+msgid "We found data in the legacy"
+msgstr ""
+
+#: src/Assets.php:138 src/Assets.php:149
+msgid ""
+"table. You can migrate all your entries into our advanced manager in just a "
+"few clicks."
+msgstr ""
+
+#: src/Assets.php:153
+msgid "✅ CSV exported successfully!"
+msgstr ""
+
+#: src/Assets.php:154
+msgid "✅ Saved changes successfully!"
+msgstr ""
+
+#: src/Assets.php:155
+msgid "✅ Settings saved successfully!"
+msgstr ""
+
+#: src/Assets.php:158
+msgid "just now"
+msgstr ""
+
+#. translators: %d is the number of minutes ago
+#: src/Assets.php:160
+msgid "%d minute ago"
+msgid_plural "%d minutes ago"
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %d is the number of hours ago
+#: src/Assets.php:162
+msgid "%d hour ago"
+msgid_plural "%d hours ago"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/Assets.php:163
+msgid "Yesterday"
+msgstr ""
+
+#: src/Assets.php:166
+msgid "Note is too long. Please limit to 1000 characters."
+msgstr ""
+
+#: src/Assets.php:167
+msgid "Failed to delete entry: Unknown error"
+msgstr ""
+
+#: src/Assets.php:168
+msgid "Delete request failed. Check console for details."
+msgstr ""
+
+#: src/Assets.php:169
+msgid "A network error occurred. Please try again."
+msgstr ""
+
+#: src/Assets.php:170
+msgid "❌ Entry not found in the list."
+msgstr ""
+
+#: src/Assets.php:171
+msgid "Bulk action failed:"
+msgstr ""
+
+#: src/Assets.php:172
+msgid "Failed to start export."
+msgstr ""
+
+#: src/Assets.php:173
+msgid "Failed to fetch export progress."
+msgstr ""
+
+#: src/Assets.php:174
+msgid "Please select a form before exporting."
+msgstr ""
+
+#: src/Assets.php:175
+msgid "Invalid CSV content."
+msgstr ""
+
+#: src/Assets.php:176
+msgid "Export complete! Your download should start shortly."
+msgstr ""
+
+#: src/Assets.php:177
+msgid "Failed to fetch forms:"
+msgstr ""
+
+#: src/Assets.php:178
+msgid "Failed to fetch entries:"
+msgstr ""
+
+#: src/Assets.php:179
+msgid "Failed to fetch form fields. Please try again."
+msgstr ""
+
+#: src/Assets.php:180
+msgid "❌ Unexpected error occurred."
+msgstr ""
+
+#: src/Assets.php:181
+msgid "Entry synchronization Done!"
+msgstr ""
+
+#: src/Assets.php:182
+msgid "❌ Synchronization failed."
+msgstr ""
+
+#: src/Assets.php:183
+msgid "❌ Save failed."
+msgstr ""
+
+#: src/GoogleSheet/Send_Data.php:270 src/GoogleSheet/Send_Data.php:320
+msgid "Entry ID"
+msgstr ""
+
+#: src/GoogleSheet/Send_Data.php:271 src/GoogleSheet/Send_Data.php:323
+msgid "Submission Date"
+msgstr ""
+
+#: src/GoogleSheet/Send_Data.php:272 src/GoogleSheet/Send_Data.php:326
+msgid "Name"
+msgstr ""
+
+#: src/GoogleSheet/Send_Data.php:287 src/GoogleSheet/Send_Data.php:335
+msgid "Note"
+msgstr ""
+
+#: src/Utility/Helper.php:392
+msgid "Expired"
+msgstr ""
+
+#: src/Utility/Helper.php:402
+msgid "Less than a minute"
+msgstr ""

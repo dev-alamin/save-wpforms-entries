@@ -107,7 +107,7 @@ class Plugin
      */
     public function early_init()
     {
-        load_plugin_textdomain('forms-entries-manager', false, dirname(plugin_basename(__FILE__)) . '/languages');
+        load_plugin_textdomain( 'forms-entries-manager', false, dirname( FEM_PLUGIN_BASE ) . '/languages/' );
     }
 
     /**

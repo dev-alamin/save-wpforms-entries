@@ -116,7 +116,7 @@ function formTable(form) {
                         this.$dispatch("toast", {
                             type: "success",
                             // FEM_I18N: Use translatable string
-                            message: aemfwStrings.entryDeletedSuccess.replace('%s', data.message),
+                            message: data.message,
                         });
 
                     } else {
@@ -124,7 +124,7 @@ function formTable(form) {
                         this.$dispatch("toast", {
                             type: "success",
                             // FEM_I18N: Use translatable string
-                            message: aemfwStrings.entryUpdatedSuccess.replace('%s', data.affected),
+                            message: data.affected,
                         });
                     }
                 }
@@ -410,7 +410,7 @@ function formTable(form) {
                     // Dispatch a success toast message
                     this.$dispatch("toast", {
                         type: "success",
-                        message: aemfwStrings.entryDeletedSuccess.replace('%s', data.message),
+                        message: data.message,
                     });
 
                 } else {

@@ -1,0 +1,550 @@
+msgid "Forms Entries Manager"
+msgstr "Formulareinträge-Verwalter"
+
+msgid "https://entriesmanager.com/"
+msgstr "https://entriesmanager.com/"
+
+msgid "The ultimate dashboard to manage, search, and sync entries from WPForms, Contact Form 7, and more."
+msgstr "Das ultimative Dashboard zum Verwalten, Suchen und Synchronisieren von Einträgen aus WPForms, Contact Form 7 und mehr."
+
+msgid "Md. Al Amin"
+msgstr "Md. Al Amin"
+
+msgid "https://almn.me"
+msgstr "https://almn.me"
+
+msgid "Settings"
+msgstr "Einstellungen"
+
+msgid "Docs"
+msgstr "Dokumentation"
+
+msgid "Upgrade PRO"
+msgstr "PRO-Version aktualisieren"
+
+msgid "🚫 Your site is blocking REST API access required by Advanced Entries Manager. Please whitelist /wp-json/aem/entries/v1/* to ensure full functionality."
+msgstr "🚫 Ihre Website blockiert den für den Advanced Entries Manager erforderlichen REST-API-Zugriff. Bitte setzen Sie /wp-json/aem/entries/v1/* auf die Whitelist, um die volle Funktionalität sicherzustellen."
+
+msgid "Your site is blocking the REST API endpoints required by Advanced Entries Manager. Please whitelist <code>/wp-json/wpforms/entries/v1/*</code> in your firewall or security plugin (e.g., Wordfence, Sucuri) to ensure full functionality."
+msgstr "Ihre Website blockiert die für den Advanced Entries Manager erforderlichen REST-API-Endpunkte. Bitte setzen Sie <code>/wp-json/wpforms/entries/v1/*</code> in Ihrer Firewall oder Sicherheits-Plugin (z. B. Wordfence, Sucuri) auf die Whitelist, um die volle Funktionalität sicherzustellen."
+
+msgid "Dismiss REST API alert"
+msgstr "REST-API-Warnung schließen"
+
+msgid "Need help managing entries or exporting them to Google Sheets? <a href=\"%s\" class=\"text-blue-600 hover:underline font-medium\" target=\"_blank\" rel=\"noopener noreferrer\">Visit the documentation</a>."
+msgstr "Brauchen Sie Hilfe beim Verwalten von Einträgen oder beim Export in Google Sheets? <a href=\"%s\" class=\"text-blue-600 hover:underline font-medium\" target=\"_blank\" rel=\"noopener noreferrer\">Besuchen Sie die Dokumentation</a>."
+
+msgid "Collapse details"
+msgstr "Details ausblenden"
+
+msgid "Expand details"
+msgstr "Details erweitern"
+
+msgid "Dismiss"
+msgstr "Schließen"
+
+msgid "Getting Started Guide"
+msgstr "Einstiegsanleitung"
+
+msgid "View Full Entry in Modal"
+msgstr "Vollen Eintrag im Modal anzeigen"
+
+msgid "Bulk Actions & Filters"
+msgstr "Massenaktionen & Filter"
+
+msgid "CSV Export & Field Exclusion"
+msgstr "CSV-Export & Feld-Ausschluss"
+
+msgid "Comment on Entries"
+msgstr "Kommentare zu Einträgen"
+
+msgid "Print Friendly Entries"
+msgstr "Druckfreundliche Einträge"
+
+msgid "Sync to Google Sheets"
+msgstr "Mit Google Sheets synchronisieren"
+
+msgid "Entry Migration Guide"
+msgstr "Eintrags-Migrationsanleitung"
+
+msgid "WPForms Entries"
+msgstr "WPForms Einträge"
+
+msgid "WPForms Entry Sync Settings"
+msgstr "WPForms Eintragssynchronisierung Einstellungen"
+
+msgid "Migration"
+msgstr "Migration"
+
+msgid "No Entries Found"
+msgstr "Keine Einträge gefunden"
+
+msgid "Looks like you haven't received any submissions yet.\n            <br class='hidden sm:block'>Sit back and relax — \n            we’ll show the entries here as soon as they arrive! 📨"
+msgstr "Es sieht so aus, als hätten Sie noch keine Einsendungen erhalten.\n            <br class='hidden sm:block'>Lehnen Sie sich zurück — wir zeigen die Einträge hier, sobald sie eintreffen! 📨"
+
+msgid "Migrate from WPFormsDB"
+msgstr "Von WPFormsDB migrieren"
+
+msgid "Easily migrate your old WPFormsDB entries to take full advantage of our advanced features."
+msgstr "Migrieren Sie Ihre alten WPFormsDB-Einträge einfach, um alle Vorteile unserer erweiterten Funktionen zu nutzen."
+
+msgid "Total Entries:"
+msgstr "Gesamteinträge:"
+
+msgid "Migration Overview"
+msgstr "Migrationsübersicht"
+
+msgid "⚠️ You have a large dataset. We recommend using a batch size of 100 or less to avoid timeouts."
+msgstr "⚠️ Sie haben einen großen Datensatz. Wir empfehlen, eine Batch-Größe von 100 oder weniger zu verwenden, um Zeitüberschreitungen zu vermeiden."
+
+msgid "Batch Size:"
+msgstr "Batch-Größe:"
+
+msgid "50"
+msgstr "50"
+
+msgid "Start Migration"
+msgstr "Migration starten"
+
+msgid "View Migration Progress"
+msgstr "Migrationsfortschritt anzeigen"
+
+msgid "Migration is running. See Progress"
+msgstr "Migration läuft. Fortschritt anzeigen"
+
+msgid "Stop Migration"
+msgstr "Migration stoppen"
+
+msgid "Migration Completed!"
+msgstr "Migration abgeschlossen!"
+
+msgid "Migration Progress"
+msgstr "Migrationsfortschritt"
+
+msgid "Migrating Entries:"
+msgstr "Einträge werden migriert:"
+
+msgid "Estimated time left:"
+msgstr "Geschätzte verbleibende Zeit:"
+
+msgid "Progress:"
+msgstr "Fortschritt:"
+
+msgid "Migration Log"
+msgstr "Migrationsprotokoll"
+
+msgid "Entry Details"
+msgstr "Eintragsdetails"
+
+msgid "-"
+msgstr "-"
+
+msgid "Close Note"
+msgstr "Notiz schließen"
+
+msgid "Edit Note"
+msgstr "Notiz bearbeiten"
+
+msgid "Add Note"
+msgstr "Notiz hinzufügen"
+
+msgid "Your Note"
+msgstr "Ihre Notiz"
+
+msgid "Write something helpful for this entry…"
+msgstr "Schreiben Sie etwas Nützliches für diesen Eintrag…"
+
+msgid "Max 1000 characters. Avoid sensitive data."
+msgstr "Maximal 1000 Zeichen. Keine sensiblen Daten verwenden."
+
+msgid "Saved Note"
+msgstr "Gespeicherte Notiz"
+
+msgid "Save Note"
+msgstr "Notiz speichern"
+
+msgid "Mark as Read"
+msgstr "Als gelesen markieren"
+
+msgid "Mark as unread"
+msgstr "Als ungelesen markieren"
+
+msgid "Delete"
+msgstr "Löschen"
+
+msgid "Advanced Entries Manager Settings"
+msgstr "Erweiterte Eintragsmanager-Einstellungen"
+
+msgid "Browse and manage form entries submitted by users. Click on a form to view its submissions, \n                mark entries as read/unread, or delete them as needed."
+msgstr "Durchsuchen und Verwalten von Formulareinträgen, die von Benutzern eingereicht wurden. Klicken Sie auf ein Formular, um seine Einsendungen anzuzeigen, Einträge als gelesen/ungelesen zu markieren oder sie bei Bedarf zu löschen."
+
+msgid "Google Sync"
+msgstr "Google-Synchronisierung"
+
+msgid "Advanced Export"
+msgstr "Erweiterter Export"
+
+msgid "General Settings"
+msgstr "Allgemeine Einstellungen"
+
+msgid "Save Changes"
+msgstr "Änderungen speichern"
+
+msgid "Select Form"
+msgstr "Formular auswählen"
+
+msgid "-- Select a Form --"
+msgstr "-- Wählen Sie ein Formular --"
+
+msgid "Date From"
+msgstr "Datum von"
+
+msgid "Date To"
+msgstr "Datum bis"
+
+msgid "Exclude Columns (Optional)"
+msgstr "Spalten ausschließen (optional)"
+
+msgid "Start Exporting"
+msgstr "Export starten"
+
+msgid "Download Export File"
+msgstr "Exportdatei herunterladen"
+
+msgid "See Export Progress"
+msgstr "Exportfortschritt anzeigen"
+
+msgid "Delete Export File"
+msgstr "Exportdatei löschen"
+
+msgid "Export Progress"
+msgstr "Exportfortschritt"
+
+msgid "The export is currently in progress. You can close this window and it will continue in the background."
+msgstr "Der Export läuft derzeit. Sie können dieses Fenster schließen, der Export läuft im Hintergrund weiter."
+
+msgid "Entries Processed"
+msgstr "Verarbeitete Einträge"
+
+msgid "Close"
+msgstr "Schließen"
+
+msgid "📄 Pagination Settings"
+msgstr "📄 Paginierungseinstellungen"
+
+msgid "Set how many entries are shown per page in the admin UI."
+msgstr "Legen Sie fest, wie viele Einträge pro Seite in der Admin-Oberfläche angezeigt werden."
+
+msgid "Entries per Page"
+msgstr "Einträge pro Seite"
+
+msgid "Google Account Connection"
+msgstr "Google-Konto-Verbindung"
+
+msgid "Connected to Google Sheets"
+msgstr "Mit Google Sheets verbunden"
+
+msgid "Reconnect or switch Google Account"
+msgstr "Google-Konto erneut verbinden oder wechseln"
+
+msgid "Switch Account"
+msgstr "Konto wechseln"
+
+msgid "Live data sync is active. Streaming enabled ✅"
+msgstr "Echtzeit-Datensynchronisierung aktiv. Streaming aktiviert ✅"
+
+msgid "Your WPForms submissions are now syncing automatically with your Google Sheets in real-time. This connection allows you to streamline your data collection and analysis."
+msgstr "Ihre WPForms-Einsendungen werden jetzt automatisch in Echtzeit mit Ihren Google Sheets synchronisiert. Diese Verbindung ermöglicht eine effizientere Datenerfassung und Analyse."
+
+msgid "Token expires in:"
+msgstr "Token läuft ab in:"
+
+msgid "Reconnect"
+msgstr "Erneut verbinden"
+
+msgid "To start syncing WPForms entries with Google Sheets, please connect your Google account. This will enable live synchronization and easy data management."
+msgstr "Um WPForms-Einträge mit Google Sheets zu synchronisieren, verbinden Sie bitte Ihr Google-Konto. Dadurch wird die Echtzeitsynchronisation und eine einfache Datenverwaltung aktiviert."
+
+msgid "Connect with Google"
+msgstr "Mit Google verbinden"
+
+msgid "Mark as Read/Unread"
+msgstr "Als gelesen/ungelesen markieren"
+
+msgid "Mark as Favorite"
+msgstr "Als Favorit markieren"
+
+msgid "Sync to Google Sheet"
+msgstr "Mit Google Sheet synchronisieren"
+
+msgid "Print Entry"
+msgstr "Eintrag drucken"
+
+msgid "Export as CSV"
+msgstr "Als CSV exportieren"
+
+msgid "View Details"
+msgstr "Details anzeigen"
+
+msgid "Select Action"
+msgstr "Aktion auswählen"
+
+msgid "Apply"
+msgstr "Anwenden"
+
+msgid "Filter by Status"
+msgstr "Nach Status filtern"
+
+msgid "All Statuses"
+msgstr "Alle Status"
+
+msgid "Read"
+msgstr "Gelesen"
+
+msgid "Unread"
+msgstr "Ungelesen"
+
+msgid "Select search type"
+msgstr "Suchtyp auswählen"
+
+msgid "No matching entries found."
+msgstr "Keine passenden Einträge gefunden."
+
+msgid "Searching..."
+msgstr "Suche läuft..."
+
+msgid "Previous Page"
+msgstr "Vorherige Seite"
+
+msgid "Go to page"
+msgstr "Gehe zu Seite"
+
+msgid "Next Page"
+msgstr "Nächste Seite"
+
+msgid "Go to"
+msgstr "Gehe zu"
+
+msgid "Jump to page number"
+msgstr "Zu Seitenzahl springen"
+
+msgid "Export CSV"
+msgstr "CSV exportieren"
+
+msgid "Mark as Unread"
+msgstr "Als ungelesen markieren"
+
+msgid "Unmark Favorite"
+msgstr "Favorit entfernen"
+
+msgid "Mark as Spam"
+msgstr "Als Spam markieren"
+
+msgid "Unmark Spam"
+msgstr "Spam entfernen"
+
+msgid "Delete Entries"
+msgstr "Einträge löschen"
+
+msgid "Advanced Entries Manager Overview"
+msgstr "Übersicht des erweiterten Eintragsmanagers"
+
+msgid "ID:"
+msgstr "ID:"
+
+msgid "Entries:"
+msgstr "Einträge:"
+
+msgid "Total number of entries"
+msgstr "Gesamtanzahl der Einträge"
+
+msgid "Number of unread entries"
+msgstr "Anzahl ungelesener Einträge"
+
+msgid "Total number of unread entries"
+msgstr "Gesamtanzahl ungelesener Einträge"
+
+msgid "Unread:"
+msgstr "Ungelesen:"
+
+msgid "Click to view entries"
+msgstr "Klicken, um Einträge anzuzeigen"
+
+msgid "Hide entries"
+msgstr "Einträge ausblenden"
+
+msgid "Entries table for form"
+msgstr "Eintragstabelle für Formular"
+
+msgid "Email"
+msgstr "E-Mail"
+
+msgid "Date"
+msgstr "Datum"
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Actions"
+msgstr "Aktionen"
+
+msgid "Click for details"
+msgstr "Für Details klicken"
+
+msgid "Invalid or missing entry IDs."
+msgstr "Ungültige oder fehlende Eintrags-IDs."
+
+msgid "Invalid action provided."
+msgstr "Ungültige Aktion angegeben."
+
+msgid "%d entry deleted."
+msgstr[0] "%d Eintrag gelöscht."
+msgid_plural "%d entries deleted."
+msgstr[1] "%d Einträge gelöscht."
+
+msgid "%d entry updated."
+msgstr[0] "%d Eintrag aktualisiert."
+msgid_plural "%d entries updated."
+msgstr[1] "%d Einträge aktualisiert."
+
+msgid "No entries selected."
+msgstr "Keine Einträge ausgewählt."
+
+msgid "No data found."
+msgstr "Keine Daten gefunden."
+
+msgid "Invalid or missing form_id or entry data."
+msgstr "Ungültige oder fehlende form_id oder Eintragsdaten."
+
+msgid "Database insert failed."
+msgstr "Datenbankeinfügung fehlgeschlagen."
+
+msgid "Entry created successfully."
+msgstr "Eintrag erfolgreich erstellt."
+
+msgid "Missing required parameters."
+msgstr "Erforderliche Parameter fehlen."
+
+msgid "You are not allowed to delete entries."
+msgstr "Sie dürfen Einträge nicht löschen."
+
+msgid "Entry has been deleted successfully!"
+msgstr "Eintrag wurde erfolgreich gelöscht!"
+
+msgid "Entry not found or already deleted."
+msgstr "Eintrag nicht gefunden oder bereits gelöscht."
+
+msgid "Action Scheduler is required but not available."
+msgstr "Action Scheduler wird benötigt, ist aber nicht verfügbar."
+
+msgid "A valid Form ID is required."
+msgstr "Eine gültige Formular-ID wird benötigt."
+
+msgid "No entries found for the selected criteria."
+msgstr "Keine Einträge für die ausgewählten Kriterien gefunden."
+
+msgid "CSV export has been successfully queued."
+msgstr "CSV-Export wurde erfolgreich in die Warteschlange gestellt."
+
+msgid "Job ID is required."
+msgstr "Job-ID wird benötigt."
+
+msgid "Export job not found or has expired."
+msgstr "Exportauftrag nicht gefunden oder abgelaufen."
+
+msgid "Could not create temporary export directory."
+msgstr "Temporäres Exportverzeichnis konnte nicht erstellt werden."
+
+msgid "Export job not found or not yet complete."
+msgstr "Exportauftrag nicht gefunden oder noch nicht abgeschlossen."
+
+msgid "Export file not found on the server."
+msgstr "Exportdatei auf dem Server nicht gefunden."
+
+msgid "File was already deleted."
+msgstr "Datei wurde bereits gelöscht."
+
+msgid "Export file deleted successfully."
+msgstr "Exportdatei erfolgreich gelöscht."
+
+msgid "Failed to delete the export file."
+msgstr "Löschen der Exportdatei fehlgeschlagen."
+
+msgid "Invalid or missing form ID."
+msgstr "Ungültige oder fehlende Formular-ID."
+
+msgid "just now"
+msgstr "gerade eben"
+
+msgid "%d minute ago"
+msgid_plural "%d minutes ago"
+msgstr[0] "vor %d Minute"
+msgstr[1] "vor %d Minuten"
+
+msgid "%d hour ago"
+msgid_plural "%d hours ago"
+msgstr[0] "vor %d Stunde"
+msgstr[1] "vor %d Stunden"
+
+msgid "Yesterday"
+msgstr "Gestern"
+
+msgid "Note is too long. Please limit to 1000 characters."
+msgstr "Notiz ist zu lang. Bitte auf 1000 Zeichen beschränken."
+
+msgid "Failed to delete entry: Unknown error"
+msgstr "Löschen des Eintrags fehlgeschlagen: Unbekannter Fehler"
+
+msgid "Delete request failed. Check console for details."
+msgstr "Löschanfrage fehlgeschlagen. Überprüfen Sie die Konsole für Details."
+
+msgid "A network error occurred. Please try again."
+msgstr "Ein Netzwerkfehler ist aufgetreten. Bitte versuchen Sie es erneut."
+
+msgid "❌ Entry not found in the list."
+msgstr "❌ Eintrag nicht in der Liste gefunden."
+
+msgid "Bulk action failed:"
+msgstr "Massenaktion fehlgeschlagen:"
+
+msgid "Failed to start export."
+msgstr "Export konnte nicht gestartet werden."
+
+msgid "Failed to fetch export progress."
+msgstr "Exportfortschritt konnte nicht abgerufen werden."
+
+msgid "Please select a form before exporting."
+msgstr "Bitte wählen Sie ein Formular, bevor Sie exportieren."
+
+msgid "Invalid CSV content."
+msgstr "Ungültiger CSV-Inhalt."
+
+msgid "Export complete! Your download should start shortly."
+msgstr "Export abgeschlossen! Ihr Download sollte in Kürze starten."
+
+msgid "Failed to fetch forms:"
+msgstr "Formulare konnten nicht abgerufen werden:"
+
+msgid "Failed to fetch entries:"
+msgstr "Einträge konnten nicht abgerufen werden:"
+
+msgid "Failed to fetch form fields. Please try again."
+msgstr "Formularfelder konnten nicht abgerufen werden. Bitte erneut versuchen."
+
+msgid "❌ Unexpected error occurred."
+msgstr "❌ Unerwarteter Fehler aufgetreten."
+
+msgid "Entry synchronization Done!"
+msgstr "Eintragssynchronisierung abgeschlossen!"
+
+msgid "❌ Synchronization failed."
+msgstr "❌ Synchronisierung fehlgeschlagen."
+
+msgid "❌ Save failed."
+msgstr "❌ Speichern fehlgeschlagen."
+
+msgid "Expired"
+msgstr "Abgelaufen"
+
+msgid "Less than a minute"
+msgstr "Weniger als eine Minute"
