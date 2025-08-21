@@ -326,7 +326,7 @@ class Export_Entries
             }
 
             // Delete the temporary batch file after processing
-            unlink($batch_file);
+            wp_delete_file($batch_file);
         }
 
         fclose($final_file_handle);

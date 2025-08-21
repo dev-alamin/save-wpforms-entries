@@ -36,7 +36,7 @@ class Export_Entries_Action {
         $dir = wp_upload_dir()['basedir'] . '/femexports';
         foreach (glob($dir . '/*.csv') as $file) {
             if (filemtime($file) < strtotime('-2 days')) {
-                unlink($file);
+                wp_delete_file($file);
             }
         }
     }

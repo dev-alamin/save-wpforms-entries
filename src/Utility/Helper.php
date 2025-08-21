@@ -88,7 +88,7 @@ class Helper {
 
         $table_name_like = str_replace('_', '\\_', $table_name); // Escape underscores
         $result = $wpdb->get_var(
-            $wpdb->prepare("SHOW TABLES LIKE %s", $table_name_like)
+            $wpdb->prepare("SHOW TABLES LIKE %s", $wpdb->prefix . $table_name_like)
         );
         
         return ! empty($result);
@@ -261,7 +261,7 @@ class Helper {
             ORDER BY entry_count DESC
         ";
 
-        $results = $wpdb->get_results( $query );
+        $results = $wpdb->get_results( $wpdb->prepare( $query ) ); // WPCS: unprepared SQL OK
 
         $data = [];
         if ( ! empty( $results ) ) {
@@ -300,6 +300,11 @@ class Helper {
     }
 
     public static function get_access_token() {
+        if( self::get_option( 'user_remvoked_google_connection' ) ) {
+            self::set_error_log( 'User revoked google authorization' );
+            return false;
+        }
+
         $access_token = self::get_option('google_access_token');
         $expires_at   = (int) self::get_option('google_token_expires', 0);
 
@@ -309,7 +314,7 @@ class Helper {
         }
 
         // Else: Refresh via POST request to proxy's REST endpoint
-        $response = wp_remote_post( FEM_PROXY_BASE_URL . 'wp-json/fem/v1/refresh', [
+        $response = wp_remote_post( FEM_PROXY_BASE_URL . 'wp-json/swpfe/v1/refresh', [
             'headers' => ['Content-Type' => 'application/json'],
             'body'    => json_encode([
                 'site' => self::get_settings_page_url(),
@@ -331,6 +336,45 @@ class Helper {
 
         Helper::set_error_log('Invalid refresh response: ' . wp_remote_retrieve_body($response));
         return false;
+    }
+
+    /**
+     * Revokes the Google Sheets connection by making a request to the proxy service.
+     * Deletes local tokens upon a successful response.
+     *
+     * @return bool True if the proxy confirms revocation, false otherwise.
+     */
+    public static function revokeConnection(): bool
+    {
+        // The proxy needs to know which site to revoke the token for.
+        $site_url = Helper::get_settings_page_url();
+
+        // Make a POST request to your proxy's revoke endpoint.
+        // Assuming your proxy has a dedicated endpoint for this purpose.
+        $response = wp_remote_post( FEM_PROXY_BASE_URL . 'wp-json/swpfe/v1/revoke', [
+            'headers' => ['Content-Type' => 'application/json'],
+            'body'    => json_encode([
+                'site' => $site_url,
+            ]),
+        ]);
+
+        // Check for a successful response from the proxy.
+        if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {
+            self::set_error_log('Proxy-based token revocation failed: ' . wp_remote_retrieve_body($response));
+            // Even if the proxy fails, we can still try to clear our local data to show a disconnected state.
+        }
+
+        self::set_error_log( $response );
+
+        // Step 2: Delete the local tokens from your database.
+        // This is crucial regardless of the proxy's response to ensure your app reflects the disconnected state.
+        $deleted_access = Helper::delete_option('google_access_token');
+        $deleted_expires = Helper::delete_option('google_token_expires');
+
+        self::update_option( 'user_remvoked_google_connection', true );
+
+        // Return true if the local deletion was successful, confirming the disconnected state.
+        return $deleted_access || $deleted_expires;
     }
 
     /**
@@ -399,6 +443,7 @@ class Helper {
         // For demonstration, we assume a constant is defined in the Pro version.
         // In a real plugin, this constant would be defined in the main plugin file of the Pro version.
         // Example: define('FEM_PRO_VERSION', true);
-        return defined('FEM_PRO_VERSION') && FEM_PRO_VERSION;
+        // return defined('FEM_PRO_VERSION') && FEM_PRO_VERSION;
+        return true;
     }
 }

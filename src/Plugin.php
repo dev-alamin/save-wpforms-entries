@@ -72,7 +72,7 @@ class Plugin
             }
 
             if (! as_next_scheduled_action('femevery_five_minute_sync')) {
-                as_schedule_recurring_action(time(), MINUTE_IN_SECONDS * 5, 'femevery_five_minute_sync');
+                as_schedule_recurring_action(time(), MINUTE_IN_SECONDS * 1, 'femevery_five_minute_sync');
             }
         });
 

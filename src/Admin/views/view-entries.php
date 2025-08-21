@@ -43,7 +43,7 @@ do_action('fembefore_entries_ui');
 
     use App\AdvancedEntryManager\Utility\Helper;
 
-    if (Helper::table_exists('') && ! Helper::get_option('migration_complete')) : ?>
+    if (Helper::table_exists('wpforms_db') && ! Helper::get_option('migration_complete')) : ?>
         <div
             x-data="{ showMigrationNotice: true }"
             x-show="showMigrationNotice"

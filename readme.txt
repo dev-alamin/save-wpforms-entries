@@ -1,14 +1,14 @@
 === Forms Entries Manager ===
 Contributors: almn-me
-Tags: forms, entries, submissions, wpforms, contact form 7, database, export, csv, google sheets, crm, gravity forms, ninja forms
+Tags: entries, submissions, wpforms, contact form 7, google sheets
 Requires at least: 5.4
-Tested up to: 6.6
+Tested up to: 6.8
 Stable tag: 1.0.0
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-The ultimate dashboard to manage, search, and sync entries from WPForms, Contact Form 7, and more. Turn your WordPress dashboard into a mini-CRM for your form submissions.
+The ultimate dashboard to manage, search, and sync entries from WPForms, Contact Form 7, and more. Transform your WordPress site into a mini-CRM.
 
 == Description ==
 

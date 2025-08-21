@@ -14,6 +14,43 @@ class Send_Data
     {
         // Capture token on init
         add_action('admin_init', [$this, 'capture_token']);
+
+        // Add a new hook to handle the revocation action
+        add_action('admin_init', [ $this, 'handle_google_revocation_action' ] );
+    }
+
+    /**
+     * Handles the revocation action when the user clicks the "Revoke Connection" button.
+     */
+    public function handle_google_revocation_action() {
+        // Check if the action parameter is set
+        if (!isset($_GET['action']) || $_GET['action'] !== 'revoke_google_connection') {
+            return;
+        }
+
+        // Verify the nonce for security
+        if (!isset($_GET['_wpnonce']) || !wp_verify_nonce($_GET['_wpnonce'], 'revoke_connection_nonce')) {
+            wp_die('Security check failed.');
+        }
+
+        // Ensure the current user has the right permissions
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die('You do not have sufficient permissions to perform this action.');
+        }
+
+        $success = Helper::revokeConnection();
+
+        // Set a redirect URL with a status message
+        $redirect_url = admin_url('admin.php?page=form-entries-settings');
+        if ($success) {
+            $redirect_url = add_query_arg('revoked', 'success', $redirect_url);
+        } else {
+            $redirect_url = add_query_arg('revoked', 'failed', $redirect_url);
+        }
+        
+        // Redirect the user
+        wp_safe_redirect($redirect_url);
+        exit;
     }
 
     public function capture_token()
@@ -42,6 +79,8 @@ class Send_Data
         if (!empty($body['access_token'])) {
             Helper::update_option('google_access_token', sanitize_text_field($body['access_token']));
             Helper::update_option('google_token_expires', time() + intval($body['expires_in'] ?? 3600));
+
+            Helper::update_option( 'user_remvoked_google_connection', false );
             // Optional: Store refresh token too if ever needed on client (rare)
             wp_safe_redirect(admin_url('admin.php?page=form-entries-settings&connected=true'));
             exit;
@@ -188,12 +227,12 @@ class Send_Data
         $entry = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE id = %d", $entry_id));
 
         if (!$entry) {
-            error_log('[AEM]: No entry data found. Sorry');
+            Helper::set_error_log('[AEM]: No entry data found. Sorry');
             return false;
         }
 
         if ($entry->synced_to_gsheet) {
-            error_log('[AEM]: Already synced this entry...');
+            Helper::set_error_log('[AEM]: Already synced this entry...');
             return false;
         }
 
@@ -202,7 +241,7 @@ class Send_Data
         // Step 1: Ensure the target sheet is ready.
         $sheet_info = $this->get_or_create_sheet_for_form($form_id);
         if (is_wp_error($sheet_info)) {
-            error_log("[AEM] GSheet preparation failed for form $form_id: " . $sheet_info->get_error_message());
+            Helper::set_error_log("[AEM] GSheet preparation failed for form $form_id: " . $sheet_info->get_error_message());
             $this->handle_sync_failure($entry_id, $entry->retry_count);
             return false;
         }
@@ -216,7 +255,7 @@ class Send_Data
             if (!is_wp_error($metadata) && isset($metadata['sheets'][0]['properties']['gridProperties']['rowCount'])) {
                 $row_count = $metadata['sheets'][0]['properties']['gridProperties']['rowCount'];
                 if ($row_count >= 1000) {
-                    error_log("[AEM] GSheet row limit reached for form $form_id. Entry {$entry_id} not synced.");
+                    Helper::set_error_log("[AEM] GSheet row limit reached for form $form_id. Entry {$entry_id} not synced.");
                     $wpdb->update($table, ['synced_to_gsheet' => 2], ['id' => $entry_id]); // '2' can indicate 'sync_limit_reached'
                     return false;
                 }
@@ -226,7 +265,7 @@ class Send_Data
         // Step 2: Prepare the data row, ensuring it matches the header order.
         $row_data = $this->prepare_row_data($entry);
         if (is_wp_error($row_data)) {
-            error_log("[AEM] GSheet data preparation failed for entry $entry_id: " . $row_data->get_error_message());
+            Helper::set_error_log("[AEM] GSheet data preparation failed for entry $entry_id: " . $row_data->get_error_message());
             $this->handle_sync_failure($entry_id, $entry->retry_count);
             return false;
         }
@@ -239,12 +278,12 @@ class Send_Data
         $response = $this->_make_google_api_request($url, $body, 'POST');
 
         if (is_wp_error($response)) {
-            error_log("[AEM] GSheet append failed for entry $entry_id. Error: " . $response->get_error_message());
+            Helper::set_error_log("[AEM] GSheet append failed for entry $entry_id. Error: " . $response->get_error_message());
             $this->handle_sync_failure($entry_id, $entry->retry_count);
             return false;
         }
 
-        error_log('[AEM] Google sync is going on ' . $entry_id . ' Form ID: ' . $form_id );
+        Helper::set_error_log('[AEM] Google sync is going on ' . $entry_id . ' Form ID: ' . $form_id );
 
         // Step 4: Mark as synced on success.
         $wpdb->update($table, ['synced_to_gsheet' => 1, 'retry_count' => 0], ['id' => $entry_id]);
@@ -259,12 +298,24 @@ class Send_Data
      * @param int $form_id The ID of the form.
      * @return array An array of headers.
      */
-    protected function get_form_headers(int $form_id): array
+     protected function get_form_headers(int $form_id): array
     {
         $cached_headers = Helper::get_option("gsheet_headers_{$form_id}");
         if ($cached_headers && is_array($cached_headers)) {
             return $cached_headers;
         }
+
+        global $wpdb;
+        $table = Helper::get_table_name();
+
+        // Fetch a sample entry to infer headers
+        $row = $wpdb->get_row(
+            $wpdb->prepare("SELECT entry, note, status FROM {$table} WHERE form_id = %d LIMIT 1", $form_id),
+            ARRAY_A
+        );
+
+        // If sample entry is unavailable somehow, use WPFORMS Default
+        // $default = wpforms()->form->get($form_id);
 
         $headers = [
             __('Entry ID', 'forms-entries-manager'),
@@ -272,14 +323,15 @@ class Send_Data
             __( 'Name', 'forms-entries-manager' ),
             __( 'Email', 'forms-entries-manager' )
         ];
-        
-        // **BUG FIX**: Directly get headers from WPForms form fields
-        $form_data = wpforms()->get('form_handler')->get_form_fields($form_id, false);
-        if (!is_wp_error($form_data) && !empty($form_data['fields'])) {
-            foreach ($form_data['fields'] as $field_id => $field_data) {
-                if (!empty($field_data['label'])) {
-                    $headers[] = $field_data['label'];
-                }
+
+        $entry_data = [];
+        if (!empty($row['entry'])) {
+            $entry_data = maybe_unserialize($row['entry']);
+        }
+
+        if (is_array($entry_data)) {
+            foreach ($entry_data as $field_label => $field_value) {
+                $headers[] = $field_label;
             }
         }
 
@@ -290,6 +342,37 @@ class Send_Data
 
         return $headers;
     }
+    // protected function get_form_headers(int $form_id): array
+    // {
+    //     $cached_headers = Helper::get_option("gsheet_headers_{$form_id}");
+    //     if ($cached_headers && is_array($cached_headers)) {
+    //         return $cached_headers;
+    //     }
+
+    //     $headers = [
+    //         __('Entry ID', 'forms-entries-manager'),
+    //         __('Submission Date', 'forms-entries-manager'),
+    //         __( 'Name', 'forms-entries-manager' ),
+    //         __( 'Email', 'forms-entries-manager' )
+    //     ];
+        
+    //     // **BUG FIX**: Directly get headers from WPForms form fields
+    //     $form_data = wpforms()->get('form_handler')->get_form_fields($form_id, false);
+    //     if (!is_wp_error($form_data) && !empty($form_data['fields'])) {
+    //         foreach ($form_data['fields'] as $field_id => $field_data) {
+    //             if (!empty($field_data['label'])) {
+    //                 $headers[] = $field_data['label'];
+    //             }
+    //         }
+    //     }
+
+    //     $headers[] = __('Status', 'forms-entries-manager');
+    //     $headers[] = __('Note', 'forms-entries-manager');
+
+    //     Helper::update_option("gsheet_headers_{$form_id}", $headers);
+
+    //     return $headers;
+    // }
 
     /**
      * Prepares a single row of data, ensuring the order and values
@@ -370,7 +453,7 @@ class Send_Data
             $delay = 60 * pow(2, $current_retry_count); // 1 min, 2 min, 4 min, etc.
             as_schedule_single_action(time() + $delay, 'femprocess_gsheet_entry', ['entry_id' => $entry_id]);
         } else {
-            error_log("[AEM] Max retry limit reached for entry ID $entry_id. Sync abandoned.");
+            Helper::set_error_log("[AEM] Max retry limit reached for entry ID $entry_id. Sync abandoned.");
             // Optionally, mark as failed in the DB
             // $wpdb->update($table, ['status' => 'failed_sync'], ['id' => $entry_id]);
         }
@@ -451,7 +534,7 @@ class Send_Data
             }
         }
 
-        // error_log('[AEM] : Entri is syncing...' . print_r($entries, true));
+        // Helper::set_error_log('[AEM] : Entri is syncing...' . print_r($entries, true));
 
         return count($entries);
     }
@@ -485,7 +568,7 @@ class Send_Data
         $code = wp_remote_retrieve_response_code($response);
         if ($code < 200 || $code >= 300) {
             $error_body = wp_remote_retrieve_body($response);
-            error_log("[AEM] Google API Error: Code $code - $error_body");
+            Helper::set_error_log("[AEM] Google API Error: Code $code - $error_body");
             return new WP_Error('api_error', "Google API request failed with code {$code}.", ['body' => $error_body]);
         }
 
@@ -516,7 +599,7 @@ class Send_Data
 
         if (is_wp_error($sheet_info) || !$spreadsheet_id) {
             // If there's no sheet configured, it's already "unsynced".
-            error_log("[AEM] Unsync skipped for entry {$entry_id}: No spreadsheet is configured for form {$form_id}.");
+            Helper::set_error_log("[AEM] Unsync skipped for entry {$entry_id}: No spreadsheet is configured for form {$form_id}.");
             return true;
         }
         
@@ -531,7 +614,7 @@ class Send_Data
         $response = $this->_make_google_api_request($url, [], 'GET');
 
         if (is_wp_error($response)) {
-            error_log("[AEM] Unsync failed for entry {$entry_id}: Could not read sheet to find row. " . $response->get_error_message());
+            Helper::set_error_log("[AEM] Unsync failed for entry {$entry_id}: Could not read sheet to find row. " . $response->get_error_message());
             return $response;
         }
 
@@ -546,7 +629,7 @@ class Send_Data
         }
 
         if (empty($rows_to_delete)) {
-            error_log("[AEM] Unsync notice for entry {$entry_id}: Row was not found in the Google Sheet.");
+            Helper::set_error_log("[AEM] Unsync notice for entry {$entry_id}: Row was not found in the Google Sheet.");
             // The desired state (row is gone) is achieved, so we can return true.
             // Also update local status to be sure.
             $wpdb->update($table, ['synced_to_gsheet' => 0], ['id' => $entry_id]);
@@ -573,14 +656,14 @@ class Send_Data
         $batch_update_result = $this->gsheet_batch_update($spreadsheet_id, $requests);
 
         if (is_wp_error($batch_update_result)) {
-            error_log("[AEM] Unsync failed for entry {$entry_id}: The batch delete request failed.");
+            Helper::set_error_log("[AEM] Unsync failed for entry {$entry_id}: The batch delete request failed.");
             return $batch_update_result;
         }
 
         // 5. Update the local database to mark it as unsynced
         $wpdb->update($table, ['synced_to_gsheet' => 0], ['id' => $entry_id]);
 
-        error_log("[AEM] Successfully unsynced entry {$entry_id} from Google Sheet.");
+        Helper::set_error_log("[AEM] Successfully unsynced entry {$entry_id} from Google Sheet.");
 
         return true;
     }

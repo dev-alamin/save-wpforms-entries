@@ -45,16 +45,15 @@ class Get_Forms {
             $table = Helper::get_table_name();
 
             // Query distinct form IDs and their entry counts
-            $query = $wpdb->prepare(
+            $results = $wpdb->get_results(
+                $wpdb->prepare(
                 "SELECT 
                     form_id, 
                     COUNT(*) as entry_count,
                     SUM(CASE WHEN status = 'unread' THEN 1 ELSE 0 END) as unread_count
                 FROM `{$table}`
                 GROUP BY form_id"
-            );
-
-            $results = $wpdb->get_results($query, OBJECT);
+            ), OBJECT);
 
             $forms = [];
 

@@ -70,7 +70,7 @@ class Migrate
      */
     public function migrate_from_wpformsdb_plugin(int $batch_size = self::BATCH_SIZE): void
     {
-        error_log('[fem MIGRATION] migrate_from_wpformsdb_plugin called, batch size: ' . $batch_size);
+        Helper::set_error_log('migrate_from_wpformsdb_plugin called, batch size: ' . $batch_size);
         global $wpdb;
 
         $last_id = absint(Helper::get_option(self::OPTION_LAST_ID, 0));
@@ -78,12 +78,12 @@ class Migrate
         $target_table = Helper::get_table_name(); // e.g., AEMFW table
 
         if (! Helper::table_exists($source_table)) {
-            error_log('[fem ERROR] Source table missing: ' . $source_table);
+            Helper::set_error_log('Source table missing: ' . $source_table);
             return;
         }
 
         if (! Helper::table_exists($target_table)) {
-            error_log('[fem ERROR] Target table missing: ' . $target_table);
+            Helper::set_error_log('Target table missing: ' . $target_table);
             return;
         }
 
