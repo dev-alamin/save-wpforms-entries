@@ -351,7 +351,7 @@ class Helper {
      * @return string
      */
     public static function get_settings_page_url(){
-        return admin_url( 'admin.php?page=fem-settings');
+        return admin_url( 'admin.php?page=form-entries-settings');
     }
 
     /**

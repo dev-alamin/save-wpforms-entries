@@ -1,10 +1,11 @@
 /* Make admin page body match our custom design */
 body.toplevel_page_forms-entries-manager #screen-meta,
 body.toplevel_page_forms-entries-manager #wpfooter,
+body.forms-entries_page_form-entries-settings .notice,
+body.forms-entries_page_form-entries-migration .notice,
 body.toplevel_page_forms-entries-manager .notice:not(.notice-error.aem-notice) {
     display: none;
 }
-
 
 body.toplevel_page_forms-entries-manager,
 body.forms-entries_page_form-entries-settings,

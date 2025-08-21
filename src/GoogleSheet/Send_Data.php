@@ -13,7 +13,7 @@ class Send_Data
     public function __construct()
     {
         // Capture token on init
-        // add_action('admin_init', [$this, 'capture_token']);
+        add_action('admin_init', [$this, 'capture_token']);
     }
 
     public function capture_token()
@@ -25,7 +25,7 @@ class Send_Data
         $auth_code = sanitize_text_field($_GET['oauth_proxy_code']);
 
         // Exchange the one-time auth code for real tokens
-        $response = wp_remote_post(FEM_PROXY_BASE_URL . 'wp-json/fem/v1/token', [
+        $response = wp_remote_post(FEM_PROXY_BASE_URL . 'wp-json/swpfe/v1/token', [
             'headers' => ['Content-Type' => 'application/json'],
             'body'    => json_encode([
                 'auth_code' => $auth_code,
@@ -33,7 +33,7 @@ class Send_Data
         ]);
 
         if (is_wp_error($response)) {
-            error_log('[fem] Token exchange failed: ' . $response->get_error_message());
+            Helper::set_error_log('Token exchange failed: ' . $response->get_error_message());
             return;
         }
 
@@ -43,7 +43,7 @@ class Send_Data
             Helper::update_option('google_access_token', sanitize_text_field($body['access_token']));
             Helper::update_option('google_token_expires', time() + intval($body['expires_in'] ?? 3600));
             // Optional: Store refresh token too if ever needed on client (rare)
-            wp_safe_redirect(admin_url('admin.php?page=fem-settings&connected=true'));
+            wp_safe_redirect(admin_url('admin.php?page=form-entries-settings&connected=true'));
             exit;
         }
 
