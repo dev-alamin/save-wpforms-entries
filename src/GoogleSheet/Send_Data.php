@@ -347,37 +347,6 @@ class Send_Data
 
         return $headers;
     }
-    // protected function get_form_headers(int $form_id): array
-    // {
-    //     $cached_headers = Helper::get_option("gsheet_headers_{$form_id}");
-    //     if ($cached_headers && is_array($cached_headers)) {
-    //         return $cached_headers;
-    //     }
-
-    //     $headers = [
-    //         __('Entry ID', 'forms-entries-manager'),
-    //         __('Submission Date', 'forms-entries-manager'),
-    //         __( 'Name', 'forms-entries-manager' ),
-    //         __( 'Email', 'forms-entries-manager' )
-    //     ];
-        
-    //     // **BUG FIX**: Directly get headers from WPForms form fields
-    //     $form_data = wpforms()->get('form_handler')->get_form_fields($form_id, false);
-    //     if (!is_wp_error($form_data) && !empty($form_data['fields'])) {
-    //         foreach ($form_data['fields'] as $field_id => $field_data) {
-    //             if (!empty($field_data['label'])) {
-    //                 $headers[] = $field_data['label'];
-    //             }
-    //         }
-    //     }
-
-    //     $headers[] = __('Status', 'forms-entries-manager');
-    //     $headers[] = __('Note', 'forms-entries-manager');
-
-    //     Helper::update_option("gsheet_headers_{$form_id}", $headers);
-
-    //     return $headers;
-    // }
 
     /**
      * Prepares a single row of data, ensuring the order and values
