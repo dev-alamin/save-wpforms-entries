@@ -69,4 +69,14 @@ class FileLogger extends AbstractLogger {
             }
         }
     }
+
+    /**
+     * Gets the full path to the log directory.
+     *
+     * @return string The log directory path.
+     */
+    public function get_log_directory() {
+        $upload_dir = wp_upload_dir();
+        return $upload_dir['basedir'] . '/forms-entries-manager-logs';
+    }
 }

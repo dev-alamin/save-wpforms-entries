@@ -163,7 +163,7 @@ class Plugin
                 new Options(),
                 new Menu(),
                 new Admin_Notice(),
-                new Send_Data()
+                new Send_Data(),
             );
         }
     }

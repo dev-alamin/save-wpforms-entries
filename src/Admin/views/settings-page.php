@@ -11,6 +11,8 @@ $per_page  = Helper::get_option('entries_per_page', 20);
 $sheet_id  = Helper::get_option('google_sheet_id');
 $auto_sync = Helper::get_option('google_sheet_auto_sync', true);
 $sheet_tab = Helper::get_option('google_sheet_tab', 'Sheet1');
+
+
 ?>
 
 <div x-data="toastHandler()" x-init="init()" x-show="visible"

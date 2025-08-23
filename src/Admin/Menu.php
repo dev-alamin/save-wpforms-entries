@@ -5,6 +5,8 @@ namespace App\AdvancedEntryManager\Admin;
 defined('ABSPATH') || exit;
 
 use App\AdvancedEntryManager\Utility\Helper;
+use App\AdvancedEntryManager\Admin\Logs\LogViewerPage;
+
 /**
  * Class Menu
  *
@@ -14,12 +16,19 @@ use App\AdvancedEntryManager\Utility\Helper;
 class Menu {
 
     /**
+     * LogViewer instance.
+     * @var Assets
+     */
+    protected $log_viewer_page;
+
+    /**
      * Constructor.
      *
      * Hooks into WordPress admin actions to initialize the admin menu,
      * enqueue assets, register settings, and hide update notices on plugin pages.
      */
     public function __construct() {
+        $this->log_viewer_page = new LogViewerPage();
         add_action('admin_menu', [$this, 'add_menu']);
         add_action('admin_head', [$this, 'hide_update_notices']);
         add_action( 'admin_init', [ $this, 'register_settings' ] );
@@ -96,6 +105,15 @@ class Menu {
             65
         );
 
+        add_submenu_page(
+            'forms-entries-manager',
+            __('Logs', 'forms-entries-manager'),
+            __('Logs', 'forms-entries-manager'),
+            'manage_options',
+            'forms-entries-manager-logs',
+            [ $this->log_viewer_page, 'render_page' ]
+        );
+
         if ( $legacy_table_exists && ! Helper::get_option( 'migration_complete' )  ) :
             add_submenu_page(
                 'forms-entries-manager',
@@ -103,7 +121,7 @@ class Menu {
                 __('Migration', 'forms-entries-manager'),
                 'manage_options',
                 'form-entries-migration',
-                [ $this, 'render_migration_page' ]
+                [ $this,  ]
             );
         endif;
         }
@@ -139,6 +157,17 @@ class Menu {
      */
     public function render_migration_page() {
         include __DIR__ . '/views/migration-page.php';
+    }
+
+    /**
+     * Render log viewer page.
+     *
+     * Includes the log viewer page view file.
+     *
+     * @return void
+     */
+    public function render_log_viewer_page() {
+        include __DIR__ . '/views/log-viewer-page.php';
     }
 
     /**

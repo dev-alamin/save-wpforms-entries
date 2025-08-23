@@ -10,6 +10,7 @@ use App\AdvancedEntryManager\Admin\Menu;
 use App\AdvancedEntryManager\Admin\Admin_Notice;
 use App\AdvancedEntryManager\GoogleSheet\Admin_UI;
 use App\AdvancedEntryManager\GoogleSheet\Send_Data;
+use FluentForm\App\Models\Log;
 
 /**
  * Class Admin
@@ -69,7 +70,7 @@ class Admin {
     Options $options,
     Menu $menu,
     Admin_Notice $admin_notice,
-    Send_Data $send_data
+    Send_Data $send_data,
     ) {
         $this->assets = $assets;
         $this->options = $options;
