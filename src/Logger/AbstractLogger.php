@@ -28,6 +28,8 @@ abstract class AbstractLogger {
         $this->fs = new FileSystem();
         $this->log_dir = $this->get_log_directory();
         $this->maybe_create_log_directory();
+
+        $this->protect_log_directory();
     }
 
     /**
@@ -65,6 +67,50 @@ abstract class AbstractLogger {
         if ( ! $this->fs->exists($this->log_dir) || ! $this->fs->is_dir($this->log_dir) ) {
             return wp_mkdir_p($this->log_dir);
         }
+        return true;
+    }
+
+    /**
+     * Secures a directory by adding .htaccess (for Apache) and index.php (for all servers).
+     *
+     * @param string $dir The directory to secure.
+     * @return bool True on success, false on failure.
+     */
+    protected function protect_log_directory() {
+        if ( ! $this->fs->is_dir($this->log_dir) ) {
+            return false;
+        }
+
+        // 1. Create .htaccess for Apache protection
+        $htaccess_file = trailingslashit($this->log_dir) . '.htaccess';
+        $htaccess_content = "# Apache 2.4+\n"
+                          . "<IfModule authz_core_module>\n"
+                          . "    Require all denied\n"
+                          . "</IfModule>\n\n"
+                          . "# Apache 2.2\n"
+                          . "<IfModule !authz_core_module>\n"
+                          . "    Deny from all\n"
+                          . "</IfModule>\n";
+
+        // Check if the .htaccess file already exists to avoid unnecessary writes
+        if ( ! $this->fs->exists($htaccess_file) ) {
+            $this->fs->write($htaccess_file, $htaccess_content);
+        }
+
+        // 2. Create index.php for universal protection
+        $index_file = trailingslashit($this->log_dir) . 'index.php';
+        $index_content = "<?php // Silence is golden.";
+        if ( ! $this->fs->exists($index_file) ) {
+            $this->fs->write($index_file, $index_content);
+        }
+
+        // 3. Create robots.txt to discourage indexing
+        $robots_file = trailingslashit($this->log_dir) . 'robots.txt';
+        $robots_content = "User-agent: *\nDisallow: /";
+        if ( ! $this->fs->exists($robots_file) ) {
+            $this->fs->write($robots_file, $robots_content);
+        }
+
         return true;
     }
 }
