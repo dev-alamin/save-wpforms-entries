@@ -28,45 +28,22 @@ $sheet_tab = Helper::get_option('google_sheet_tab', 'Sheet1');
     x-data="settingsForm()">
     <div class="mb-8 bg-slate-700 text-white px-4 py-2 rounded-lg">
         <h1 class="!text-4xl !font-extrabold !text-indigo-100 !tracking-tight mb-2 flex items-center gap-3">
-            📋 <span><?php esc_html_e('Advanced Entries Manager Settings', 'forms-entries-manager'); ?></span>
+            <span><?php esc_html_e('📋 Advanced Entries Manager Settings', 'forms-entries-manager'); ?></span>
         </h1>
         <p class="text-gray-200 !text-[15px] leading-relaxed">
             <?php
-            esc_html_e('Browse and manage form entries submitted by users. Click on a form to view its submissions, 
-                mark entries as read/unread, or delete them as needed.', 'forms-entries-manager');
+            esc_html_e('Browse and manage form entries submitted by users. Click on a form to view its submissions, mark entries as read/unread, or delete them as needed.', 'forms-entries-manager');
             ?>
         </p>
     </div>
 
-    <div
-    x-data="{ 
-        message: '',
-        init() {
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('revoked') === 'success') {
-                this.message = '✅ Connection to Google Sheets has been successfully revoked.';
-            } else if (urlParams.get('revoked') === 'failed') {
-                this.message = '❌ Failed to revoke the connection. Please try again.';
-            }
-        }
-    }"
-    x-show="message"
-    x-transition
-    class="mb-6 border rounded-lg p-4 shadow-sm"
-    :class="{
-        'border-green-400 bg-green-50 text-green-800': message.includes('✅'),
-        'border-red-400 bg-red-50 text-red-800': message.includes('❌')
-    }">
-    <div class="text-center items-center justify-between gap-4">
+    <?php if( Helper::is_user_revoked() ) : ?>
+    <div class="text-center items-center justify-between gap-4 mb-6 border border-yellow-400 bg-yellow-50 text-yellow-800 rounded-lg p-4 shadow-sm">
         <div class="flex-1">
-            <h2 class="text-lg font-semibold mb-1 flex items-center gap-2">
-                <?php esc_html_e( 'Google Revocation Status', 'forms-entries-manager' ); ?>
-            </h2>
-            <p x-text="message"></p>
+            <p><?php esc_html_e( '✅ Connection to Google Sheets has been successfully revoked. You can connect again with the below button.', 'forms-entries-manager' ); ?></p>
         </div>
     </div>
-</div>
-
+    <?php endif; ?>
 
     <div x-data="{ tab: 'google' }" class="fem-settings-tabs mb-10">
         <!-- Tab Control Navigation -->

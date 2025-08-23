@@ -30,6 +30,7 @@ use App\AdvancedEntryManager\Admin\Admin_Notice;
 use App\AdvancedEntryManager\Core\Handle_Cache;
 use App\AdvancedEntryManager\GoogleSheet\Send_Data;
 use App\AdvancedEntryManager\Scheduler\Actions\Sync_Google_Sheet_Action;
+use App\AdvancedEntryManager\Utility\Helper;
 
 /**
  * Bootstrap Plugin for the Advanced Entries Manager plugin.
@@ -71,15 +72,15 @@ class Plugin
                 as_schedule_recurring_action(strtotime('tomorrow 2am'), DAY_IN_SECONDS, 'femdaily_sync');
             }
 
-            if (! as_next_scheduled_action('femevery_five_minute_sync')) {
-                as_schedule_recurring_action(time(), MINUTE_IN_SECONDS * 1, 'femevery_five_minute_sync');
+            if (! as_next_scheduled_action('fem_every_five_minute_sync')) {
+                as_schedule_recurring_action(time(), MINUTE_IN_SECONDS * 1, 'fem_every_five_minute_sync');
             }
         });
 
         register_deactivation_hook(FEM_PLUGIN_BASE_FILE, function () {
             (new Capabilities())->remove_cap();
 
-            as_unschedule_all_actions('femevery_five_minute_sync');
+            as_unschedule_all_actions('fem_every_five_minute_sync');
         });
     }
 

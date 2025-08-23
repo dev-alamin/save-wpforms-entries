@@ -4,6 +4,7 @@ namespace App\AdvancedEntryManager\Utility;
 
 defined('ABSPATH') || exit;
 
+use App\AdvancedEntryManager\Logger\FileLogger;
 use WP_Error;
 use WP_REST_Response;
 use App\AdvancedEntryManager\Utility\DB;
@@ -11,6 +12,11 @@ use App\AdvancedEntryManager\Utility\DB;
 class Helper {
 
     const OPTION_PREFIX = 'fem';
+    protected static $logger;
+
+    public function __construct() {
+        self::$logger = new FileLogger();
+    }
 
     /**
      * Set FEM Transient
@@ -53,7 +59,7 @@ class Helper {
     }
 
     /**
-     * Set FEM Error Log
+     * Set FEM Error Log in debug.log
      * 
      * @param mixed $data
      */
@@ -186,20 +192,6 @@ class Helper {
     }
 
     /**
-     * Write to error_log for debug (with prefix).
-     *
-     * @param mixed $data
-     * @param string $label
-     * @return void
-     */
-    public static function log( $data, string $label = 'DEBUG' ): void {
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            $output = is_scalar( $data ) ? $data : print_r( $data, true );
-            error_log( "[FEM][$label] " . $output );
-        }
-    }
-
-    /**
      * Sanitize a string or array of strings recursively.
      *
      * @param mixed $data
@@ -300,8 +292,10 @@ class Helper {
     }
 
     public static function get_access_token() {
-        if( self::get_option( 'user_remvoked_google_connection' ) ) {
-            self::set_error_log( 'User revoked google authorization' );
+        $logger = new FileLogger();
+
+        if( self::is_user_revoked() ) {
+            $logger->log( 'User has revoked Google connection. No access token available.', 'INFO' );
             return false;
         }
 
@@ -322,7 +316,7 @@ class Helper {
         ]);
 
         if (is_wp_error($response)) {
-            Helper::set_error_log('Token refresh failed: ' . $response->get_error_message());
+            $logger->log( 'Token refresh failed: ' . $response->get_error_message(), 'ERROR' );
             return false;
         }
 
@@ -334,7 +328,7 @@ class Helper {
             return $body['access_token'];
         }
 
-        Helper::set_error_log('Invalid refresh response: ' . wp_remote_retrieve_body($response));
+        $logger->log( 'Invalid refresh response: ' . wp_remote_retrieve_body($response), 'ERROR' );
         return false;
     }
 
@@ -360,11 +354,11 @@ class Helper {
 
         // Check for a successful response from the proxy.
         if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {
-            self::set_error_log('Proxy-based token revocation failed: ' . wp_remote_retrieve_body($response));
+            self::$logger->log( 'Proxy-based token revocation failed: ' . wp_remote_retrieve_body($response), 'ERROR' );
             // Even if the proxy fails, we can still try to clear our local data to show a disconnected state.
         }
 
-        self::set_error_log( $response );
+        self::$logger->log( 'Proxy revocation response: ' . wp_remote_retrieve_body($response), 'INFO' );
 
         // Step 2: Delete the local tokens from your database.
         // This is crucial regardless of the proxy's response to ensure your app reflects the disconnected state.
@@ -373,8 +367,17 @@ class Helper {
 
         self::update_option( 'user_remvoked_google_connection', true );
 
+         // Unschedule the synchronization action
+        if ($deleted_access || $deleted_expires) {
+            as_unschedule_all_actions('fem_every_five_minute_sync');
+        }
+
         // Return true if the local deletion was successful, confirming the disconnected state.
         return $deleted_access || $deleted_expires;
+    }
+
+    public static function is_user_revoked(){
+        return self::get_option( 'user_remvoked_google_connection' );
     }
 
     /**

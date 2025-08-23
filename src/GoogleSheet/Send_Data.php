@@ -5,13 +5,17 @@ namespace App\AdvancedEntryManager\GoogleSheet;
 defined('ABSPATH') || exit;
 
 use App\AdvancedEntryManager\Utility\Helper;
+use App\AdvancedEntryManager\Logger\FileLogger;
 use WP_Error;
 
 class Send_Data
 {
 
+    protected $logger;
+
     public function __construct()
     {
+        $this->logger = new FileLogger();
         // Capture token on init
         add_action('admin_init', [$this, 'capture_token']);
 
@@ -70,7 +74,7 @@ class Send_Data
         ]);
 
         if (is_wp_error($response)) {
-            Helper::set_error_log('Token exchange failed: ' . $response->get_error_message());
+            $this->logger->log( 'Token exchange failed: ' . $response->get_error_message(), 'ERROR' );
             return;
         }
 
@@ -86,7 +90,7 @@ class Send_Data
             exit;
         }
 
-        Helper::set_error_log('Invalid token exchange response: ' . wp_remote_retrieve_body($response));
+        $this->logger->log( 'Token exchange failed: Invalid response', 'ERROR' );
     }
 
     /**
@@ -227,12 +231,12 @@ class Send_Data
         $entry = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE id = %d", $entry_id));
 
         if (!$entry) {
-            Helper::set_error_log('[AEM]: No entry data found. Sorry');
+            $this->logger->log( 'No entry data found for ID: ' . $entry_id, 'ERROR' );
             return false;
         }
 
         if ($entry->synced_to_gsheet) {
-            Helper::set_error_log('[AEM]: Already synced this entry...');
+            $this->logger->log( 'Entry ID ' . $entry_id . ' already synced to Google Sheets.', 'INFO' );
             return false;
         }
 
@@ -241,7 +245,7 @@ class Send_Data
         // Step 1: Ensure the target sheet is ready.
         $sheet_info = $this->get_or_create_sheet_for_form($form_id);
         if (is_wp_error($sheet_info)) {
-            Helper::set_error_log("[AEM] GSheet preparation failed for form $form_id: " . $sheet_info->get_error_message());
+            $this->logger->log( 'GSheet preparation failed for form ' . $form_id . ': ' . $sheet_info->get_error_message(), 'ERROR' );
             $this->handle_sync_failure($entry_id, $entry->retry_count);
             return false;
         }
@@ -255,7 +259,7 @@ class Send_Data
             if (!is_wp_error($metadata) && isset($metadata['sheets'][0]['properties']['gridProperties']['rowCount'])) {
                 $row_count = $metadata['sheets'][0]['properties']['gridProperties']['rowCount'];
                 if ($row_count >= 1000) {
-                    Helper::set_error_log("[AEM] GSheet row limit reached for form $form_id. Entry {$entry_id} not synced.");
+                    $this->logger->log( 'GSheet row limit reached for form ' . $form_id . '. Entry ' . $entry_id . ' not synced.', 'ERROR' );
                     $wpdb->update($table, ['synced_to_gsheet' => 2], ['id' => $entry_id]); // '2' can indicate 'sync_limit_reached'
                     return false;
                 }
@@ -265,7 +269,7 @@ class Send_Data
         // Step 2: Prepare the data row, ensuring it matches the header order.
         $row_data = $this->prepare_row_data($entry);
         if (is_wp_error($row_data)) {
-            Helper::set_error_log("[AEM] GSheet data preparation failed for entry $entry_id: " . $row_data->get_error_message());
+            $this->logger->log( 'GSheet data preparation failed for entry ' . $entry_id . ': ' . $row_data->get_error_message(), 'ERROR' );
             $this->handle_sync_failure($entry_id, $entry->retry_count);
             return false;
         }
@@ -278,12 +282,13 @@ class Send_Data
         $response = $this->_make_google_api_request($url, $body, 'POST');
 
         if (is_wp_error($response)) {
-            Helper::set_error_log("[AEM] GSheet append failed for entry $entry_id. Error: " . $response->get_error_message());
+            $this->logger->log( 'GSheet append failed for entry ' . $entry_id . ': ' . $response->get_error_message(), 'ERROR' );
             $this->handle_sync_failure($entry_id, $entry->retry_count);
             return false;
         }
 
-        Helper::set_error_log('[AEM] Google sync is going on ' . $entry_id . ' Form ID: ' . $form_id );
+        // If we reach here, the entry was successfully synced.
+        $this->logger->log( 'Entry ID ' . $entry_id . ' successfully synced to Google Sheets.', 'INFO' );
 
         // Step 4: Mark as synced on success.
         $wpdb->update($table, ['synced_to_gsheet' => 1, 'retry_count' => 0], ['id' => $entry_id]);
@@ -393,8 +398,6 @@ class Send_Data
         $row = [];
         $entry_data = maybe_unserialize($entry->entry);
         $entry_data = is_array($entry_data) ? $entry_data : [];
-        
-        // Helper::set_error_log( print_r( $entry_data, true ) );
 
         foreach ($headers as $header_title) {
             $value = '';
@@ -430,11 +433,7 @@ class Send_Data
             }
             
             $row[] = (string) $value;
-
-            // Helper::set_error_log( print_r( $header_title, true ) );
         }
-
-        // Helper::set_error_log( print_r( $row, true ) );
 
         return $row;
     }
@@ -453,7 +452,7 @@ class Send_Data
             $delay = 60 * pow(2, $current_retry_count); // 1 min, 2 min, 4 min, etc.
             as_schedule_single_action(time() + $delay, 'femprocess_gsheet_entry', ['entry_id' => $entry_id]);
         } else {
-            Helper::set_error_log("[AEM] Max retry limit reached for entry ID $entry_id. Sync abandoned.");
+            $this->logger->log( 'Max retry limit reached for entry ID ' . $entry_id . '. Sync abandoned.', 'ERROR' );
             // Optionally, mark as failed in the DB
             // $wpdb->update($table, ['status' => 'failed_sync'], ['id' => $entry_id]);
         }
@@ -534,8 +533,6 @@ class Send_Data
             }
         }
 
-        // Helper::set_error_log('[AEM] : Entri is syncing...' . print_r($entries, true));
-
         return count($entries);
     }
 
@@ -568,7 +565,8 @@ class Send_Data
         $code = wp_remote_retrieve_response_code($response);
         if ($code < 200 || $code >= 300) {
             $error_body = wp_remote_retrieve_body($response);
-            Helper::set_error_log("[AEM] Google API Error: Code $code - $error_body");
+            $this->logger->log( 'Google API request failed with code ' . $code . '. Response: ' . $error_body, 'ERROR' );
+
             return new WP_Error('api_error', "Google API request failed with code {$code}.", ['body' => $error_body]);
         }
 
@@ -599,7 +597,7 @@ class Send_Data
 
         if (is_wp_error($sheet_info) || !$spreadsheet_id) {
             // If there's no sheet configured, it's already "unsynced".
-            Helper::set_error_log("[AEM] Unsync skipped for entry {$entry_id}: No spreadsheet is configured for form {$form_id}.");
+            $this->logger->log( 'Unsync skipped for entry ' . $entry_id . ': No spreadsheet is configured for form ' . $form_id . '.', 'INFO' );
             return true;
         }
         
@@ -614,7 +612,7 @@ class Send_Data
         $response = $this->_make_google_api_request($url, [], 'GET');
 
         if (is_wp_error($response)) {
-            Helper::set_error_log("[AEM] Unsync failed for entry {$entry_id}: Could not read sheet to find row. " . $response->get_error_message());
+            $this->logger->log( 'Unsync failed for entry ' . $entry_id . ': Could not read sheet to find row. ' . $response->get_error_message(), 'ERROR' );
             return $response;
         }
 
@@ -629,8 +627,9 @@ class Send_Data
         }
 
         if (empty($rows_to_delete)) {
-            Helper::set_error_log("[AEM] Unsync notice for entry {$entry_id}: Row was not found in the Google Sheet.");
+            $this->logger->log( 'Unsync notice for entry ' . $entry_id . ': Row was not found in the Google Sheet.', 'INFO' );
             // The desired state (row is gone) is achieved, so we can return true.
+
             // Also update local status to be sure.
             $wpdb->update($table, ['synced_to_gsheet' => 0], ['id' => $entry_id]);
             return true;
@@ -656,14 +655,14 @@ class Send_Data
         $batch_update_result = $this->gsheet_batch_update($spreadsheet_id, $requests);
 
         if (is_wp_error($batch_update_result)) {
-            Helper::set_error_log("[AEM] Unsync failed for entry {$entry_id}: The batch delete request failed.");
+            $this->logger->log( 'Unsync failed for entry ' . $entry_id . ': Batch delete request failed. ' . $batch_update_result->get_error_message(), 'ERROR' );
             return $batch_update_result;
         }
 
         // 5. Update the local database to mark it as unsynced
         $wpdb->update($table, ['synced_to_gsheet' => 0], ['id' => $entry_id]);
 
-        Helper::set_error_log("[AEM] Successfully unsynced entry {$entry_id} from Google Sheet.");
+        $this->logger->log( 'Entry ID ' . $entry_id . ' successfully unsynced from Google Sheets.', 'INFO' );
 
         return true;
     }

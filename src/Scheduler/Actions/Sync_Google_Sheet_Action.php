@@ -22,6 +22,6 @@ class Sync_Google_Sheet_Action
         });
 
         // Hook the task.
-        add_action( 'femevery_five_minute_sync', [ $this->send_data, 'enqueue_unsynced_entries' ] );
+        add_action( 'fem_every_five_minute_sync', [ $this->send_data, 'enqueue_unsynced_entries' ] );
     }
 }
