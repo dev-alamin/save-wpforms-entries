@@ -67,6 +67,7 @@ class Submit_Entry {
 			$serialized_data[ $field['name'] ] = $value;
 		}
 
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$wpdb->insert(
 			$table,
 			array(
@@ -169,6 +170,7 @@ class Submit_Entry {
 		}
 
 		// Insert into database
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$wpdb->insert(
 			$table,
 			array(

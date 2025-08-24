@@ -51,7 +51,7 @@ class Get_Forms {
                     form_id, 
                     COUNT(*) as entry_count,
                     SUM(CASE WHEN status = 'unread' THEN 1 ELSE 0 END) as unread_count
-                FROM `{$table}`
+                FROM `{$table}` 
                 GROUP BY form_id"
 				),
 				OBJECT

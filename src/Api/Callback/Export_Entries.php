@@ -99,7 +99,8 @@ class Export_Entries {
 				$query_args[] = $date_to;
 			}
 
-			$count_query   = $wpdb->prepare( $count_sql, ...$query_args );
+			$count_query = $wpdb->prepare( $count_sql, ...$query_args );
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			$total_entries = (int) $wpdb->get_var( $count_query );
 
 			wp_cache_set( $count_cache_key, $total_entries, 'aem_exports', HOUR_IN_SECONDS );
@@ -134,7 +135,8 @@ class Export_Entries {
 				$select_sql .= ' ORDER BY created_at ASC';
 
 				$select_query = $wpdb->prepare( $select_sql, ...$query_args );
-				$low_entries  = $wpdb->get_results( $select_query, ARRAY_A );
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+				$low_entries = $wpdb->get_results( $select_query, ARRAY_A );
 
 				wp_cache_set( $entries_cache_key, $low_entries, 'aem_exports', HOUR_IN_SECONDS );
 			}
@@ -238,7 +240,9 @@ class Export_Entries {
 			"SELECT * FROM {$target_table} {$where_sql} ORDER BY id ASC LIMIT %d",
 			array_merge( $query_args, array( $job_state['batch_size'] ) )
 		);
-		$entries       = $wpdb->get_results( $entries_query, ARRAY_A );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$entries = $wpdb->get_results( $entries_query, ARRAY_A );
 
 		if ( empty( $entries ) ) {
 			// No more entries found, so we are done. Schedule finalization.

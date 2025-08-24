@@ -23,7 +23,7 @@ class FileLogger extends AbstractLogger {
 			return false;
 		}
 
-		$log_file  = $this->log_dir . '/' . date( 'Y-m-d' ) . '.log';
+		$log_file  = $this->log_dir . '/' . wp_date( 'Y-m-d' ) . '.log';
 		$log_entry = sprintf( "[%s] [%s] %s\n", current_time( 'mysql' ), strtoupper( $level ), $message );
 
 		// Check if the file exists before attempting to read.

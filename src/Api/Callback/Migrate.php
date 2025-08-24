@@ -89,6 +89,7 @@ class Migrate {
 			return;
 		}
 
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$entries = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT * FROM {$source_table} WHERE form_id > %d ORDER BY form_id ASC LIMIT %d",
@@ -98,6 +99,7 @@ class Migrate {
 			ARRAY_A
 		);
 
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$total_entries = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$source_table}" );
 
 		// Save total entries count to option for progress tracking
@@ -125,6 +127,7 @@ class Migrate {
 
 			$form_date = sanitize_text_field( $entry['form_date'] ?? current_time( 'mysql' ) );
 
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			$result = $wpdb->insert(
 				$target_table,
 				array(
@@ -163,11 +166,13 @@ class Migrate {
 		$table = $wpdb->prefix . 'wpforms_db';
 
 		// Safety: check if table exists
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) !== $table ) {
 			return new WP_Error( 'table_missing', 'Source table does not exist', array( 'status' => 404 ) );
 		}
 
 		// Query counts grouped by form_post_id
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$results = $wpdb->get_results(
 			"
             SELECT form_post_id AS form_id, COUNT(*) AS entry_count

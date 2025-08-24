@@ -180,17 +180,6 @@ class Menu {
 	}
 
 	/**
-	 * Render log viewer page.
-	 *
-	 * Includes the log viewer page view file.
-	 *
-	 * @return void
-	 */
-	public function render_log_viewer_page() {
-		include __DIR__ . '/views/log-viewer-page.php';
-	}
-
-	/**
 	 * Hide update notices on plugin admin pages.
 	 *
 	 * Prevents update nags, warnings, and other notices from

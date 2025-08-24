@@ -44,6 +44,7 @@ class Scheduler {
 			...$args
 		);
 
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$total_entries = (int) $wpdb->get_var( $count_sql );
 
 		$batches = (int) ceil( $total_entries / $batch_size );

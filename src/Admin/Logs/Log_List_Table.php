@@ -116,8 +116,9 @@ class Log_List_Table extends \WP_List_Table {
 	}
 
 	protected function sort_files( $a, $b ) {
-		$orderby = isset( $_GET['orderby'] ) ? sanitize_text_field( $_GET['orderby'] ) : 'date_modified';
-		$order   = isset( $_GET['order'] ) ? sanitize_text_field( $_GET['order'] ) : 'desc';
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$orderby = isset( $_GET['orderby'] ) ? sanitize_text_field( wp_unslash( $_GET['orderby'] ) ) : 'date_modified';
+		$order   = isset( $_GET['order'] ) ? sanitize_text_field( wp_unslash( $_GET['order'] ) ) : 'desc'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$result  = ( $orderby === 'file_name' ) ? strcmp( $a[ $orderby ], $b[ $orderby ] ) : $a[ $orderby ] - $b[ $orderby ];
 		return ( $order === 'asc' ) ? $result : -$result;
 	}

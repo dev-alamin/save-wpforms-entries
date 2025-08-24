@@ -101,7 +101,7 @@ class Get_Entries {
 			"SELECT COUNT(*) FROM $table $where",
 			...$params
 		);
-		$total_count = (int) $wpdb->get_var( $count_sql );
+		$total_count = (int) $wpdb->get_var( $count_sql ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		// Step 1: Find the ID of the first entry for the requested page.
 		if ( $page > 1 ) {
@@ -109,7 +109,7 @@ class Get_Entries {
 				"SELECT id FROM $table $where ORDER BY created_at DESC LIMIT 1 OFFSET %d",
 				...array_merge( $params, array( $offset ) )
 			);
-			$start_id   = $wpdb->get_var( $get_id_sql );
+			$start_id   = $wpdb->get_var( $get_id_sql ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		}
 
 		// Step 2: Fetch the data using the cursor/start ID.
@@ -126,7 +126,7 @@ class Get_Entries {
 		}
 
 		$sql     = $wpdb->prepare( $data_sql, ...$data_params );
-		$results = $wpdb->get_results( $sql );
+		$results = $wpdb->get_results( $sql ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		// --- The rest of the code remains the same ---
 		$data = array();

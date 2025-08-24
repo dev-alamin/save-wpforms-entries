@@ -85,12 +85,12 @@ class Update_Entries {
 		}
 
 		if ( isset( $params['printed_at'] ) ) {
-			$data['printed_at'] = date( 'Y-m-d H:i:s', strtotime( $params['printed_at'] ) );
+			$data['printed_at'] = wp_date( 'Y-m-d H:i:s', strtotime( $params['printed_at'] ) );
 			$format[]           = '%s';
 		}
 
 		if ( isset( $params['resent_at'] ) ) {
-			$data['resent_at'] = date( 'Y-m-d H:i:s', strtotime( $params['resent_at'] ) );
+			$data['resent_at'] = wp_date( 'Y-m-d H:i:s', strtotime( $params['resent_at'] ) );
 			$format[]          = '%s';
 		}
 
@@ -115,6 +115,7 @@ class Update_Entries {
 		do_action( 'fembefore_entry_update', $id, $data, $request );
 
 		// Perform DB update
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$updated = $wpdb->update(
 			$table,
 			$data,

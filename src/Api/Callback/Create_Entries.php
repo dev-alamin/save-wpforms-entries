@@ -106,6 +106,7 @@ class Create_Entries {
 			'%s', // created_at
 		);
 
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$inserted = $wpdb->insert( $table, $data, $format );
 
 		if ( $inserted === false ) {

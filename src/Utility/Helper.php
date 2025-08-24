@@ -67,7 +67,8 @@ class Helper {
 		global $wpdb;
 
 		$table_name_like = str_replace( '_', '\\_', $table_name ); // Escape underscores
-		$result          = $wpdb->get_var(
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$result = $wpdb->get_var(
 			$wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->prefix . $table_name_like )
 		);
 
@@ -100,8 +101,9 @@ class Helper {
 	public static function count_wpformsdb_entries(): int {
 		global $wpdb;
 
-		$table_name = $wpdb->prefix . 'wpforms_db';
-		return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name}" );
+		$table_name = $wpdb->prefix . 'wpforms_db'; // Safe table
+
+		return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	}
 
 	/**
@@ -230,7 +232,7 @@ class Helper {
         ";
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
-		$results = $wpdb->get_results( $wpdb->prepare( $query ) ); 
+		$results = $wpdb->get_results( $query );
 
 		$data = array();
 		if ( ! empty( $results ) ) {
@@ -448,32 +450,36 @@ class Helper {
 		$entries   = wp_cache_get( $cache_key, 'aem' );
 
         // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
-        if ( false === $entries ) {
-            global $wpdb;
-            $table = self::get_table_name();
+		if ( false === $entries ) {
+			global $wpdb;
+			$table = self::get_table_name(); // Safe table
 
-            // Build placeholders
-            $placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+			// Build placeholders
+			$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
 
-            // Expand $ids array into arguments using the splat operator
-            $entries = $wpdb->get_results(
-                $wpdb->prepare(
-                    "SELECT * FROM {$table} WHERE id IN ($placeholders)",
-                    ...$ids
-                ),
-                ARRAY_A
-            );
+			// Expand $ids array into arguments using the splat operator
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			$entries = $wpdb->get_results(
+				$wpdb->prepare(
+                    // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					"SELECT * FROM {$table} WHERE id IN ($placeholders)",
+					...$ids
+				),
+				ARRAY_A
+			);
 
-            wp_cache_set( $cache_key, $entries, 'aem', 300 ); // cache 5 mins
-        }
+			wp_cache_set( $cache_key, $entries, 'aem', 300 ); // cache 5 mins
+		}
 
 		return $entries ?: array();
 	}
 
 	// Update a single entry with caching
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 	public static function update_entry( int $id, array $data ): bool {
 		global $wpdb;
-		$table  = self::get_table_name();
+		$table = self::get_table_name();
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$result = $wpdb->update( $table, $data, array( 'id' => $id ) );
 
 		if ( $result !== false ) {
@@ -486,7 +492,8 @@ class Helper {
 	// Delete a single entry with caching
 	public static function delete_entry( int $id ): bool {
 		global $wpdb;
-		$table  = self::get_table_name();
+		$table = self::get_table_name();
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$result = $wpdb->delete( $table, array( 'id' => $id ) );
 
 		if ( $result !== false ) {
