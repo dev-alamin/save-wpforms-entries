@@ -706,6 +706,7 @@ class Route {
 	 * This method checks the current user's capabilities
 	 * based on the requested method of the route.
 	 *
+	 * @param string $method The HTTP method of the request.
 	 * @return bool True if the user has permission, false otherwise.
 	 */
 	private function permission_callback_by_method( string $method ) {
