@@ -123,6 +123,6 @@ class Log_List_Table extends \WP_List_Table {
 	}
 
 	public function no_items() {
-		_e( 'No log files found.', 'forms-entries-manager' );
+		esc_html_e( 'No log files found.', 'forms-entries-manager' );
 	}
 }

@@ -136,7 +136,12 @@ class LogViewerPage {
 		}
 		?>
 		<div class="wrap">
-			<h1><?php printf( esc_html__( 'Viewing Log File: %s', 'forms-entries-manager' ), esc_html( $file_name ) ); ?></h1>
+			<h1>
+			<?php
+			/* translators: %s is the log file name */
+			printf( esc_html__( 'Viewing Log File: %s', 'forms-entries-manager' ), esc_html( $file_name ) );
+			?>
+			</h1>
 			<a href="<?php echo esc_url( admin_url( 'admin.php?page=forms-entries-manager-logs' ) ); ?>" class="button button-secondary"><?php esc_html_e( 'Back to Logs', 'forms-entries-manager' ); ?></a>
 			<a href="
 			<?php

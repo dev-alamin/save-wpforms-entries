@@ -59,39 +59,51 @@ class Export_Entries {
 	 */
 	public function start_export_job( WP_REST_Request $request ) {
 		if ( ! class_exists( 'ActionScheduler' ) ) {
-			return new WP_Error( 'missing_scheduler', __( 'Action Scheduler is required but not available.', 'forms-entries-manager' ), array( 'status' => 500 ) );
+			return new WP_Error(
+				'missing_scheduler',
+				__( 'Action Scheduler is required but not available.', 'forms-entries-manager' ),
+				array( 'status' => 500 )
+			);
 		}
 
 		$form_id = absint( $request->get_param( 'form_id' ) );
 		if ( ! $form_id ) {
-			return new WP_Error( 'missing_form_id', __( 'A valid Form ID is required.', 'forms-entries-manager' ), array( 'status' => 400 ) );
+			return new WP_Error(
+				'missing_form_id',
+				__( 'A valid Form ID is required.', 'forms-entries-manager' ),
+				array( 'status' => 400 )
+			);
 		}
 
 		global $wpdb;
-		$target_table = Helper::get_table_name(); // e.g., 'fem_entries_manager'
+		$target_table = esc_sql( Helper::get_table_name() ); // sanitize table name
 
-		// Build query to count total entries based on filters
-		$query_args    = array();
-		$where_clauses = array( 'form_id = %d' );
-		$query_args[]  = $form_id;
-
+		// Prepare date filters
 		$date_from = sanitize_text_field( $request->get_param( 'date_from' ) ?? '' );
-		if ( $date_from ) {
-			$where_clauses[] = 'created_at >= %s';
-			$query_args[]    = $date_from;
+		$date_to   = sanitize_text_field( $request->get_param( 'date_to' ) ?? '' );
+
+		// ---------- Step 1: Count total entries with caching ----------
+		$count_cache_key = 'export_total_entries_' . $form_id . '_' . md5( $date_from . '|' . $date_to );
+		$total_entries   = wp_cache_get( $count_cache_key, 'aem_exports' );
+
+		if ( false === $total_entries ) {
+			$count_sql  = "SELECT COUNT(*) FROM {$target_table} WHERE form_id = %d";
+			$query_args = array( $form_id );
+
+			if ( $date_from ) {
+				$count_sql   .= ' AND created_at >= %s';
+				$query_args[] = $date_from;
+			}
+			if ( $date_to ) {
+				$count_sql   .= ' AND created_at <= %s';
+				$query_args[] = $date_to;
+			}
+
+			$count_query   = $wpdb->prepare( $count_sql, ...$query_args );
+			$total_entries = (int) $wpdb->get_var( $count_query );
+
+			wp_cache_set( $count_cache_key, $total_entries, 'aem_exports', HOUR_IN_SECONDS );
 		}
-
-		$date_to = sanitize_text_field( $request->get_param( 'date_to' ) ?? '' );
-		if ( $date_to ) {
-			$where_clauses[] = 'created_at <= %s';
-			$query_args[]    = $date_to;
-		}
-
-		$where_sql = 'WHERE ' . implode( ' AND ', $where_clauses );
-
-		// Step 1: Count entries
-		$count_query   = $wpdb->prepare( "SELECT COUNT(*) FROM {$target_table} {$where_sql}", ...$query_args );
-		$total_entries = (int) $wpdb->get_var( $count_query );
 
 		if ( $total_entries === 0 ) {
 			return new WP_Error(
@@ -101,26 +113,41 @@ class Export_Entries {
 			);
 		}
 
-		// Step 2: If low volume, fetch directly
+		// ---------- Step 2: Fetch low-volume entries directly ----------
 		if ( $total_entries <= 10000 ) {
+			$entries_cache_key = 'export_low_entries_' . $form_id . '_' . md5( $date_from . '|' . $date_to );
+			$low_entries       = wp_cache_get( $entries_cache_key, 'aem_exports' );
 
-			$select_query = $wpdb->prepare(
-				"SELECT * FROM {$target_table} {$where_sql} ORDER BY created_at ASC",
-				...$query_args
-			);
+			if ( false === $low_entries ) {
+				$select_sql = "SELECT * FROM {$target_table} WHERE form_id = %d";
+				$query_args = array( $form_id );
 
-			$low_entries = $wpdb->get_results( $select_query, ARRAY_A );
+				if ( $date_from ) {
+					$select_sql  .= ' AND created_at >= %s';
+					$query_args[] = $date_from;
+				}
+				if ( $date_to ) {
+					$select_sql  .= ' AND created_at <= %s';
+					$query_args[] = $date_to;
+				}
+
+				$select_sql .= ' ORDER BY created_at ASC';
+
+				$select_query = $wpdb->prepare( $select_sql, ...$query_args );
+				$low_entries  = $wpdb->get_results( $select_query, ARRAY_A );
+
+				wp_cache_set( $entries_cache_key, $low_entries, 'aem_exports', HOUR_IN_SECONDS );
+			}
 
 			$this->export_entries_otg( $low_entries );
 		}
 
-		// Generate a unique ID for this export job
+		// ---------- Step 3: Schedule export job ----------
 		$job_id = 'export_' . $form_id . '_' . wp_generate_password( 12, false );
 
 		$exclude_fields = $request->get_param( 'exclude_fields' );
 		$exclude_fields = is_string( $exclude_fields ) ? explode( ',', $exclude_fields ) : (array) $exclude_fields;
 
-		// Store the initial state of the job in a transient
 		$job_state = array(
 			'job_id'          => $job_id,
 			'status'          => 'queued',
@@ -140,9 +167,9 @@ class Export_Entries {
 			'file_url'        => null,
 			'header'          => array(),
 		);
+
 		Helper::set_transient( self::JOB_TRANSIENT_PREFIX . $job_id, $job_state, DAY_IN_SECONDS );
 
-		// Schedule the first batch
 		as_schedule_single_action(
 			time(),
 			self::BATCH_PROCESSING_HOOK,
@@ -295,42 +322,41 @@ class Export_Entries {
 	public function finalize_export_file( string $job_id ): void {
 		$upload_dir = $this->get_temp_dir();
 		if ( is_wp_error( $upload_dir ) ) {
-			// Handle error, maybe update transient with a 'failed' status
 			return;
 		}
 
-		$final_file_path   = $upload_dir['path'] . '/' . $job_id . '.csv';
-		$final_file_handle = fopen( $final_file_path, 'w' );
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		global $wp_filesystem;
+		WP_Filesystem();
+
+		$final_file_path = $upload_dir['path'] . '/' . $job_id . '.csv';
+		$final_handle    = $wp_filesystem->fopen( $final_file_path, 'w' );
 
 		$batch_files    = glob( $upload_dir['path'] . '/' . $job_id . '_batch_*.csv' );
 		$header_written = false;
 
-		foreach ( $batch_files as $index => $batch_file ) {
-
-			$batch_handle = fopen( $batch_file, 'r' );
-
-			if ( $batch_handle ) {
-
-				if ( $header_written ) {
-					fgetcsv( $batch_handle ); // Skip header of subsequent files
-				}
-
-				while ( ( $data = fgetcsv( $batch_handle ) ) !== false ) {
-					fputcsv( $final_file_handle, $data );
-				}
-
-				fclose( $batch_handle );
-				$header_written = true;
-
+		foreach ( $batch_files as $batch_file ) {
+			$batch_handle = $wp_filesystem->fopen( $batch_file, 'r' );
+			if ( ! $batch_handle ) {
+				continue;
 			}
 
-			// Delete the temporary batch file after processing
-			wp_delete_file( $batch_file );
+			if ( $header_written ) {
+				fgetcsv( $batch_handle ); // skip header
+			}
+
+			while ( ( $data = fgetcsv( $batch_handle ) ) !== false ) {
+				Helper::fputcsv( $final_handle, $data );
+			}
+
+			$wp_filesystem->fclose( $batch_handle );
+			$wp_filesystem->delete( $batch_file ); // safer than unlink
+			$header_written = true;
 		}
 
-		fclose( $final_file_handle );
+		$wp_filesystem->fclose( $final_handle );
 
-		// Update the job state to complete
+		// Update job state
 		$transient_key = self::JOB_TRANSIENT_PREFIX . $job_id;
 		$job_state     = Helper::get_transient( $transient_key );
 		if ( $job_state ) {
@@ -396,42 +422,51 @@ class Export_Entries {
 			return;
 		}
 
-		$file_path   = $upload_dir['path'] . '/' . $job_id . '_batch_' . $page . '.csv';
-		$file_handle = fopen( $file_path, 'w' );
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		global $wp_filesystem;
+		WP_Filesystem();
 
-		// Write the header only for the first batch. The header array is now passed directly.
+		$file_path = $upload_dir['path'] . '/' . $job_id . '_batch_' . $page . '.csv';
+
+		// Open file for writing
+		$handle = $wp_filesystem->fopen( $file_path, 'w' );
+		if ( ! $handle ) {
+			return;
+		}
+
+		// Write header only for first batch
 		if ( $page === 1 ) {
-			fputcsv( $file_handle, $header );
+			Helper::fputcsv( $handle, $header ); // Use your Helper::fputcsv method
 		}
 
 		foreach ( $entries as $entry ) {
 			$entry_data      = ! empty( $entry['entry'] ) ? maybe_unserialize( $entry['entry'] ) : array();
 			$flat_entry_data = $this->flatten_entry_data( $entry_data );
 
-			$row = array();
-			// Add default columns
-			$row['id']          = $entry['id'];
-			$row['form_id']     = $entry['form_id'];
-			$row['email']       = $entry['email'];
-			$row['note']        = $entry['note'];
-			$row['created_at']  = $entry['created_at'];
-			$row['status']      = $entry['status'];
-			$row['is_favorite'] = $entry['is_favorite'];
+			$row = array_merge(
+				array(
+					'id'          => $entry['id'],
+					'form_id'     => $entry['form_id'],
+					'email'       => $entry['email'],
+					'note'        => $entry['note'],
+					'created_at'  => $entry['created_at'],
+					'status'      => $entry['status'],
+					'is_favorite' => $entry['is_favorite'],
+				),
+				$flat_entry_data
+			);
 
-			// Merge dynamic data
-			$row = array_merge( $row, $flat_entry_data );
-
-			// Build the final row using the provided header
 			$final_row = array();
 			foreach ( $header as $col ) {
 				$final_row[] = $row[ $col ] ?? '';
 			}
 
-			fputcsv( $file_handle, $final_row );
+			Helper::fputcsv( $handle, $final_row );
 		}
 
-		fclose( $file_handle );
+		$wp_filesystem->fclose( $handle );
 	}
+
 
 	/**
 	 * A helper function to flatten nested array keys for a consistent header.
@@ -556,49 +591,45 @@ class Export_Entries {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_export_file( WP_REST_Request $request ) {
-		// Sanitize the job ID from the request
 		$job_id = sanitize_key( $request->get_param( 'job_id' ) );
 		if ( empty( $job_id ) ) {
 			return new WP_Error( 'missing_job_id', __( 'Job ID is required.', 'forms-entries-manager' ), array( 'status' => 400 ) );
 		}
 
-		// Get the job state from the transient
 		$transient_key = self::JOB_TRANSIENT_PREFIX . $job_id;
 		$job_state     = Helper::get_transient( $transient_key );
 
-		// Check if the job exists and is complete
 		if ( false === $job_state || $job_state['status'] !== 'complete' ) {
 			return new WP_Error( 'invalid_job', __( 'Export job not found or not yet complete.', 'forms-entries-manager' ), array( 'status' => 404 ) );
 		}
 
-		// Check if a file path is set
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		global $wp_filesystem;
+		WP_Filesystem();
+
 		$file_path = $job_state['file_path'];
-		if ( empty( $file_path ) || ! file_exists( $file_path ) ) {
-			// File is already gone, which is fine
-			Helper::delete_transient( $transient_key ); // Clean up the transient
-			return new WP_REST_Response(
+
+		if ( empty( $file_path ) || ! $wp_filesystem->exists( $file_path ) ) {
+			Helper::delete_transient( $transient_key );
+			return rest_ensure_response(
 				array(
 					'success' => true,
 					'message' => __( 'File was already deleted.', 'forms-entries-manager' ),
-				),
-				200
+				)
 			);
 		}
 
-		// Delete the file
-		if ( unlink( $file_path ) ) {
-			// Delete the transient as well
+		if ( $wp_filesystem->delete( $file_path ) ) {
 			Helper::delete_transient( $transient_key );
-			return new WP_REST_Response(
+			return rest_ensure_response(
 				array(
 					'success' => true,
 					'message' => __( 'Export file deleted successfully.', 'forms-entries-manager' ),
-				),
-				200
+				)
 			);
-		} else {
-			return new WP_Error( 'delete_failed', __( 'Failed to delete the export file.', 'forms-entries-manager' ), array( 'status' => 500 ) );
 		}
+
+		return new WP_Error( 'delete_failed', __( 'Failed to delete the export file.', 'forms-entries-manager' ), array( 'status' => 500 ) );
 	}
 
 	public function export_entries_otg( $entries ) {

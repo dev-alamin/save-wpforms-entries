@@ -59,32 +59,6 @@ class Helper {
 	}
 
 	/**
-	 * Set FEM Error Log in debug.log
-	 *
-	 * @param mixed $data
-	 */
-	public static function set_error_log( $data ): void {
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			$output = is_scalar( $data ) ? $data : print_r( $data, true );
-			error_log( '[Forms Entries Manager] ' . $output );
-		}
-	}
-
-	/**
-	 * Get FEM Error Log
-	 *
-	 * @return array
-	 */
-	public static function get_error_log(): array {
-		$log_file = WP_CONTENT_DIR . '/debug.log';
-		if ( file_exists( $log_file ) ) {
-			$log_contents = file_get_contents( $log_file );
-			return explode( "\n", trim( $log_contents ) );
-		}
-		return array();
-	}
-
-	/**
 	 * Check if the WPFormsDB table exists.
 	 *
 	 * @return bool

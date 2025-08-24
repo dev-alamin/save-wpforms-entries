@@ -97,13 +97,16 @@ class Bulk_Action {
 				'success'     => true,
 				'message'     => $action === 'delete'
 					? sprintf(
+						/* translators: %d is the number of deleted entries */
 						_n( '%d entry deleted.', '%d entries deleted.', count( $deleted_ids ), 'forms-entries-manager' ),
 						count( $deleted_ids )
 					)
 					: sprintf(
+						/* translators: %d is the number of updated entries */
 						_n( '%d entry updated.', '%d entries updated.', count( $updated_ids ), 'forms-entries-manager' ),
 						count( $updated_ids )
 					),
+
 				'deleted_ids' => $deleted_ids,
 				'updated_ids' => $updated_ids,
 				'affected'    => $affected,
