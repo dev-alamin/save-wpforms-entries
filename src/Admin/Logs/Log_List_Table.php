@@ -36,7 +36,6 @@ class Log_List_Table extends \WP_List_Table {
             'file_name' => __('File Name', 'forms-entries-manager'),
             'file_size' => __('Size', 'forms-entries-manager'),
             'date_modified' => __('Last Modified', 'forms-entries-manager'),
-            'actions' => __('Actions', 'forms-entries-manager'),
         ];
     }
 
@@ -60,6 +59,7 @@ class Log_List_Table extends \WP_List_Table {
             'page' => 'forms-entries-manager-logs',
             'action' => 'view_log',
             'file' => urlencode($item['file_name']),
+            '_wpnonce' => wp_create_nonce('forms-entries-manager-view')
         ], admin_url('admin.php'));
 
         return sprintf(
@@ -75,17 +75,6 @@ class Log_List_Table extends \WP_List_Table {
 
     public function column_date_modified($item) {
         return date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $item['date_modified']);
-    }
-
-    public function column_actions($item) {
-        return sprintf(
-            '<a href="%s" class="button button-secondary">%s</a>',
-            esc_url(wp_nonce_url(
-                admin_url('admin.php?page=forms-entries-manager-logs&action=download&file=' . $item['file_name']),
-                'forms-entries-manager-download'
-            )),
-            __('Download', 'forms-entries-manager')
-        );
     }
 
     protected function get_log_files_data() {

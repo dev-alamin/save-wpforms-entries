@@ -30,6 +30,7 @@ use App\AdvancedEntryManager\Admin\Admin_Notice;
 use App\AdvancedEntryManager\Core\Handle_Cache;
 use App\AdvancedEntryManager\GoogleSheet\Send_Data;
 use App\AdvancedEntryManager\Scheduler\Actions\Sync_Google_Sheet_Action;
+use App\AdvancedEntryManager\Admin\Logs\HandleLogAction;
 use App\AdvancedEntryManager\Utility\Helper;
 
 /**
@@ -164,6 +165,7 @@ class Plugin
                 new Menu(),
                 new Admin_Notice(),
                 new Send_Data(),
+                new HandleLogAction(),
             );
         }
     }

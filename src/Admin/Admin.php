@@ -10,7 +10,7 @@ use App\AdvancedEntryManager\Admin\Menu;
 use App\AdvancedEntryManager\Admin\Admin_Notice;
 use App\AdvancedEntryManager\GoogleSheet\Admin_UI;
 use App\AdvancedEntryManager\GoogleSheet\Send_Data;
-use FluentForm\App\Models\Log;
+use App\AdvancedEntryManager\Admin\Logs\HandleLogAction;
 
 /**
  * Class Admin
@@ -57,6 +57,12 @@ class Admin {
     protected $send_data;
 
     /**
+     * HandleLogAction instance
+     * @var HandleLogAction
+     */
+    protected $handle_log_action;
+
+    /**
      * Initializes and manages all admin-related functionalities by instantiating and connecting various services.
      *
      * @param Assets       $assets       The assets handler.
@@ -71,11 +77,13 @@ class Admin {
     Menu $menu,
     Admin_Notice $admin_notice,
     Send_Data $send_data,
+    HandleLogAction $handle_log_action
     ) {
         $this->assets = $assets;
         $this->options = $options;
         $this->menu = $menu;
         $this->admin_notice = $admin_notice;
         $this->send_data = $send_data;
+        $this->handle_log_action = $handle_log_action;
     }
 }

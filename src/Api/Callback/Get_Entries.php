@@ -63,8 +63,8 @@ class Get_Entries {
         if ($search) {
             switch ($search_type) {
                 case 'email':
-                    $where_clauses[] = 'email LIKE %s';
-                    $params[] = '%' . $wpdb->esc_like($search) . '%';
+                    $where_clauses[] = 'email = %s';
+                    $params[] = (string) $search;
                     break;
                 case 'id':
                     // The validate_callback for 'id' should ensure this is an integer.

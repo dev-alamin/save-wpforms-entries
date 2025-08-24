@@ -4,7 +4,6 @@ namespace App\AdvancedEntryManager\Admin\Logs;
 
 use App\AdvancedEntryManager\Logger\FileLogger;
 use App\AdvancedEntryManager\Utility\FileSystem;
-use App\AdvancedEntryManager\Admin\Logs\Log_List_Table;
 
 defined('ABSPATH') || exit;
 
@@ -35,12 +34,39 @@ class LogViewerPage {
      * Renders the content of the admin page.
      */
     public function render_page() {
+        // Verify nonce for GET requests (viewing logs)
+        $nonce_valid = false;
 
-        if (isset($_GET['action']) && $_GET['action'] === 'view_log' && isset($_GET['file'])) {
-            $this->render_single_log_view();
-        } else {
-            $this->render_log_list();
+        if (isset($_GET['_wpnonce'])) {
+            $nonce_valid = wp_verify_nonce( sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'forms-entries-manager-view' );
         }
+
+        // Verify nonce for POST requests (actions like clear logs)
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (
+                !isset($_POST['_wpnonce']) ||
+                !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['_wpnonce'])), 'forms-entries-manager-clear')
+            ) {
+                echo sprintf(
+                    '<div class="notice notice-error is-dismissible"><p>%s</p></div>',
+                    esc_html__('Security check failed. Please try again.', 'forms-entries-manager')
+                );
+                return;
+            }
+        }
+
+        // Handle log viewing
+        if (
+            isset($_GET['action'], $_GET['file']) &&
+            $_GET['action'] === 'view_log' &&
+            $nonce_valid
+        ) {
+            $this->render_single_log_view();
+            return;
+        }
+
+        // Default: render log list
+        $this->render_log_list();
     }
 
     /**
@@ -52,7 +78,7 @@ class LogViewerPage {
         $message_type = '';
 
         if (isset($_GET['message'])) {
-            $message = sanitize_text_field($_GET['message']);
+            $message = sanitize_text_field( wp_unslash( $_GET['message'] ) );
             $message_type = 'success';
         }
         ?>
@@ -121,60 +147,6 @@ class LogViewerPage {
     }
 
     /**
-     * Handles the file download request.
-     */
-    protected function handle_download() {
-        if (!isset($_GET['_wpnonce']) || !wp_verify_nonce($_GET['_wpnonce'], 'forms-entries-manager-download')) {
-            wp_die('Invalid nonce!');
-        }
-
-        if (!isset($_GET['file'])) {
-            return;
-        }
-
-        $file_name = sanitize_file_name($_GET['file']);
-        $log_dir = $this->get_log_directory();
-        $file_path = trailingslashit($log_dir) . $file_name;
-
-        // Security check: Verify the file exists and is in the correct directory.
-        if ($this->fs->exists($file_path) && strpos(realpath($file_path), realpath($log_dir)) === 0) {
-            $file_content = $this->fs->read($file_path);
-
-            // Set headers for file download
-            header('Content-Description: File Transfer');
-            header('Content-Type: text/plain');
-            header('Content-Disposition: attachment; filename="' . esc_attr($file_name) . '"');
-            header('Expires: 0');
-            header('Cache-Control: must-revalidate');
-            header('Pragma: public');
-            header('Content-Length: ' . strlen($file_content));
-
-            // Output the file content and exit
-            echo $file_content;
-            exit;
-        } else {
-            // Redirect with an error message.
-            $redirect_url = add_query_arg(['message' => urlencode('File not found or invalid.')], admin_url('admin.php?page=forms-entries-manager-logs'));
-            wp_safe_redirect($redirect_url);
-            exit;
-        }
-    }
-
-    /**
-     * Handles the log clear request.
-     */
-    protected function handle_clear() {
-        if (!isset($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'forms-entries-manager-clear')) {
-            wp_die('Invalid nonce!');
-        }
-
-        $this->logger->clear_old_logs(0); // Pass 0 to clear all logs.
-        $redirect_url = add_query_arg(['message' => urlencode('All logs have been cleared.')], admin_url('admin.php?page=forms-entries-manager-logs'));
-        wp_safe_redirect($redirect_url);
-        exit;
-    }
-
-    /**
      * Gets a list of log files from the log directory.
      *
      * @return array An associative array of log files.
@@ -189,7 +161,7 @@ class LogViewerPage {
 
         // Sort files by last modification date, descending.
         usort($files, function($a, $b) {
-            return $b['lastmodtime'] <=> $a['lastmodtime'];
+            return $b['lastmodunix'] <=> $a['lastmodunix'];
         });
 
         // Filter to only include .log files.

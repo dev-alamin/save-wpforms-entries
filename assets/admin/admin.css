@@ -20,7 +20,7 @@ body.forms-entries_page_form-entries-migration  {
     background-repeat: no-repeat;
     background-size: cover;
 	min-height: 100vh;
-	padding: 2rem;
+	padding: 1rem;
 	font-family: 'Inter', system-ui, sans-serif;
 	color: #1f2937; /* text-gray-800 */
 }
