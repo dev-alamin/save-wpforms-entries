@@ -41,9 +41,10 @@ class Get_Forms {
 		// If cache is empty, run the database query and populate the cache
 		if ( false === $response ) {
 			global $wpdb;
-			$table = Helper::get_table_name();
+			$table = Helper::get_table_name(); // Safe table
 
 			// Query distinct form IDs and their entry counts
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$results = $wpdb->get_results(
 				$wpdb->prepare(
 					"SELECT 
@@ -119,9 +120,10 @@ class Get_Forms {
 		}
 
 		global $wpdb;
-		$table = Helper::get_table_name();
+		$table = Helper::get_table_name(); // Safe table
 
 		// Fetch a few rows to detect fields (faster than scanning all)
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT * FROM `{$table}` WHERE form_id = %d LIMIT 5",

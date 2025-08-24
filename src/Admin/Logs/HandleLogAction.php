@@ -42,18 +42,22 @@ class HandleLogAction {
 		}
 
 		if ( isset( $_GET['action'] ) && $_GET['action'] === 'download_log' ) {
-
-			if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( $_GET['_wpnonce'], 'forms-entries-manager-download' ) ) {
-				wp_die( 'Invalid nonce!' );
+			if ( check_admin_referer( 'forms-entries-manager-download' ) === false ) {
+				printf(
+					'<div class="notice notice-error is-dismissible"><p>%s</p></div>',
+					esc_html__( 'Security check failed. Please try again.', 'forms-entries-manager' )
+				);
 			}
 
 			$this->handle_download();
 		}
 
 		if ( isset( $_POST['action'] ) && $_POST['action'] === 'clear_logs' ) {
-
-			if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( $_POST['_wpnonce'], 'forms-entries-manager-clear' ) ) {
-				wp_die( 'Invalid nonce!' );
+			if ( check_admin_referer( 'forms-entries-manager-clear' ) === false ) {
+				printf(
+					'<div class="notice notice-error is-dismissible"><p>%s</p></div>',
+					esc_html__( 'Security check failed. Please try again.', 'forms-entries-manager' )
+				);
 			}
 
 			$this->handle_clear();
@@ -69,7 +73,11 @@ class HandleLogAction {
 			return;
 		}
 
-		$file_name = sanitize_file_name( $_GET['file'] );
+		if ( check_admin_referer( 'forms-entries-manager-download' ) === false ) {
+			wp_die( esc_html__( 'Invalid nonce!', 'forms-entries-manager' ) );
+		}
+
+		$file_name = sanitize_file_name( wp_unslash( $_GET['file'] ) );
 		$log_dir   = $this->logger->get_log_directory();
 		$file_path = trailingslashit( $log_dir ) . $file_name;
 
@@ -104,8 +112,17 @@ class HandleLogAction {
 	 * Handles the log clear request.
 	 */
 	protected function handle_clear() {
+		if ( check_admin_referer( 'forms-entries-manager-clear' ) === false ) {
+			wp_die( esc_html__( 'Invalid nonce!', 'forms-entries-manager' ) );
+		}
+
 		$this->logger->clear_old_logs( 0 ); // Pass 0 to clear all logs.
-		$redirect_url = add_query_arg( array( 'message' => urlencode( 'All logs have been cleared.' ) ), admin_url( 'admin.php?page=forms-entries-manager-logs' ) );
+		$redirect_url = add_query_arg(
+			array(
+				'message' => urlencode( 'All logs have been cleared.' ),
+			),
+			admin_url( 'admin.php?page=forms-entries-manager-logs' )
+		);
 		wp_safe_redirect( $redirect_url );
 		exit;
 	}

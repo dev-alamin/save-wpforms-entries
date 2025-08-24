@@ -53,7 +53,22 @@
 			</a>
 		</div>
 
-		<a href="<?php echo esc_url( admin_url( 'admin.php?page=form-entries-settings&action=revoke_google_connection&_wpnonce=' . wp_create_nonce( 'revoke_connection_nonce' ) ) ); ?>" 
+		<a href="
+			<?php
+			echo esc_url(
+				admin_url(
+					add_query_arg(
+						array(
+							'action'   => 'revoke_google_connection',
+							'page'     => 'form-entries-settings',
+							'_wpnonce' => wp_create_nonce( 'revoke_connection_nonce' ),
+						),
+						''
+					)
+				)
+			);
+			?>
+		" 
 		class="inline-flex mt-4 items-center justify-center gap-2 px-7 py-3 rounded-lg bg-red-600 hover:bg-red-700 !text-white font-medium shadow transition max-w-xs mx-auto">
 			<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#fff"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
 			<?php esc_html_e( 'Revoke Connection', 'forms-entries-manager' ); ?>
@@ -64,7 +79,18 @@
 				<?php esc_html_e( 'To start syncing WPForms entries with Google Sheets, please connect your Google account. This will enable live synchronization and easy data management.', 'forms-entries-manager' ); ?>
 			</p>
 
-			<a href="<?php echo esc_url( FEM_GOOGLE_PROXY_URL . '?site=' . rawurlencode( Helper::get_settings_page_url() ) ); ?>"
+			<a href="
+			<?php
+			echo esc_url(
+				add_query_arg(
+					array(
+						'site' => rawurlencode( Helper::get_settings_page_url() ),
+					),
+					FEM_GOOGLE_PROXY_URL
+				)
+			);
+			?>
+			"
 				class="inline-flex items-center justify-center gap-2 px-7 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 !text-white font-medium shadow transition max-w-xs mx-auto">
 				<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
 					stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

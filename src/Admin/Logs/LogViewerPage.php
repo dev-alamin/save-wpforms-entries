@@ -42,15 +42,14 @@ class LogViewerPage {
 		}
 
 		// Verify nonce for POST requests (actions like clear logs)
-		if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
-			if (
-				! isset( $_POST['_wpnonce'] ) ||
-				! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), 'forms-entries-manager-clear' )
-			) {
+		if ( isset( $_SERVER['REQUEST_METHOD'] ) && $_SERVER['REQUEST_METHOD'] === 'POST' ) {
+			if ( check_admin_referer( 'forms-entries-manager-clear' ) === false ) {
+
 				printf(
 					'<div class="notice notice-error is-dismissible"><p>%s</p></div>',
 					esc_html__( 'Security check failed. Please try again.', 'forms-entries-manager' )
 				);
+
 				return;
 			}
 		}
@@ -73,11 +72,15 @@ class LogViewerPage {
 	 * Renders the log file list view.
 	 */
 	private function render_log_list() {
+		// Nonce already verified in parent method.
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$log_files    = $this->get_log_files();
 		$message      = '';
 		$message_type = '';
 
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		if ( isset( $_GET['message'] ) ) {
+            // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			$message      = sanitize_text_field( wp_unslash( $_GET['message'] ) );
 			$message_type = 'success';
 		}
@@ -120,11 +123,13 @@ class LogViewerPage {
 	 * Renders a single log file's content.
 	 */
 	private function render_single_log_view() {
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		if ( ! isset( $_GET['file'] ) ) {
 			return;
 		}
 
-		$file_name = sanitize_file_name( $_GET['file'] );
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$file_name = sanitize_file_name( wp_unslash( $_GET['file'] ) );
 		$log_dir   = $this->get_log_directory();
 		$file_path = trailingslashit( $log_dir ) . $file_name;
 

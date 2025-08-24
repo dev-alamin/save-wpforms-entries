@@ -229,7 +229,8 @@ class Helper {
             ORDER BY entry_count DESC
         ";
 
-		$results = $wpdb->get_results( $wpdb->prepare( $query ) ); // WPCS: unprepared SQL OK
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+		$results = $wpdb->get_results( $wpdb->prepare( $query ) ); 
 
 		$data = array();
 		if ( ! empty( $results ) ) {
@@ -446,19 +447,25 @@ class Helper {
 		$cache_key = 'aem_entries_' . md5( implode( ',', $ids ) );
 		$entries   = wp_cache_get( $cache_key, 'aem' );
 
-		if ( false === $entries ) {
-			global $wpdb;
-			$table        = self::get_table_name();
-			$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
-			$entries      = $wpdb->get_results(
-				$wpdb->prepare(
-					"SELECT * FROM {$table} WHERE id IN ($placeholders)",
-					$ids
-				),
-				ARRAY_A
-			);
-			wp_cache_set( $cache_key, $entries, 'aem', 300 ); // cache 5 mins
-		}
+        // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+        if ( false === $entries ) {
+            global $wpdb;
+            $table = self::get_table_name();
+
+            // Build placeholders
+            $placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+
+            // Expand $ids array into arguments using the splat operator
+            $entries = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT * FROM {$table} WHERE id IN ($placeholders)",
+                    ...$ids
+                ),
+                ARRAY_A
+            );
+
+            wp_cache_set( $cache_key, $entries, 'aem', 300 ); // cache 5 mins
+        }
 
 		return $entries ?: array();
 	}

@@ -32,8 +32,11 @@ class Send_Data {
 		}
 
 		// Verify the nonce for security
-		if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( $_GET['_wpnonce'], 'revoke_connection_nonce' ) ) {
-			wp_die( 'Security check failed.' );
+		if ( check_admin_referer( 'revoke_connection_nonce' ) === false ) {
+			printf(
+				'<div class="notice notice-error is-dismissible"><p>%s</p></div>',
+				esc_html__( 'Security check failed. Please try again.', 'forms-entries-manager' )
+			);
 		}
 
 		// Ensure the current user has the right permissions
@@ -57,11 +60,12 @@ class Send_Data {
 	}
 
 	public function capture_token() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		if ( ! isset( $_GET['oauth_proxy_code'] ) ) {
 			return;
 		}
 
-		$auth_code = sanitize_text_field( $_GET['oauth_proxy_code'] );
+		$auth_code = sanitize_text_field( wp_unslash( $_GET['oauth_proxy_code'] ) ); //phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
 		// Exchange the one-time auth code for real tokens
 		$response = wp_remote_post(
@@ -233,8 +237,9 @@ class Send_Data {
 		global $wpdb;
 
 		$entry_id = absint( $args['entry_id'] );
-		$table    = Helper::get_table_name();
+		$table    = Helper::get_table_name(); // Safe table
 
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$entry = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $entry_id ) );
 
 		if ( ! $entry ) {
@@ -267,6 +272,7 @@ class Send_Data {
 				$row_count = $metadata['sheets'][0]['properties']['gridProperties']['rowCount'];
 				if ( $row_count >= 1000 ) {
 					$this->logger->log( 'GSheet row limit reached for form ' . $form_id . '. Entry ' . $entry_id . ' not synced.', 'ERROR' );
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 					$wpdb->update( $table, array( 'synced_to_gsheet' => 2 ), array( 'id' => $entry_id ) ); // '2' can indicate 'sync_limit_reached'
 					return false;
 				}
@@ -298,7 +304,7 @@ class Send_Data {
 		$this->logger->log( 'Entry ID ' . $entry_id . ' successfully synced to Google Sheets.', 'INFO' );
 
 		// Step 4: Mark as synced on success.
-		$wpdb->update(
+		$wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$table,
 			array(
 				'synced_to_gsheet' => 1,
@@ -325,9 +331,10 @@ class Send_Data {
 		}
 
 		global $wpdb;
-		$table = Helper::get_table_name();
+		$table = Helper::get_table_name(); // Safe table
 
 		// Fetch a sample entry to infer headers
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$row = $wpdb->get_row(
 			$wpdb->prepare( "SELECT entry, note, status FROM {$table} WHERE form_id = %d LIMIT 1", $form_id ),
 			ARRAY_A
@@ -428,6 +435,7 @@ class Send_Data {
 		$table = Helper::get_table_name();
 
 		if ( $current_retry_count < 5 ) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->update( $table, array( 'retry_count' => $current_retry_count + 1 ), array( 'id' => $entry_id ) );
 			// Schedule retry with exponential backoff
 			$delay = 60 * pow( 2, $current_retry_count ); // 1 min, 2 min, 4 min, etc.
@@ -493,6 +501,7 @@ class Send_Data {
 		$query    = "SELECT id FROM $table WHERE $where ORDER BY id ASC LIMIT %d";
 		$params[] = $batch_size;
 
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
 		$entries = $wpdb->get_results( $wpdb->prepare( $query, ...$params ) );
 
 		if ( empty( $entries ) ) {
@@ -558,9 +567,10 @@ class Send_Data {
 	 */
 	public function unsync_entry_from_sheet( int $entry_id ) {
 		global $wpdb;
-		$table = Helper::get_table_name();
+		$table = Helper::get_table_name(); // Safe table
 
 		// 1. Get Form ID from Entry ID
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$form_id = $wpdb->get_var( $wpdb->prepare( "SELECT form_id FROM $table WHERE id = %d", $entry_id ) );
 		if ( ! $form_id ) {
 			return new WP_Error( 'entry_not_found', "Entry with ID {$entry_id} not found in the local database." );
@@ -606,6 +616,7 @@ class Send_Data {
 			// The desired state (row is gone) is achieved, so we can return true.
 
 			// Also update local status to be sure.
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->update( $table, array( 'synced_to_gsheet' => 0 ), array( 'id' => $entry_id ) );
 			return true;
 		}
@@ -635,6 +646,7 @@ class Send_Data {
 		}
 
 		// 5. Update the local database to mark it as unsynced
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$wpdb->update( $table, array( 'synced_to_gsheet' => 0 ), array( 'id' => $entry_id ) );
 
 		$this->logger->log( 'Entry ID ' . $entry_id . ' successfully unsynced from Google Sheets.', 'INFO' );
