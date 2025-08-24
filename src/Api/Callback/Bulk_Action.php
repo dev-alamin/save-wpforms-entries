@@ -1,221 +1,178 @@
 <?php
-
 namespace App\AdvancedEntryManager\Api\Callback;
 
-defined('ABSPATH') || exit;
+defined( 'ABSPATH' ) || exit;
 
 use App\AdvancedEntryManager\Utility\Helper;
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
 
-/**
- * Class Bulk_Action
- *
- * Handles the retrieval of forms from the custom database table.
- */
-class Bulk_Action
-{
-    /**
-     * Handle bulk actions on entries.
-     *
-     * This endpoint processes bulk operations like marking as read/unread,
-     * favoriting/unfavoriting, and deleting multiple WPForms entries.
-     *
-     * @since 1.0.0
-     *
-     * @param WP_REST_Request $request The REST request object.
-     * @return WP_REST_Response JSON response indicating success or failure.
-     */
-    public function bulk_actions(WP_REST_Request $request)
-    {
-        $ids = array_unique(array_map('absint', $request->get_param('ids')));
-        $action = sanitize_text_field($request->get_param('action'));
+class Bulk_Action {
 
-        // Validate IDs
-        if (!is_array($ids) || empty($ids)) {
-            return new WP_REST_Response([
-                'success' => false,
-                'message' => __('Invalid or missing entry IDs.', 'forms-entries-manager'),
-            ], 400);
-        }
+	public function bulk_actions( WP_REST_Request $request ) {
+		$ids    = array_unique( array_map( 'absint', $request->get_param( 'ids' ) ) );
+		$action = sanitize_text_field( $request->get_param( 'action' ) );
 
-        // Sanitize each ID
-        $ids = array_map('absint', $ids);
+		if ( empty( $ids ) ) {
+			return new WP_REST_Response(
+				array(
+					'success' => false,
+					'message' => __( 'Invalid or missing entry IDs.', 'forms-entries-manager' ),
+				),
+				400
+			);
+		}
 
-        // Validate action
-        $valid_actions = ['delete', 'mark_read', 'mark_unread', 'favorite', 'unfavorite', 'mark_spam', 'unmark_spam'];
-        if (!in_array($action, $valid_actions, true)) {
-            return new WP_REST_Response([
-                'success' => false,
-                'message' => __('Invalid action provided.', 'forms-entries-manager'),
-            ], 400);
-        }
+		$valid_actions = array( 'delete', 'mark_read', 'mark_unread', 'favorite', 'unfavorite', 'mark_spam', 'unmark_spam' );
+		if ( ! in_array( $action, $valid_actions, true ) ) {
+			return new WP_REST_Response(
+				array(
+					'success' => false,
+					'message' => __( 'Invalid action provided.', 'forms-entries-manager' ),
+				),
+				400
+			);
+		}
 
-        global $wpdb;
-        $table = Helper::get_table_name();
+		$affected    = 0;
+		$deleted_ids = array();
+		$updated_ids = array();
 
-        $affected = 0;
-        $deleted_ids = [];
-        $updated_ids = [];
+		foreach ( $ids as $id ) {
+			switch ( $action ) {
+				case 'delete':
+					if ( Helper::delete_entry( $id ) ) {
+						$deleted_ids[] = $id;
+						++$affected;
+					}
+					break;
 
-        foreach ($ids as $id) {
-            switch ($action) {
-                case 'delete':
-                    $deleted = $wpdb->delete($table, ['id' => $id]);
-                    if ($deleted !== false) {
-                        $affected++;
-                        $deleted_ids[] = $id;
-                    }
-                    break;
+				case 'mark_read':
+					if ( Helper::update_entry( $id, array( 'status' => 'read' ) ) ) {
+						$updated_ids[] = $id;
+						++$affected;
+					}
+					break;
 
-                case 'mark_read':
-                    $updated = $wpdb->update($table, ['status' => 'read'], ['id' => $id]);
-                    if ($updated !== false) {
-                        $affected++;
-                        $updated_ids[] = $id;
-                    }
-                    break;
+				case 'mark_unread':
+					if ( Helper::update_entry( $id, array( 'status' => 'unread' ) ) ) {
+						$updated_ids[] = $id;
+						++$affected;
+					}
+					break;
 
-                case 'mark_unread':
-                    $updated = $wpdb->update($table, ['status' => 'unread'], ['id' => $id]);
-                    if ($updated !== false) {
-                        $affected++;
-                        $updated_ids[] = $id;
-                    }
-                    break;
+				case 'favorite':
+					if ( Helper::update_entry( $id, array( 'is_favorite' => 1 ) ) ) {
+						$updated_ids[] = $id;
+						++$affected;
+					}
+					break;
 
-                case 'favorite':
-                    $updated = $wpdb->update($table, ['is_favorite' => 1], ['id' => $id]);
-                    if ($updated !== false) {
-                        $affected++;
-                        $updated_ids[] = $id;
-                    }
-                    break;
+				case 'unfavorite':
+					if ( Helper::update_entry( $id, array( 'is_favorite' => 0 ) ) ) {
+						$updated_ids[] = $id;
+						++$affected;
+					}
+					break;
 
-                case 'unfavorite':
-                    $updated = $wpdb->update($table, ['is_favorite' => 0], ['id' => $id]);
-                    if ($updated !== false) {
-                        $affected++;
-                        $updated_ids[] = $id;
-                    }
-                    break;
+				case 'mark_spam':
+					if ( Helper::update_entry( $id, array( 'is_spam' => 1 ) ) ) {
+						$updated_ids[] = $id;
+						++$affected;
+					}
+					break;
 
-                case 'mark_spam':
-                    $updated = $wpdb->update($table, ['is_spam' => 1], ['id' => $id]);
-                    if ($updated !== false) {
-                        $affected++;
-                        $updated_ids[] = $id;
-                    }
-                    break;
+				case 'unmark_spam':
+					if ( Helper::update_entry( $id, array( 'is_spam' => 0 ) ) ) {
+						$updated_ids[] = $id;
+						++$affected;
+					}
+					break;
+			}
+		}
 
-                case 'unmark_spam':
-                    $updated = $wpdb->update($table, ['is_spam' => 0], ['id' => $id]);
-                    if ($updated !== false) {
-                        $affected++;
-                        $updated_ids[] = $id;
-                    }
-                    break;
-            }
-        }
+		return rest_ensure_response(
+			array(
+				'success'     => true,
+				'message'     => $action === 'delete'
+					? sprintf(
+						_n( '%d entry deleted.', '%d entries deleted.', count( $deleted_ids ), 'forms-entries-manager' ),
+						count( $deleted_ids )
+					)
+					: sprintf(
+						_n( '%d entry updated.', '%d entries updated.', count( $updated_ids ), 'forms-entries-manager' ),
+						count( $updated_ids )
+					),
+				'deleted_ids' => $deleted_ids,
+				'updated_ids' => $updated_ids,
+				'affected'    => $affected,
+			)
+		);
+	}
 
-        return rest_ensure_response([
-            'success' => true,
-            'message' => $action === 'delete'
-                ? sprintf(
-                    /* translators: %d is the number of deleted entries */
-                    _n(
-                        '%d entry deleted.',
-                        '%d entries deleted.',
-                        count($deleted_ids),
-                        'forms-entries-manager'
-                    ),
-                    count($deleted_ids)
-                )
-                : sprintf(
-                    /* translators: %d is the number of updated entries */
-                    _n(
-                        '%d entry updated.',
-                        '%d entries updated.',
-                        count($updated_ids),
-                        'forms-entries-manager'
-                    ),
-                    count($updated_ids)
-                ),
-            'deleted_ids' => $deleted_ids,
-            'updated_ids' => $updated_ids,
-            'affected'    => $affected,
-        ]);
-    }
+	public function export_entries_csv_bulk( WP_REST_Request $request ) {
+		$ids = $request->get_param( 'ids' );
 
-    /**
-     * Export selected WPForms entries as a CSV file download.
-     *
-     * This method handles a REST API POST request, expecting an array of entry IDs 
-     * under the 'ids' parameter. It fetches entries from the custom `fem_entries_manager` table,
-     * unserializes the stored entry data, and outputs it as a CSV file.
-     * 
-     * The CSV file includes an 'id' column as the first column, followed by the entry data keys.
-     *
-     * @param WP_REST_Request $request The REST API request object containing parameters.
-     * 
-     * @return WP_Error|void Returns WP_Error on invalid input or no data; otherwise sends CSV download and exits.
-     * 
-     * @throws void Sends CSV headers and exits script after output.
-     */
-    public function export_entries_csv_bulk($request)
-    {
-        global $wpdb;
-        $ids = $request->get_param('ids');
+		if ( empty( $ids ) || ! is_array( $ids ) ) {
+			return new WP_Error( 'invalid_data', __( 'No entries selected.', 'forms-entries-manager' ), array( 'status' => 400 ) );
+		}
 
-        if (empty($ids) || !is_array($ids)) {
-            return new \WP_Error('invalid_data', __('No entries selected.', 'forms-entries-manager'), ['status' => 400]);
-        }
+		$entries = Helper::get_entries_by_ids( $ids );
 
-        // Prepare placeholders for SQL IN clause
-        $placeholders = implode(',', array_fill(0, count($ids), '%d'));
-        $table = Helper::get_table_name(); // e.g., 'fem_entries_manager'
-        $query = "SELECT * FROM {$table} WHERE id IN ($placeholders)";
-        $entries = $wpdb->get_results($wpdb->prepare($query, $ids), ARRAY_A);
+		if ( empty( $entries ) ) {
+			return new WP_Error( 'no_data', __( 'No data found.', 'forms-entries-manager' ), array( 'status' => 404 ) );
+		}
 
-        if (empty($entries)) {
-            return new \WP_Error('no_data', __('No data found.', 'forms-entries-manager'), ['status' => 404]);
-        }
+		// Load WordPress filesystem
+		if ( ! function_exists( 'WP_Filesystem' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+		WP_Filesystem();
+		global $wp_filesystem;
 
-        // Set headers for CSV file download
-        header('Content-Type: text/csv');
-        header('Content-Disposition: attachment; filename="aem-entries.csv"');
+		// Create temp file using WordPress temp path
+		$tmp_file = wp_tempnam( 'aem-entries.csv' );
+		if ( ! $tmp_file ) {
+			return new WP_Error( 'fs_error', __( 'Unable to create temp file.', 'forms-entries-manager' ), array( 'status' => 500 ) );
+		}
 
-        $output = fopen('php://output', 'w');
+		// Open file for writing
+		$handle = $wp_filesystem->fopen( $tmp_file, 'w' );
 
-        // Extract header columns from first entry's unserialized data keys
-        $first = $entries[0];
-        $entry_data = maybe_unserialize($first['entry']);
-        $headers = array_keys($entry_data);
+		// Write headers
+		$first      = $entries[0];
+		$entry_data = maybe_unserialize( $first['entry'] );
+		$headers    = array_keys( $entry_data );
+		array_unshift( $headers, 'id' );
+		Helper::fputcsv( $handle, $headers );
 
-        // Add 'id' as first column header
-        array_unshift($headers, 'id');
+		// Write rows
+		foreach ( $entries as $entry ) {
+			$data = maybe_unserialize( $entry['entry'] );
+			$row  = array( $entry['id'] );
+			foreach ( array_slice( $headers, 1 ) as $key ) {
+				$row[] = $data[ $key ] ?? '-';
+			}
+			Helper::fputcsv( $handle, $row );
+		}
 
-        // Write CSV headers
-        fputcsv($output, $headers);
+		// Close file
+		$wp_filesystem->fclose( $handle );
 
-        // Write CSV rows including 'id' and entry data values
-        foreach ($entries as $entry) {
-            $data = maybe_unserialize($entry['entry']);
-            $row = [];
+		// Read file content
+		$csv_content = $wp_filesystem->get_contents( $tmp_file );
 
-            // Add the 'id' column value first
-            $row[] = $entry['id'];
+		// Delete temp file
+		$wp_filesystem->delete( $tmp_file );
 
-            // Add other columns in header order
-            foreach (array_slice($headers, 1) as $key) {
-                $row[] = $data[$key] ?? '-';
-            }
-
-            fputcsv($output, $row);
-        }
-
-        fclose($output);
-        exit; // Stop execution to prevent extra output
-    }
+		// Return CSV as base64 string via REST
+		return rest_ensure_response(
+			array(
+				'success'  => true,
+				'filename' => 'fem-entries.csv',
+				'csv'      => base64_encode( $csv_content ),
+			)
+		);
+	}
 }

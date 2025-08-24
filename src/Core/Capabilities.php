@@ -10,69 +10,69 @@
  */
 namespace App\AdvancedEntryManager\Core;
 
-defined('ABSPATH') || exit;
+defined( 'ABSPATH' ) || exit;
 
 class Capabilities {
-    /**
-     * Adds custom WPForms entry management capabilities to the administrator role.
-     *
-     * Checks if the 'administrator' role exists and assigns the following capabilities:
-     * - can_create_wpf_entries
-     * - can_edit_wpf_entries
-     * - can_delete_wpf_entries
-     * - can_view_wpf_entries
-     * - can_manage_wpf_entries
-     *
-     * @return void
-     */
-    public function add_cap(){
-        $role = get_role( 'administrator' );
+	/**
+	 * Adds custom WPForms entry management capabilities to the administrator role.
+	 *
+	 * Checks if the 'administrator' role exists and assigns the following capabilities:
+	 * - can_create_wpf_entries
+	 * - can_edit_wpf_entries
+	 * - can_delete_wpf_entries
+	 * - can_view_wpf_entries
+	 * - can_manage_wpf_entries
+	 *
+	 * @return void
+	 */
+	public function add_cap() {
+		$role = get_role( 'administrator' );
 
-        if( ! $role ) {
-            return;
-        }
+		if ( ! $role ) {
+			return;
+		}
 
-        $capabilities = [
-            'can_create_fem_entries',
-            'can_edit_fem_entries',
-            'can_delete_fem_entries',
-            'can_view_fem_entries',
-            'can_manage_fem_entries',
-        ];
+		$capabilities = array(
+			'can_create_fem_entries',
+			'can_edit_fem_entries',
+			'can_delete_fem_entries',
+			'can_view_fem_entries',
+			'can_manage_fem_entries',
+		);
 
-        foreach( $capabilities as $cap ) {
-            if( ! $role->has_cap( $cap ) ) {
-                $role->add_cap( $cap );
-            }
-        }
-    }
+		foreach ( $capabilities as $cap ) {
+			if ( ! $role->has_cap( $cap ) ) {
+				$role->add_cap( $cap );
+			}
+		}
+	}
 
-    /**
-     * Removes custom capabilities from the 'administrator' role.
-     *
-     * This method is called when the plugin is deactivated to clean up capabilities.
-     *
-     * @return void
-     */
-    public function remove_cap() {
-        $role = get_role( 'administrator' );
+	/**
+	 * Removes custom capabilities from the 'administrator' role.
+	 *
+	 * This method is called when the plugin is deactivated to clean up capabilities.
+	 *
+	 * @return void
+	 */
+	public function remove_cap() {
+		$role = get_role( 'administrator' );
 
-        if( ! $role ) {
-            return;
-        }
+		if ( ! $role ) {
+			return;
+		}
 
-        $capabilities = [
-            'can_create_fem_entries',
-            'can_edit_fem_entries',
-            'can_delete_fem_entries',
-            'can_view_fem_entries',
-            'can_manage_fem_entries',
-        ];
+		$capabilities = array(
+			'can_create_fem_entries',
+			'can_edit_fem_entries',
+			'can_delete_fem_entries',
+			'can_view_fem_entries',
+			'can_manage_fem_entries',
+		);
 
-        foreach( $capabilities as $cap ) {
-            if( $role->has_cap( $cap ) ) {
-                $role->remove_cap( $cap );
-            }
-        }
-    }
+		foreach ( $capabilities as $cap ) {
+			if ( $role->has_cap( $cap ) ) {
+				$role->remove_cap( $cap );
+			}
+		}
+	}
 }

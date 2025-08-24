@@ -2,7 +2,7 @@
 
 namespace App\AdvancedEntryManager\Utility;
 
-defined('ABSPATH') || exit;
+defined( 'ABSPATH' ) || exit;
 
 use App\AdvancedEntryManager\Logger\FileLogger;
 use WP_Error;
@@ -11,239 +11,241 @@ use App\AdvancedEntryManager\Utility\DB;
 
 class Helper {
 
-    const OPTION_PREFIX = 'fem';
-    protected static $logger;
+	const OPTION_PREFIX = 'fem';
+	protected static $logger;
 
-    public function __construct() {
-        self::$logger = new FileLogger();
-    }
+	public function __construct() {
+		self::$logger = new FileLogger();
+	}
 
-    /**
-     * Set FEM Transient
-     * 
-     * @param string $key
-     * @param mixed $value
-     */
-    public static function set_transient( string $key, $value ): void {
-        set_transient( self::OPTION_PREFIX . $key, $value, HOUR_IN_SECONDS );
-    }
+	/**
+	 * Set FEM Transient
+	 *
+	 * @param string $key
+	 * @param mixed  $value
+	 */
+	public static function set_transient( string $key, $value ): void {
+		set_transient( self::OPTION_PREFIX . $key, $value, HOUR_IN_SECONDS );
+	}
 
-    /**
-     * Get FEM Table
-     * 
-     * @return string
-     */
-    public static function get_table_name(): string {
-        global $wpdb;
-        // return $wpdb->prefix . FEM_TABLE_NAME;
-        return $wpdb->prefix . 'aemfw_entries';
-    }
+	/**
+	 * Get FEM Table
+	 *
+	 * @return string
+	 */
+	public static function get_table_name(): string {
+		global $wpdb;
+		// return $wpdb->prefix . FEM_TABLE_NAME;
+		return $wpdb->prefix . 'aemfw_entries';
+	}
 
-    /**
-     * Get FEM Transient
-     * 
-     * @param string $key
-     * @return mixed
-     */
-    public static function get_transient( string $key ) {
-        return get_transient( self::OPTION_PREFIX . $key );
-    }
+	/**
+	 * Get FEM Transient
+	 *
+	 * @param string $key
+	 * @return mixed
+	 */
+	public static function get_transient( string $key ) {
+		return get_transient( self::OPTION_PREFIX . $key );
+	}
 
-    /**
-     * Delete FEM Transient
-     * 
-     * @param string $key
-     */
-    public static function delete_transient( string $key ): void {
-        delete_transient( self::OPTION_PREFIX . $key );
-    }
+	/**
+	 * Delete FEM Transient
+	 *
+	 * @param string $key
+	 */
+	public static function delete_transient( string $key ): void {
+		delete_transient( self::OPTION_PREFIX . $key );
+	}
 
-    /**
-     * Set FEM Error Log in debug.log
-     * 
-     * @param mixed $data
-     */
-    public static function set_error_log( $data ): void {
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            $output = is_scalar( $data ) ? $data : print_r( $data, true );
-            error_log( "[Forms Entries Manager] " . $output );
-        }
-    }
+	/**
+	 * Set FEM Error Log in debug.log
+	 *
+	 * @param mixed $data
+	 */
+	public static function set_error_log( $data ): void {
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			$output = is_scalar( $data ) ? $data : print_r( $data, true );
+			error_log( '[Forms Entries Manager] ' . $output );
+		}
+	}
 
-    /**
-     * Get FEM Error Log
-     * 
-     * @return array
-     */
-    public static function get_error_log(): array {
-        $log_file = WP_CONTENT_DIR . '/debug.log';
-        if ( file_exists( $log_file ) ) {
-            $log_contents = file_get_contents( $log_file );
-            return explode( "\n", trim( $log_contents ) );
-        }
-        return [];
-    }
+	/**
+	 * Get FEM Error Log
+	 *
+	 * @return array
+	 */
+	public static function get_error_log(): array {
+		$log_file = WP_CONTENT_DIR . '/debug.log';
+		if ( file_exists( $log_file ) ) {
+			$log_contents = file_get_contents( $log_file );
+			return explode( "\n", trim( $log_contents ) );
+		}
+		return array();
+	}
 
-    /**
-     * Check if the WPFormsDB table exists.
-     *
-     * @return bool
-     */
-    public static function table_exists( $table_name ): bool {
-        global $wpdb;
+	/**
+	 * Check if the WPFormsDB table exists.
+	 *
+	 * @return bool
+	 */
+	public static function table_exists( $table_name ): bool {
+		global $wpdb;
 
-        $table_name_like = str_replace('_', '\\_', $table_name); // Escape underscores
-        $result = $wpdb->get_var(
-            $wpdb->prepare("SHOW TABLES LIKE %s", $wpdb->prefix . $table_name_like)
-        );
-        
-        return ! empty($result);
-    }
+		$table_name_like = str_replace( '_', '\\_', $table_name ); // Escape underscores
+		$result          = $wpdb->get_var(
+			$wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->prefix . $table_name_like )
+		);
 
-    /**
-     * Check if the WPFormsDB plugin is active.
-     * 
-     * @return bool
-     */
-    public static function is_wpformsdb_active(): bool {
-        return is_plugin_active( 'database-for-wpforms/database-for-wpforms.php' );
-    }
+		return ! empty( $result );
+	}
 
-    /**
-     * Get All Entries from WPFormsDB.
-     * 
-     * @return array
-     */
-    public static function get_all_wpformsdb_entries(): array {
-        return DB::get_all_entries( 'wpforms_db' );
-    }
+	/**
+	 * Check if the WPFormsDB plugin is active.
+	 *
+	 * @return bool
+	 */
+	public static function is_wpformsdb_active(): bool {
+		return is_plugin_active( 'database-for-wpforms/database-for-wpforms.php' );
+	}
 
-    /**
-     * Count total entries in the WPFormsDB table.
-     * 
-     * @return int
-     */
-    public static function count_wpformsdb_entries(): int {
-        global $wpdb;
+	/**
+	 * Get All Entries from WPFormsDB.
+	 *
+	 * @return array
+	 */
+	public static function get_all_wpformsdb_entries(): array {
+		return DB::get_all_entries( 'wpforms_db' );
+	}
 
-        $table_name = $wpdb->prefix . 'wpforms_db';
-        return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name}" );
-    }
+	/**
+	 * Count total entries in the WPFormsDB table.
+	 *
+	 * @return int
+	 */
+	public static function count_wpformsdb_entries(): int {
+		global $wpdb;
 
-    /**
-     * Get the current user ID.
-     *
-     * @return int
-     */
-    public static function get_current_user_id(): int {
-        return get_current_user_id();
-    }
+		$table_name = $wpdb->prefix . 'wpforms_db';
+		return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name}" );
+	}
 
-    /**
-     * Return a formatted REST response.
-     *
-     * @param mixed $data
-     * @param int $status
-     * @return WP_REST_Response
-     */
-    public static function wp_rest_response( $data, int $status = 200 ): WP_REST_Response {
-        return new WP_REST_Response( $data, $status );
-    }
+	/**
+	 * Get the current user ID.
+	 *
+	 * @return int
+	 */
+	public static function get_current_user_id(): int {
+		return get_current_user_id();
+	}
 
-    /**
-     * Check if Action Scheduler is available.
-     *
-     * @return bool
-     */
-    public static function is_action_scheduler_available(): bool {
-        return class_exists( 'ActionScheduler' );
-    }
+	/**
+	 * Return a formatted REST response.
+	 *
+	 * @param mixed $data
+	 * @param int   $status
+	 * @return WP_REST_Response
+	 */
+	public static function wp_rest_response( $data, int $status = 200 ): WP_REST_Response {
+		return new WP_REST_Response( $data, $status );
+	}
 
-    /**
-     * Get a namespaced plugin option.
-     *
-     * @param string $key
-     * @param mixed $default
-     * @return mixed
-     */
-    public static function get_option( string $key, $default = false ) {
-        return get_option( self::OPTION_PREFIX . $key, $default );
-    }
+	/**
+	 * Check if Action Scheduler is available.
+	 *
+	 * @return bool
+	 */
+	public static function is_action_scheduler_available(): bool {
+		return class_exists( 'ActionScheduler' );
+	}
 
-    /**
-     * Update a namespaced plugin option.
-     *
-     * @param string $key
-     * @param mixed $value
-     * @return bool
-     */
-    public static function update_option( string $key, $value ): bool {
-        return update_option( self::OPTION_PREFIX . $key, $value );
-    }
+	/**
+	 * Get a namespaced plugin option.
+	 *
+	 * @param string $key
+	 * @param mixed  $default
+	 * @return mixed
+	 */
+	public static function get_option( string $key, $default = false ) {
+		return get_option( self::OPTION_PREFIX . $key, $default );
+	}
 
-    /**
-     * Delete a namespaced plugin option.
-     *
-     * @param string $key
-     * @return bool
-     */
-    public static function delete_option( string $key ): bool {
-        return delete_option( self::OPTION_PREFIX . $key );
-    }
+	/**
+	 * Update a namespaced plugin option.
+	 *
+	 * @param string $key
+	 * @param mixed  $value
+	 * @return bool
+	 */
+	public static function update_option( string $key, $value ): bool {
+		return update_option( self::OPTION_PREFIX . $key, $value );
+	}
 
-    /**
-     * Sanitize a string or array of strings recursively.
-     *
-     * @param mixed $data
-     * @return mixed
-     */
-    public static function sanitize_deep( $data ) {
-        if ( is_array( $data ) ) {
-            return array_map( [ self::class, 'sanitize_deep' ], $data );
-        }
-        return sanitize_text_field( $data );
-    }
+	/**
+	 * Delete a namespaced plugin option.
+	 *
+	 * @param string $key
+	 * @return bool
+	 */
+	public static function delete_option( string $key ): bool {
+		return delete_option( self::OPTION_PREFIX . $key );
+	}
 
-    /**
-     * Format migration progress percentage.
-     *
-     * @param int $done
-     * @param int $total
-     * @return string
-     */
-    public static function format_percent( int $done, int $total ): string {
-        if ( $total === 0 ) return '0%';
-        return round( ( $done / $total ) * 100, 2 ) . '%';
-    }
+	/**
+	 * Sanitize a string or array of strings recursively.
+	 *
+	 * @param mixed $data
+	 * @return mixed
+	 */
+	public static function sanitize_deep( $data ) {
+		if ( is_array( $data ) ) {
+			return array_map( array( self::class, 'sanitize_deep' ), $data );
+		}
+		return sanitize_text_field( $data );
+	}
 
-    /**
-     * Generate a unique hash for entry de-duplication.
-     *
-     * @param int $form_post_id
-     * @param string $form_value
-     * @param string $form_date
-     * @return string
-     */
-    public static function generate_entry_hash( int $form_post_id, string $form_value, string $form_date ): string {
-        return md5( $form_post_id . $form_value . $form_date );
-    }
+	/**
+	 * Format migration progress percentage.
+	 *
+	 * @param int $done
+	 * @param int $total
+	 * @return string
+	 */
+	public static function format_percent( int $done, int $total ): string {
+		if ( $total === 0 ) {
+			return '0%';
+		}
+		return round( ( $done / $total ) * 100, 2 ) . '%';
+	}
 
-    /**
-     * Check if the current request is an AJAX request.
-     *
-     * @return bool
-     */
-    public static function is_ajax(): bool {
-        return defined( 'DOING_AJAX' ) && DOING_AJAX;
-    }
+	/**
+	 * Generate a unique hash for entry de-duplication.
+	 *
+	 * @param int    $form_post_id
+	 * @param string $form_value
+	 * @param string $form_date
+	 * @return string
+	 */
+	public static function generate_entry_hash( int $form_post_id, string $form_value, string $form_date ): string {
+		return md5( $form_post_id . $form_value . $form_date );
+	}
 
-    public static function wpformd_db_data_summary() {
-        global $wpdb;
+	/**
+	 * Check if the current request is an AJAX request.
+	 *
+	 * @return bool
+	 */
+	public static function is_ajax(): bool {
+		return defined( 'DOING_AJAX' ) && DOING_AJAX;
+	}
 
-        $db_table    = $wpdb->prefix . 'wpforms_db';
-        $posts_table = $wpdb->posts;
+	public static function wpformd_db_data_summary() {
+		global $wpdb;
 
-        $query = "
+		$db_table    = $wpdb->prefix . 'wpforms_db';
+		$posts_table = $wpdb->posts;
+
+		$query = "
             SELECT 
                 f.ID AS form_post_id,
                 f.post_title,
@@ -253,200 +255,273 @@ class Helper {
             ORDER BY entry_count DESC
         ";
 
-        $results = $wpdb->get_results( $wpdb->prepare( $query ) ); // WPCS: unprepared SQL OK
+		$results = $wpdb->get_results( $wpdb->prepare( $query ) ); // WPCS: unprepared SQL OK
 
-        $data = [];
-        if ( ! empty( $results ) ) {
-            foreach ( $results as $row ) {
-                $data[] = [
-                    'form_post_id' => (int) $row->form_post_id,
-                    'post_title'   => $row->post_title,
-                    'entry_count'  => (int) $row->entry_count,
-                ];
-            }
-        }
+		$data = array();
+		if ( ! empty( $results ) ) {
+			foreach ( $results as $row ) {
+				$data[] = array(
+					'form_post_id' => (int) $row->form_post_id,
+					'post_title'   => $row->post_title,
+					'entry_count'  => (int) $row->entry_count,
+				);
+			}
+		}
 
-        return $data;
-    }
+		return $data;
+	}
 
-    /**
-     * Check if the WordPress REST API is enabled.
-     *
-     * @return bool True if REST API is accessible, false otherwise.
-     */
-    public static function is_rest_enabled() {
-        $response = wp_remote_get( site_url( '/wp-json/' ), [
-            'timeout' => 5,
-            'headers' => [
-                'Accept' => 'application/json',
-            ],
-        ] );
+	/**
+	 * Check if the WordPress REST API is enabled.
+	 *
+	 * @return bool True if REST API is accessible, false otherwise.
+	 */
+	public static function is_rest_enabled() {
+		$response = wp_remote_get(
+			site_url( '/wp-json/' ),
+			array(
+				'timeout' => 5,
+				'headers' => array(
+					'Accept' => 'application/json',
+				),
+			)
+		);
 
-        if ( is_wp_error( $response ) ) {
-            return false;
-        }
+		if ( is_wp_error( $response ) ) {
+			return false;
+		}
 
-        $code = wp_remote_retrieve_response_code( $response );
+		$code = wp_remote_retrieve_response_code( $response );
 
-        return ( $code >= 200 && $code < 300 );
-    }
+		return ( $code >= 200 && $code < 300 );
+	}
 
-    public static function get_access_token() {
-        $logger = new FileLogger();
+	public static function get_access_token() {
+		$logger = new FileLogger();
 
-        if( self::is_user_revoked() ) {
-            $logger->log( 'User has revoked Google connection. No access token available.', 'INFO' );
-            return false;
-        }
+		if ( self::is_user_revoked() ) {
+			$logger->log( 'User has revoked Google connection. No access token available.', 'INFO' );
+			return false;
+		}
 
-        $access_token = self::get_option('google_access_token');
-        $expires_at   = (int) self::get_option('google_token_expires', 0);
+		$access_token = self::get_option( 'google_access_token' );
+		$expires_at   = (int) self::get_option( 'google_token_expires', 0 );
 
-        // If valid and not expired, return
-        if ($access_token && $expires_at > (time() + 60)) {
-            return $access_token;
-        }
+		// If valid and not expired, return
+		if ( $access_token && $expires_at > ( time() + 60 ) ) {
+			return $access_token;
+		}
 
-        // Else: Refresh via POST request to proxy's REST endpoint
-        $response = wp_remote_post( FEM_PROXY_BASE_URL . 'wp-json/swpfe/v1/refresh', [
-            'headers' => ['Content-Type' => 'application/json'],
-            'body'    => json_encode([
-                'site' => self::get_settings_page_url(),
-            ]),
-        ]);
+		// Else: Refresh via POST request to proxy's REST endpoint
+		$response = wp_remote_post(
+			FEM_PROXY_BASE_URL . 'wp-json/swpfe/v1/refresh',
+			array(
+				'headers' => array( 'Content-Type' => 'application/json' ),
+				'body'    => json_encode(
+					array(
+						'site' => self::get_settings_page_url(),
+					)
+				),
+			)
+		);
 
-        if (is_wp_error($response)) {
-            $logger->log( 'Token refresh failed: ' . $response->get_error_message(), 'ERROR' );
-            return false;
-        }
+		if ( is_wp_error( $response ) ) {
+			$logger->log( 'Token refresh failed: ' . $response->get_error_message(), 'ERROR' );
+			return false;
+		}
 
-        $body = json_decode(wp_remote_retrieve_body($response), true);
+		$body = json_decode( wp_remote_retrieve_body( $response ), true );
 
-        if (!empty($body['access_token'])) {
-            self::update_option('google_access_token', sanitize_text_field($body['access_token']));
-            self::update_option('google_token_expires', time() + intval($body['expires_in'] ?? 3600)); // fallback: 1 hour
-            return $body['access_token'];
-        }
+		if ( ! empty( $body['access_token'] ) ) {
+			self::update_option( 'google_access_token', sanitize_text_field( $body['access_token'] ) );
+			self::update_option( 'google_token_expires', time() + intval( $body['expires_in'] ?? 3600 ) ); // fallback: 1 hour
+			return $body['access_token'];
+		}
 
-        $logger->log( 'Invalid refresh response: ' . wp_remote_retrieve_body($response), 'ERROR' );
-        return false;
-    }
+		$logger->log( 'Invalid refresh response: ' . wp_remote_retrieve_body( $response ), 'ERROR' );
+		return false;
+	}
 
-    /**
-     * Revokes the Google Sheets connection by making a request to the proxy service.
-     * Deletes local tokens upon a successful response.
-     *
-     * @return bool True if the proxy confirms revocation, false otherwise.
-     */
-    public static function revokeConnection(): bool
-    {
-        // The proxy needs to know which site to revoke the token for.
-        $site_url = Helper::get_settings_page_url();
+	/**
+	 * Revokes the Google Sheets connection by making a request to the proxy service.
+	 * Deletes local tokens upon a successful response.
+	 *
+	 * @return bool True if the proxy confirms revocation, false otherwise.
+	 */
+	public static function revokeConnection(): bool {
+		// The proxy needs to know which site to revoke the token for.
+		$site_url = self::get_settings_page_url();
 
-        // Make a POST request to your proxy's revoke endpoint.
-        // Assuming your proxy has a dedicated endpoint for this purpose.
-        $response = wp_remote_post( FEM_PROXY_BASE_URL . 'wp-json/swpfe/v1/revoke', [
-            'headers' => ['Content-Type' => 'application/json'],
-            'body'    => json_encode([
-                'site' => $site_url,
-            ]),
-        ]);
+		// Make a POST request to your proxy's revoke endpoint.
+		// Assuming your proxy has a dedicated endpoint for this purpose.
+		$response = wp_remote_post(
+			FEM_PROXY_BASE_URL . 'wp-json/swpfe/v1/revoke',
+			array(
+				'headers' => array( 'Content-Type' => 'application/json' ),
+				'body'    => json_encode(
+					array(
+						'site' => $site_url,
+					)
+				),
+			)
+		);
 
-        // Check for a successful response from the proxy.
-        if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {
-            self::$logger->log( 'Proxy-based token revocation failed: ' . wp_remote_retrieve_body($response), 'ERROR' );
-            // Even if the proxy fails, we can still try to clear our local data to show a disconnected state.
-        }
+		// Check for a successful response from the proxy.
+		if ( is_wp_error( $response ) || wp_remote_retrieve_response_code( $response ) !== 200 ) {
+			self::$logger->log( 'Proxy-based token revocation failed: ' . wp_remote_retrieve_body( $response ), 'ERROR' );
+			// Even if the proxy fails, we can still try to clear our local data to show a disconnected state.
+		}
 
-        self::$logger->log( 'Proxy revocation response: ' . wp_remote_retrieve_body($response), 'INFO' );
+		self::$logger->log( 'Proxy revocation response: ' . wp_remote_retrieve_body( $response ), 'INFO' );
 
-        // Step 2: Delete the local tokens from your database.
-        // This is crucial regardless of the proxy's response to ensure your app reflects the disconnected state.
-        $deleted_access = Helper::delete_option('google_access_token');
-        $deleted_expires = Helper::delete_option('google_token_expires');
+		// Step 2: Delete the local tokens from your database.
+		// This is crucial regardless of the proxy's response to ensure your app reflects the disconnected state.
+		$deleted_access  = self::delete_option( 'google_access_token' );
+		$deleted_expires = self::delete_option( 'google_token_expires' );
 
-        self::update_option( 'user_remvoked_google_connection', true );
+		self::update_option( 'user_remvoked_google_connection', true );
 
-         // Unschedule the synchronization action
-        if ($deleted_access || $deleted_expires) {
-            as_unschedule_all_actions('fem_every_five_minute_sync');
-        }
+		// Unschedule the synchronization action
+		if ( $deleted_access || $deleted_expires ) {
+			as_unschedule_all_actions( 'fem_every_five_minute_sync' );
+		}
 
-        // Return true if the local deletion was successful, confirming the disconnected state.
-        return $deleted_access || $deleted_expires;
-    }
+		// Return true if the local deletion was successful, confirming the disconnected state.
+		return $deleted_access || $deleted_expires;
+	}
 
-    public static function is_user_revoked(){
-        return self::get_option( 'user_remvoked_google_connection' );
-    }
+	public static function is_user_revoked() {
+		return self::get_option( 'user_remvoked_google_connection' );
+	}
 
-    /**
-     * Checks if the user is currently authenticated with Google
-     * by verifying if a valid access token can be retrieved.
-     *
-     * This method leverages the existing get_access_token() logic.
-     *
-     * @return bool True if a valid Google access token is available, false otherwise.
-     */
-    public static function is_google_authorized() {
-        return (bool) self::get_access_token();
-    }
+	/**
+	 * Checks if the user is currently authenticated with Google
+	 * by verifying if a valid access token can be retrieved.
+	 *
+	 * This method leverages the existing get_access_token() logic.
+	 *
+	 * @return bool True if a valid Google access token is available, false otherwise.
+	 */
+	public static function is_google_authorized() {
+		return (bool) self::get_access_token();
+	}
 
-    /**
-     * Get Settings page url wihout sanitization
-     *
-     * @return string
-     */
-    public static function get_settings_page_url(){
-        return admin_url( 'admin.php?page=form-entries-settings');
-    }
+	/**
+	 * Get Settings page url wihout sanitization
+	 *
+	 * @return string
+	 */
+	public static function get_settings_page_url() {
+		return admin_url( 'admin.php?page=form-entries-settings' );
+	}
 
-    /**
-     * Retrieves the number of seconds remaining until the Google token expires.
-     *
-     * @return int Number of seconds until token expiration. Returns 0 if expired or not set.
-     */
-    public static function get_token_expires_in(): int {
-        
-        $token_expires = self::get_option('google_token_expires');
-        $now           = time();
+	/**
+	 * Retrieves the number of seconds remaining until the Google token expires.
+	 *
+	 * @return int Number of seconds until token expiration. Returns 0 if expired or not set.
+	 */
+	public static function get_token_expires_in(): int {
 
-        return $token_expires ? max(0, $token_expires - $now) : 0;
-    }
+		$token_expires = self::get_option( 'google_token_expires' );
+		$now           = time();
 
-    /**
-     * Converts a number of seconds into a human-readable string format.
-     *
-     * @param int $seconds The number of seconds to convert.
-     * @return string Human-readable representation (e.g., "2h 15m", "Expired", "Less than a minute").
-     */
-    public static function seconds_to_human_readable(int $seconds): string {
-        if ($seconds <= 0) {
-            return esc_html__('Expired', 'forms-entries-manager');
-        }
+		return $token_expires ? max( 0, $token_expires - $now ) : 0;
+	}
 
-        $h = floor($seconds / 3600);
-        $m = floor(($seconds % 3600) / 60);
+	/**
+	 * Converts a number of seconds into a human-readable string format.
+	 *
+	 * @param int $seconds The number of seconds to convert.
+	 * @return string Human-readable representation (e.g., "2h 15m", "Expired", "Less than a minute").
+	 */
+	public static function seconds_to_human_readable( int $seconds ): string {
+		if ( $seconds <= 0 ) {
+			return esc_html__( 'Expired', 'forms-entries-manager' );
+		}
 
-        if ($h || $m) {
-            return trim(($h ? $h . 'h ' : '') . ($m ? $m . 'm' : ''));
-        }
+		$h = floor( $seconds / 3600 );
+		$m = floor( ( $seconds % 3600 ) / 60 );
 
-        return esc_html__('Less than a minute', 'forms-entries-manager');
-    }
+		if ( $h || $m ) {
+			return trim( ( $h ? $h . 'h ' : '' ) . ( $m ? $m . 'm' : '' ) );
+		}
 
-    /**
-     * Checks if the Pro version of the plugin is active.
-     * This method is crucial for handling free/pro version limitations.
-     *
-     * @return bool
-     */
-    public static function is_pro_version()
-    {
-        // For demonstration, we assume a constant is defined in the Pro version.
-        // In a real plugin, this constant would be defined in the main plugin file of the Pro version.
-        // Example: define('FEM_PRO_VERSION', true);
-        // return defined('FEM_PRO_VERSION') && FEM_PRO_VERSION;
-        return true;
-    }
+		return esc_html__( 'Less than a minute', 'forms-entries-manager' );
+	}
+
+	/**
+	 * Checks if the Pro version of the plugin is active.
+	 * This method is crucial for handling free/pro version limitations.
+	 *
+	 * @return bool
+	 */
+	public static function is_pro_version() {
+		// For demonstration, we assume a constant is defined in the Pro version.
+		// In a real plugin, this constant would be defined in the main plugin file of the Pro version.
+		// Example: define('FEM_PRO_VERSION', true);
+		// return defined('FEM_PRO_VERSION') && FEM_PRO_VERSION;
+		return true;
+	}
+
+		// Get entries by IDs with caching
+	public static function get_entries_by_ids( array $ids ): array {
+		if ( empty( $ids ) ) {
+			return array();
+		}
+
+		$cache_key = 'aem_entries_' . md5( implode( ',', $ids ) );
+		$entries   = wp_cache_get( $cache_key, 'aem' );
+
+		if ( false === $entries ) {
+			global $wpdb;
+			$table        = self::get_table_name();
+			$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+			$entries      = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT * FROM {$table} WHERE id IN ($placeholders)",
+					$ids
+				),
+				ARRAY_A
+			);
+			wp_cache_set( $cache_key, $entries, 'aem', 300 ); // cache 5 mins
+		}
+
+		return $entries ?: array();
+	}
+
+	// Update a single entry with caching
+	public static function update_entry( int $id, array $data ): bool {
+		global $wpdb;
+		$table  = self::get_table_name();
+		$result = $wpdb->update( $table, $data, array( 'id' => $id ) );
+
+		if ( $result !== false ) {
+			wp_cache_delete( 'aem_entries_' . $id, 'aem' );
+		}
+
+		return $result !== false;
+	}
+
+	// Delete a single entry with caching
+	public static function delete_entry( int $id ): bool {
+		global $wpdb;
+		$table  = self::get_table_name();
+		$result = $wpdb->delete( $table, array( 'id' => $id ) );
+
+		if ( $result !== false ) {
+			wp_cache_delete( 'aem_entries_' . $id, 'aem' );
+		}
+
+		return $result !== false;
+	}
+
+	public static function fputcsv( $handle, array $fields ) {
+		$line = '';
+		foreach ( $fields as $f ) {
+			$line .= '"' . str_replace( '"', '""', $f ) . '",';
+		}
+		$line = rtrim( $line, ',' ) . "\n";
+		global $wp_filesystem;
+		$wp_filesystem->fwrite( $handle, $line );
+	}
 }

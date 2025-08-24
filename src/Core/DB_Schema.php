@@ -12,40 +12,38 @@
 
 namespace App\AdvancedEntryManager\Core;
 
-defined('ABSPATH') || exit;
+defined( 'ABSPATH' ) || exit;
 
-class DB_Schema
-{
-    /**
-     * Get the name of the custom entries table with the WordPress table prefix.
-     *
-     * @global \wpdb $wpdb WordPress database abstraction object.
-     * @return string The full table name for storing WPForms entries.
-     */
-    public static function table()
-    {
-        global $wpdb;
-        return $wpdb->prefix . 'aemfw_entries';
-    }
+class DB_Schema {
 
-    /**
-     * Create the custom database table for storing WPForms entries if it does not exist.
-     *
-     * Uses WordPress dbDelta to safely create or update the table structure.
-     *
-     * @global \wpdb $wpdb WordPress database abstraction object.
-     * @return void
-     */
-    public static function create_table()
-    {
-        global $wpdb;
+	/**
+	 * Get the name of the custom entries table with the WordPress table prefix.
+	 *
+	 * @global \wpdb $wpdb WordPress database abstraction object.
+	 * @return string The full table name for storing WPForms entries.
+	 */
+	public static function table() {
+		global $wpdb;
+		return $wpdb->prefix . 'aemfw_entries';
+	}
 
-        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-        
-        $table = self::table();
-        $charset_collate = $wpdb->get_charset_collate();
+	/**
+	 * Create the custom database table for storing WPForms entries if it does not exist.
+	 *
+	 * Uses WordPress dbDelta to safely create or update the table structure.
+	 *
+	 * @global \wpdb $wpdb WordPress database abstraction object.
+	 * @return void
+	 */
+	public static function create_table() {
+		global $wpdb;
 
-        $sql = "CREATE TABLE $table (
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+		$table           = self::table();
+		$charset_collate = $wpdb->get_charset_collate();
+
+		$sql = "CREATE TABLE $table (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             form_id BIGINT(20) UNSIGNED NOT NULL,
             entry LONGTEXT NOT NULL,
@@ -71,15 +69,16 @@ class DB_Schema
             KEY idx_formid_id (form_id, id)
         ) $charset_collate;";
 
-        /**
-         * Filter the SQL query for creating the entries table.
-         * 
-         * This allows developers to modify the SQL query before it is executed.
-         * @param string $sql The SQL query to create the entries table.
-         * @return string Modified SQL query.
-         */
-        $sql = apply_filters('femcreate_entries_table_sql', $sql);
+		/**
+		 * Filter the SQL query for creating the entries table.
+		 *
+		 * This allows developers to modify the SQL query before it is executed.
+		 *
+		 * @param string $sql The SQL query to create the entries table.
+		 * @return string Modified SQL query.
+		 */
+		$sql = apply_filters( 'femcreate_entries_table_sql', $sql );
 
-        dbDelta($sql);
-    }
+		dbDelta( $sql );
+	}
 }

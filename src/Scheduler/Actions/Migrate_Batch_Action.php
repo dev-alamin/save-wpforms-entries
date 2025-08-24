@@ -2,21 +2,22 @@
 
 namespace App\AdvancedEntryManager\Scheduler\Actions;
 
-defined('ABSPATH') || exit;
+defined( 'ABSPATH' ) || exit;
 
 use App\AdvancedEntryManager\Api\Callback\Migrate;
 
 class Migrate_Batch_Action {
 
-    /**
-     * Migrate Route
-     * @var migrate
-     */
-    protected $migrate;
+	/**
+	 * Migrate Route
+	 *
+	 * @var migrate
+	 */
+	protected $migrate;
 
 	public function __construct( Migrate $migrate ) {
-        $this->migrate = $migrate;
+		$this->migrate = $migrate;
 
-		add_action( 'femmigrate_batch', [ $this->migrate, 'migrate_from_wpformsdb_plugin' ], 10, 1 );
+		add_action( 'femmigrate_batch', array( $this->migrate, 'migrate_from_wpformsdb_plugin' ), 10, 1 );
 	}
 }
