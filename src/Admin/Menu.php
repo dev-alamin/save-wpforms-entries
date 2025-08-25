@@ -32,19 +32,7 @@ class Menu {
 		$this->log_viewer_page = new LogViewerPage();
 		add_action( 'admin_menu', array( $this, 'add_menu' ) );
 		add_action( 'admin_head', array( $this, 'hide_update_notices' ) );
-		add_action( 'admin_init', array( $this, 'register_settings' ) );
-
-		add_action(
-			'wp_ajax_femsave_settings',
-			function () {
-				check_ajax_referer( 'wp_rest' );
-
-				update_option( 'femexport_limit', absint( $_POST['femexport_limit'] ?? 100 ) );
-				update_option( 'fem_entries_per_page', absint( $_POST['fem_entries_per_page'] ?? 20 ) );
-
-				wp_send_json_success( array( 'message' => 'Saved' ) );
-			}
-		);
+		// add_action( 'admin_init', array( $this, 'register_settings' ) );
 	}
 
 	public function register_settings() {
@@ -101,9 +89,7 @@ class Menu {
 	 * @return void
 	 */
 	public function add_menu() {
-		global $wpdb;
-		$table               = $wpdb->prefix . 'wpforms_db';
-		$legacy_table_exists = Helper::table_exists( $table );
+		$legacy_table_exists = Helper::table_exists( 'wpforms_db' );
 
 		add_menu_page(
 			__( 'Forms Entries', 'forms-entries-manager' ),

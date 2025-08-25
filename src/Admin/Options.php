@@ -2,6 +2,8 @@
 
 namespace App\AdvancedEntryManager\Admin;
 
+use App\AdvancedEntryManager\Utility\Helper;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -36,8 +38,21 @@ class Options {
 	public function save_settings() {
 		check_ajax_referer( 'wp_rest' );
 
-		update_option( 'femexport_limit', absint( $_POST['femexport_limit'] ?? 100 ) );
-		update_option( 'fem_entries_per_page', absint( $_POST['fem_entries_per_page'] ?? 20 ) );
+		Helper::update_option( 'export_limit', absint( $_POST['femexport_limit'] ?? 100 ) );
+		Helper::update_option( 'entries_per_page', absint( $_POST['fem_entries_per_page'] ?? 20 ) );
+
+        if ( ! empty( $_POST['fem_custom_columns'] ) && is_array( $_POST['fem_custom_columns'] ) ) {
+            $sanitized = [];
+
+            foreach ( $_POST['fem_custom_columns'] as $form_id => $fields ) {
+                $sanitized[ absint( $form_id ) ] = array_map( 'sanitize_text_field', (array) $fields );
+            }
+
+            Helper::update_option( 'cusom_form_columns_settings', $sanitized );
+        } else {
+            Helper::update_option( 'cusom_form_columns_settings', [] );
+        }
+
 
 		wp_send_json_success( array( 'message' => 'Saved' ) );
 	}

@@ -143,12 +143,29 @@ class Get_Forms {
 				}
 			}
 
+            $entry_schema = [];
 			// Step 2: Merge in keys from deserialized 'entry'
 			if ( isset( $row['entry'] ) ) {
 				$entry = maybe_unserialize( $row['entry'] );
 				if ( is_array( $entry ) ) {
 					foreach ( array_keys( $entry ) as $field_key ) {
 						$fields[ $field_key ] = true;
+
+                        if( 
+                        strtolower( $field_key ) == 'name' 
+                        || strtolower( $field_key ) == 'email' 
+                        || strtolower( $field_key ) == 'your-name'
+                        || strtolower( $field_key ) == 'your-email'
+                        || strpos( strtolower( $field_key ), 'g-recaptcha-response' ) !== false
+                        || strpos( strtolower( $field_key ), 'file' ) !== false
+                        ) {
+                            continue;
+                        }
+
+                        $entry_schema[] = array(
+                            'key'      =>  $field_key,
+                            'label'    => $field_key,
+                        );
 					}
 				}
 			}
@@ -162,6 +179,7 @@ class Get_Forms {
 		return rest_ensure_response(
 			array(
 				'fields' => $final_fields,
+                'entry_schema' => $entry_schema,
 			)
 		);
 	}

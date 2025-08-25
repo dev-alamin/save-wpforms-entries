@@ -12,6 +12,8 @@ $sheet_id  = Helper::get_option( 'google_sheet_id' );
 $auto_sync = Helper::get_option( 'google_sheet_auto_sync', true );
 $sheet_tab = Helper::get_option( 'google_sheet_tab', 'Sheet1' );
 
+$custom_columns = Helper::get_option( 'cusom_form_columns_settings', [] );
+
 
 ?>
 

@@ -11,7 +11,7 @@ use App\AdvancedEntryManager\Utility\DB;
 
 class Helper {
 
-	const OPTION_PREFIX = 'fem';
+	const OPTION_PREFIX = 'fem_';
 	protected static $logger;
 
 	public function __construct() {

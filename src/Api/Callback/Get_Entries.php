@@ -15,6 +15,7 @@ use WP_Error;
  * Handles the retrieval of entries from the custom database table.
  */
 class Get_Entries {
+
 	/**
 	 * Retrieves all entries from the fem table.
 	 *
@@ -129,21 +130,29 @@ class Get_Entries {
 		$results = $wpdb->get_results( $sql ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		// --- The rest of the code remains the same ---
+		// Initialize the final data array
 		$data = array();
+		// Initialize a unique set of all keys found across all entries
+		$all_entry_keys = array();
+
 		foreach ( $results as $row ) {
 			$entry_raw        = maybe_unserialize( $row->entry );
 			$entry_normalized = array();
 
 			if ( is_array( $entry_raw ) ) {
 				foreach ( $entry_raw as $key => $value ) {
-					$entry_normalized[ ucwords( strtolower( $key ) ) ] = $value;
+					// Use ucwords() on keys for display purposes
+					$normalized_key                      = ucwords( strtolower( $key ) );
+					$entry_normalized[ $normalized_key ] = $value;
+					// Collect all unique normalized keys
+					$all_entry_keys[] = $normalized_key;
 				}
 			}
 
 			$data[] = array(
 				'id'          => (int) $row->id,
 				'form_title'  => get_the_title( $row->form_id ),
-				'entry'       => $entry_normalized,
+				'entry'       => $entry_normalized, // Keep the normalized entry data
 				'name'        => $row->name,
 				'email'       => $row->email,
 				'status'      => $row->status,
@@ -159,16 +168,43 @@ class Get_Entries {
 			);
 		}
 
+		// Ensure unique keys and sort them for consistency
+		$unique_entry_keys = array_values( array_unique( $all_entry_keys ) );
+
+		// Build the final fields schema array
+		$entry_schema = array();
+
+		// Add the dynamic fields from the `entry` object
+		foreach ( $unique_entry_keys as $key ) {
+
+            if( 
+            strtolower( $key ) == 'name' 
+            || strtolower( $key ) == 'email' 
+            || strtolower( $key ) == 'your-name'
+            || strtolower( $key ) == 'your-email'
+            || strpos( strtolower( $key ), 'g-recaptcha-response' ) !== false
+            || strpos( strtolower( $key ), 'file' ) !== false
+            ) {
+                continue;
+            }
+
+            $entry_schema[] = array(
+                'key'      =>  $key,
+                'label'    => $key,
+            );
+		}
+
 		$data = apply_filters( 'femget_entries_data', $data, $results, $request );
 
 		do_action( 'femafter_get_total_count', $total_count, $request );
 
 		$response = rest_ensure_response(
 			array(
-				'entries'  => $data,
-				'total'    => $total_count,
-				'page'     => $page,
-				'per_page' => $per_page,
+				'entries'       => $data,
+				'entry_schema' => $entry_schema, // Add the schema to the final response
+				'total'         => $total_count,
+				'page'          => $page,
+				'per_page'      => $per_page,
 			)
 		);
 

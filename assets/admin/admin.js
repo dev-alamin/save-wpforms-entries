@@ -3,615 +3,635 @@
 // Example content: femStrings = { "csvExportedSuccess": "CSV exported successfully!", ... }
 
 function formTable(form) {
-    return {
-        open: false,
-        formId: form.form_id,
-        formTitle: form.form_title,
-        totalEntries: form.entry_count,
-        entries: [],
-        currentPage: 1,
-        pageSize: aemfwSettings.perPage,
-        totalPages: 1,
-        sortAsc: true,
-        sortAscStatus: true,
-        dateFrom: "",
-        dateTo: "",
-        loading: false,
-        jumpTo: 1,
-        noteOpen: false,
-        bulkSelected: [],
-        selectAll: false,
-        lastCheckedIndex: null,
+  return {
+    open: false,
+    formId: form.form_id,
+    formTitle: form.form_title,
+    totalEntries: form.entry_count,
+    entries: [],
+    currentPage: 1,
+    pageSize: aemfwSettings.perPage,
+    totalPages: 1,
+    sortAsc: true,
+    sortAscStatus: true,
+    dateFrom: "",
+    dateTo: "",
+    loading: false,
+    jumpTo: 1,
+    noteOpen: false,
+    bulkSelected: [],
+    selectAll: false,
+    lastCheckedIndex: null,
 
-        dropdownOpen: false, 
-        types: [
-            { key: 'email', label: searchDropdownString.emailLabel },
-            { key: 'name', label: searchDropdownString.nameLabel },
-            { key: 'id', label: searchDropdownString.entryIdLabel }
-        ],
+    // New property to store the complete fields schema from the API
+    allFields: [],
 
-        entryModalOpen: false,
-        selectedEntry: {},
-        bgClasses: [
-            "fem-row-bg-1",
-            "fem-row-bg-2",
-            "fem-row-bg-3",
-            "fem-row-bg-4",
-        ],
+    dropdownOpen: false,
+    types: [
+      { key: "email", label: searchDropdownString.emailLabel },
+      { key: "name", label: searchDropdownString.nameLabel },
+      { key: "id", label: searchDropdownString.entryIdLabel },
+    ],
 
-        // Properties for filtering from formEntriesApp
-        searchQuery: "",
-        searchType: "email",
-        filterStatus: "all",
-        onlyFavorites: false,
-        dateFrom: "",
-        dateTo: "",
+    entryModalOpen: false,
+    selectedEntry: {},
+    bgClasses: ["fem-row-bg-1", "fem-row-bg-2", "fem-row-bg-3", "fem-row-bg-4"],
 
-        get paginatedEntries() {
-            return this.entries;
-        },
-        async performBulkAction(action) {
-            if (!this.bulkSelected.length) return;
+    searchQuery: "",
+    searchType: "email",
+    filterStatus: "all",
+    onlyFavorites: false,
+    dateFrom: "",
+    dateTo: "",
+    customColumns: {},
 
-            try {
-                if (action === "export_csv") {
-                    const res = await fetch(
-                        `${aemfwSettings.restUrl}aem/v1/export/bulk`, {
-                            method: "POST",
-                            headers: {
-                                "Content-Type": "application/json",
-                                "X-WP-Nonce": aemfwSettings.nonce,
-                            },
-                            body: JSON.stringify({
-                                ids: this.bulkSelected
-                            }),
-                        }
-                    );
+    get paginatedEntries() {
+      return this.entries;
+    },
 
-                    const blob = await res.blob();
-                    const url = window.URL.createObjectURL(blob);
+    get gridStyle() {
+      // Start with fixed columns: checkbox + email
+      let columns = ["50px", "1fr"];
 
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = `aem-entries-${Date.now()}.csv`;
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
+      // Add 150px for each field in the entry_schema
+      this.allFields.forEach(() => {
+        columns.push("150px");
+      });
 
-                    window.URL.revokeObjectURL(url);
+      // Add fixed columns: Date, Status, Actions
+      columns.push("150px", "150px", "250px");
 
-                    this.$dispatch("toast", {
-                        type: "success",
-                        // FEM_I18N: Use translatable string
-                        message: femStrings.csvExportedSuccess,
-                    });
-                } else {
-                    // Handle other actions
-                    const uniqueIds = [...new Set(this.bulkSelected)];
+      return columns.join(" ");
+    },
 
-                    const res = await fetch(
-                        `${aemfwSettings.restUrl}aem/v1/entries/bulk`, {
-                            method: "POST",
-                            headers: {
-                                "Content-Type": "application/json",
-                                "X-WP-Nonce": aemfwSettings.nonce,
-                            },
-                            body: JSON.stringify({
-                                ids: uniqueIds,
-                                action
-                            }),
-                        }
-                    );
+    // Method to get the fields that should be displayed as columns
+    get displayedFields() {
+      const formId = this.formId; // Assuming formId is available in this scope
 
-                    const data = await res.json();
+      // Get the list of selected field keys for the current form
+      const selectedKeys = this.customColumns[formId] || [];
 
-                    this.bulkSelected = [];
-                    this.selectAll = false;
+      // If there are no custom columns set, return all fields
+      if (selectedKeys.length === 0) {
+        return this.allFields;
+      }
 
-                    this.fetchEntries(); 
+      // Otherwise, filter allFields to only include the selected ones
+      return this.allFields.filter((field) => selectedKeys.includes(field.key));
+    },
 
-                    if (action === 'delete') {
-                        this.entries = this.entries.filter(e => !uniqueIds.includes(e.id));
+    getEntryData(entry, key) {
+      return entry[key] || "-";
+    },
 
-                        this.$dispatch("toast", {
-                            type: "success",
-                            // FEM_I18N: Use translatable string
-                            message: data.message,
-                        });
+    async performBulkAction(action) {
+      if (!this.bulkSelected.length) return;
 
-                    } else {
-                        // For other actions
-                        this.$dispatch("toast", {
-                            type: "success",
-                            // FEM_I18N: Use translatable string
-                            message: data.affected,
-                        });
-                    }
-                }
-            } catch (error) {
-                console.error("Bulk action failed:", error);
-                // FEM_I18N: Use translatable string
-                this.$dispatch("toast", {
-                    type: "error",
-                    message: femStrings.bulkActionFailed + ' ' + error.message,
-                });
+      try {
+        if (action === "export_csv") {
+          const res = await fetch(
+            `${aemfwSettings.restUrl}aem/v1/export/bulk`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-WP-Nonce": aemfwSettings.nonce,
+              },
+              body: JSON.stringify({
+                ids: this.bulkSelected,
+              }),
             }
-        },
-        handleCheckbox(event, entryId) {
-            const index = this.entries.findIndex((e) => e.id === entryId);
-            if (index === -1) return;
+          );
 
-            if (event.shiftKey && this.lastCheckedIndex !== null) {
-                const start = Math.min(index, this.lastCheckedIndex);
-                const end = Math.max(index, this.lastCheckedIndex);
+          const blob = await res.blob();
+          const url = window.URL.createObjectURL(blob);
 
-                for (let i = start; i <= end; i++) {
-                    const id = this.entries[i].id;
-                    if (!this.bulkSelected.includes(id)) {
-                        this.bulkSelected.push(id);
-                    }
-                }
-            } else {
-                const i = this.bulkSelected.indexOf(entryId);
-                if (i > -1) {
-                    this.bulkSelected.splice(i, 1);
-                } else {
-                    this.bulkSelected.push(entryId);
-                }
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `aem-entries-${Date.now()}.csv`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+
+          window.URL.revokeObjectURL(url);
+
+          this.$dispatch("toast", {
+            type: "success",
+            // FEM_I18N: Use translatable string
+            message: femStrings.csvExportedSuccess,
+          });
+        } else {
+          // Handle other actions
+          const uniqueIds = [...new Set(this.bulkSelected)];
+
+          const res = await fetch(
+            `${aemfwSettings.restUrl}aem/v1/entries/bulk`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-WP-Nonce": aemfwSettings.nonce,
+              },
+              body: JSON.stringify({
+                ids: uniqueIds,
+                action,
+              }),
             }
+          );
 
-            this.lastCheckedIndex = index;
-        },
-        // New, correct fetchEntries function, merged from formEntriesApp
-        async fetchEntries() {
-            this.loading = true;
+          const data = await res.json();
 
-            const query = new URLSearchParams({
-                form_id: this.formId,
-                page: this.currentPage,
-                per_page: this.pageSize,
+          this.bulkSelected = [];
+          this.selectAll = false;
+
+          this.fetchEntries();
+
+          if (action === "delete") {
+            this.entries = this.entries.filter(
+              (e) => !uniqueIds.includes(e.id)
+            );
+
+            this.$dispatch("toast", {
+              type: "success",
+              // FEM_I18N: Use translatable string
+              message: data.message,
             });
-
-            if (this.searchQuery.trim() !== "") {
-                query.append("search", this.searchQuery.trim());
-                query.append("search_type", this.searchType);
-            }
-
-            if (this.filterStatus !== "all") {
-                query.append("status", this.filterStatus);
-            }
-
-            if (this.dateFrom) {
-                query.append("date_from", this.dateFrom);
-            }
-
-            if (this.dateTo) {
-                query.append("date_to", this.dateTo);
-            }
-
-            try {
-                const res = await fetch(
-                    `${aemfwSettings.restUrl}aem/v1/entries?${query}`, {
-                        headers: {
-                            "X-WP-Nonce": aemfwSettings.nonce,
-                        },
-                    }
-                );
-                const data = await res.json();
-
-                const rawEntries = Array.isArray(data.entries) ? data.entries : [];
-
-                this.entries = this.onlyFavorites ?
-                    rawEntries.filter((e) => e.is_favorite) :
-                    rawEntries;
-
-                // Fix for the old data transformation logic
-                this.entries = this.entries.map((entry) => ({
-                    ...entry,
-                    email: entry.email || "",
-                    is_favorite: Number(entry.is_favorite),
-                    synced_to_gsheet: Number(entry.synced_to_gsheet), // Corrected property name
-                    exported_to_csv: Number(entry.exported_to_csv),
-                    formated_date: new Date(entry.date).toLocaleTimeString('en-US', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                    }),
-                    printed_at: entry.printed_at ?? null,
-                    resent_at: entry.resent_at ?? null,
-                    status: entry.status ?? "unread",
-                    is_spam: entry.is_spam,
-                }));
-
-                this.totalEntries = Number(data.total) || rawEntries.length;
-                this.totalPages = Math.ceil(this.totalEntries / this.pageSize);
-
-                // Re-calculate the paginatedEntries if needed, though this getter is fine
-                // this.paginatedEntries = this.entries;
-
-            } catch (error) {
-                console.error(femStrings.fetchEntriesError, error);
-            } finally {
-                this.loading = false;
-            }
-        },
-
-        // Filter and pagination handlers, now correctly calling the new fetchEntries
-        handleSearchInput: _.debounce(function() {
-            this.currentPage = 1;
-            this.fetchEntries();
-        }, 500),
-
-        handleStatusChange() {
-            this.currentPage = 1;
-            this.fetchEntries();
-        },
-
-        handleDateChange() {
-            this.currentPage = 1;
-            this.fetchEntries();
-        },
-        toggleSelectAll(event) {
-            if (event.target.checked) {
-                this.bulkSelected = this.paginatedEntries.map((entry) => entry.id);
-            } else {
-                this.bulkSelected = [];
-            }
-        },
-        toggleOpen() {
-            this.open = !this.open;
-            if (this.open && this.entries.length === 0) {
-                this.fetchEntries();
-            }
-        },
-        goToPage(page) {
-            page = Number(page);
-            if (page > 0 && page <= this.totalPages) {
-                this.currentPage = page;
-                this.fetchEntries();
-            }
-        },
-        nextPage() {
-            if (this.currentPage < this.totalPages) {
-                this.currentPage++;
-                this.fetchEntries();
-            }
-        },
-        prevPage() {
-            if (this.currentPage > 1) {
-                this.currentPage--;
-                this.fetchEntries();
-            }
-        },
-        sortByDate() {
-            this.entries = [...this.entries].sort((a, b) => {
-                return this.sortAsc ?
-                    new Date(a.date) - new Date(b.date) :
-                    new Date(b.date) - new Date(a.date);
+          } else {
+            // For other actions
+            this.$dispatch("toast", {
+              type: "success",
+              // FEM_I18N: Use translatable string
+              message: data.affected,
             });
-            this.sortAsc = !this.sortAsc;
-        },
-        sortByStatus() {
-            this.entries.sort((a, b) => {
-                if (a.status === b.status) return 0;
+          }
+        }
+      } catch (error) {
+        console.error("Bulk action failed:", error);
+        // FEM_I18N: Use translatable string
+        this.$dispatch("toast", {
+          type: "error",
+          message: femStrings.bulkActionFailed + " " + error.message,
+        });
+      }
+    },
 
-                if (this.sortAscStatus) {
-                    return a.status === "unread" ? -1 : 1;
-                } else {
-                    return a.status === "read" ? -1 : 1;
-                }
-            });
+    handleCheckbox(event, entryId) {
+      const index = this.entries.findIndex((e) => e.id === entryId);
+      if (index === -1) return;
 
-            this.sortAscStatus = !this.sortAscStatus;
-        },
-        showEntry(i) {
-            const entry = this.entries[i];
-            this.selectedEntry = entry;
-            this.entryModalOpen = true;
+      if (event.shiftKey && this.lastCheckedIndex !== null) {
+        const start = Math.min(index, this.lastCheckedIndex);
+        const end = Math.max(index, this.lastCheckedIndex);
 
-            if (entry.status === "unread") {
-                entry.status = "read";
-                this.updateEntry(i, {
-                    status: "read"
-                });
-            }
-        },
+        for (let i = start; i <= end; i++) {
+          const id = this.entries[i].id;
+          if (!this.bulkSelected.includes(id)) {
+            this.bulkSelected.push(id);
+          }
+        }
+      } else {
+        const i = this.bulkSelected.indexOf(entryId);
+        if (i > -1) {
+          this.bulkSelected.splice(i, 1);
+        } else {
+          this.bulkSelected.push(entryId);
+        }
+      }
 
-        markAs(status) {
-            if (!this.entryModalOpen) return;
-            this.selectedEntry.status = status;
-            this.entryModalOpen = false;
-        },
+      this.lastCheckedIndex = index;
+    },
 
-        copied: false,
+    async fetchEntries() {
+      this.loading = true;
 
-        copyEntryToClipboard() {
-            const lines = Object.entries(this.selectedEntry.entry || {})
-                .map(([key, value]) => `${key}: ${value || "-"}`)
-                .join("\n");
+      const query = new URLSearchParams({
+        form_id: this.formId,
+        page: this.currentPage,
+        per_page: this.pageSize,
+      });
 
-            navigator.clipboard
-                .writeText(lines)
-                .then(() => {
-                    this.copied = true;
-                    setTimeout(() => {
-                        this.copied = false;
-                    }, 2000);
-                })
-                .catch((err) => {
-                    console.error("Copy failed:", err);
-                });
-        },
+      if (this.searchQuery.trim() !== "") {
+        query.append("search", this.searchQuery.trim());
+        query.append("search_type", this.searchType);
+      }
 
-        async updateEntry(index, changes = {}) {
-            const entry = this.entries[index];
+      if (this.filterStatus !== "all") {
+        query.append("status", this.filterStatus);
+      }
 
-            const payload = {
-                id: entry.id,
-                form_id: entry.form_id,
-                entry: entry.entry,
-                status: entry.status,
-                is_favorite: Number(entry.is_favorite),
-                note: entry.note,
-                exported_to_csv: Number(entry.exported_to_csv),
-                synced_to_gsheet: Number(entry.synced),
-                printed_at: entry.printed_at,
-                resent_at: entry.resent_at,
-                ...changes,
-            };
+      if (this.dateFrom) {
+        query.append("date_from", this.dateFrom);
+      }
 
-            try {
-                const res = await fetch(
-                    `${aemfwSettings.restUrl}aem/v1/entries/${
+      if (this.dateTo) {
+        query.append("date_to", this.dateTo);
+      }
+
+      try {
+        const res = await fetch(
+          `${aemfwSettings.restUrl}aem/v1/entries?${query}`,
+          {
+            headers: {
+              "X-WP-Nonce": aemfwSettings.nonce,
+            },
+          }
+        );
+        const apiResponse = await res.json();
+
+        // Set the fields schema based on the API response
+        this.allFields = apiResponse.entry_schema;
+
+        // Set the entries directly from the API response
+        this.entries = apiResponse.entries;
+        // console.log('Fetched entries:', this.entries);
+
+        this.totalEntries = Number(apiResponse.total) || this.entries.length;
+        this.totalPages = Math.ceil(this.totalEntries / this.pageSize);
+      } catch (error) {
+        console.error(femStrings.fetchEntriesError, error);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    // Filter and pagination handlers, now correctly calling the new fetchEntries
+    handleSearchInput: _.debounce(function () {
+      this.currentPage = 1;
+      this.fetchEntries();
+    }, 500),
+
+    handleStatusChange() {
+      this.currentPage = 1;
+      this.fetchEntries();
+    },
+
+    handleDateChange() {
+      this.currentPage = 1;
+      this.fetchEntries();
+    },
+    toggleSelectAll(event) {
+      if (event.target.checked) {
+        this.bulkSelected = this.paginatedEntries.map((entry) => entry.id);
+      } else {
+        this.bulkSelected = [];
+      }
+    },
+    toggleOpen() {
+      this.open = !this.open;
+      if (this.open && this.entries.length === 0) {
+        this.fetchEntries();
+      }
+    },
+    goToPage(page) {
+      page = Number(page);
+      if (page > 0 && page <= this.totalPages) {
+        this.currentPage = page;
+        this.fetchEntries();
+      }
+    },
+    nextPage() {
+      if (this.currentPage < this.totalPages) {
+        this.currentPage++;
+        this.fetchEntries();
+      }
+    },
+    prevPage() {
+      if (this.currentPage > 1) {
+        this.currentPage--;
+        this.fetchEntries();
+      }
+    },
+    sortByDate() {
+      this.entries = [...this.entries].sort((a, b) => {
+        return this.sortAsc
+          ? new Date(a.date) - new Date(b.date)
+          : new Date(b.date) - new Date(a.date);
+      });
+      this.sortAsc = !this.sortAsc;
+    },
+    sortByStatus() {
+      this.entries.sort((a, b) => {
+        if (a.status === b.status) return 0;
+
+        if (this.sortAscStatus) {
+          return a.status === "unread" ? -1 : 1;
+        } else {
+          return a.status === "read" ? -1 : 1;
+        }
+      });
+
+      this.sortAscStatus = !this.sortAscStatus;
+    },
+    showEntry(i) {
+      const entry = this.entries[i];
+      this.selectedEntry = entry;
+      this.entryModalOpen = true;
+
+      if (entry.status === "unread") {
+        entry.status = "read";
+        this.updateEntry(i, {
+          status: "read",
+        });
+      }
+    },
+
+    markAs(status) {
+      if (!this.entryModalOpen) return;
+      this.selectedEntry.status = status;
+      this.entryModalOpen = false;
+    },
+
+    copied: false,
+
+    copyEntryToClipboard() {
+      const lines = Object.entries(this.selectedEntry.entry || {})
+        .map(([key, value]) => `${key}: ${value || "-"}`)
+        .join("\n");
+
+      navigator.clipboard
+        .writeText(lines)
+        .then(() => {
+          this.copied = true;
+          setTimeout(() => {
+            this.copied = false;
+          }, 2000);
+        })
+        .catch((err) => {
+          console.error("Copy failed:", err);
+        });
+    },
+
+    async updateEntry(index, changes = {}) {
+      const entry = this.entries[index];
+
+      const payload = {
+        id: entry.id,
+        form_id: entry.form_id,
+        entry: entry.entry,
+        status: entry.status,
+        is_favorite: Number(entry.is_favorite),
+        note: entry.note,
+        exported_to_csv: Number(entry.exported_to_csv),
+        synced_to_gsheet: Number(entry.synced),
+        printed_at: entry.printed_at,
+        resent_at: entry.resent_at,
+        ...changes,
+      };
+
+      try {
+        const res = await fetch(
+          `${aemfwSettings.restUrl}aem/v1/entries/${
             payload.id
-          }?form_id=${encodeURIComponent(payload.form_id)}`, {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "X-WP-Nonce": aemfwSettings.nonce,
-                        },
-                        body: JSON.stringify(payload),
-                    }
-                );
+          }?form_id=${encodeURIComponent(payload.form_id)}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-WP-Nonce": aemfwSettings.nonce,
+            },
+            body: JSON.stringify(payload),
+          }
+        );
 
-                const data = await res.json();
-            } catch (error) {
-                console.error("Failed to update entry:", error);
-            }
-        },
+        const data = await res.json();
+      } catch (error) {
+        console.error("Failed to update entry:", error);
+      }
+    },
 
-        async deleteEntry() {
-            if (!this.selectedEntry) return;
+    async deleteEntry() {
+      if (!this.selectedEntry) return;
 
-            try {
-                const response = await fetch(
-                    `${aemfwSettings.restUrl}aem/v1/entries/${
-                    this.selectedEntry.id
-                }?form_id=${encodeURIComponent(this.selectedEntry.form_id)}`, {
-                        method: "DELETE",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "X-WP-Nonce": aemfwSettings.nonce,
-                        },
-                    }
-                );
+      try {
+        const response = await fetch(
+          `${aemfwSettings.restUrl}aem/v1/entries/${
+            this.selectedEntry.id
+          }?form_id=${encodeURIComponent(this.selectedEntry.form_id)}`,
+          {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              "X-WP-Nonce": aemfwSettings.nonce,
+            },
+          }
+        );
 
-                const data = await response.json();
+        const data = await response.json();
 
-                if (data.deleted) {
-                    // Close the modal and reset the selected entry immediately
-                    this.entryModalOpen = false;
-                    this.selectedEntry = null;
+        if (data.deleted) {
+          // Close the modal and reset the selected entry immediately
+          this.entryModalOpen = false;
+          this.selectedEntry = null;
 
-                    // This is the single, bulletproof line to refresh the UI.
-                    // It fetches the latest data from the server, which is the single source of truth.
-                    this.fetchEntries();
+          // This is the single, bulletproof line to refresh the UI.
+          // It fetches the latest data from the server, which is the single source of truth.
+          this.fetchEntries();
 
-                    // Dispatch a success toast message
-                    this.$dispatch("toast", {
-                        type: "success",
-                        message: data.message,
-                    });
+          // Dispatch a success toast message
+          this.$dispatch("toast", {
+            type: "success",
+            message: data.message,
+          });
+        } else {
+          // The API returned an error message
+          this.$dispatch("toast", {
+            type: "error",
+            message: femStrings.deleteFailedUnknown.replace(
+              "Unknown error",
+              data.message || "Unknown error"
+            ),
+          });
+        }
+      } catch (error) {
+        // A network or other fetch error occurred
+        this.$dispatch("toast", {
+          type: "error",
+          message: femStrings.deleteRequestFailed,
+        });
+        console.error("Delete request failed:", error);
+      }
+    },
 
-                } else {
-                    // The API returned an error message
-                    this.$dispatch("toast", {
-                        type: "error",
-                        message: femStrings.deleteFailedUnknown.replace('Unknown error', data.message || "Unknown error"),
-                    });
-                }
-            } catch (error) {
-                // A network or other fetch error occurred
-                this.$dispatch("toast", {
-                    type: "error",
-                    message: femStrings.deleteRequestFailed,
-                });
-                console.error("Delete request failed:", error);
-            }
-        },
+    toggleFavorite(index) {
+      const entry = this.entries[index];
+      entry.is_favorite = entry.is_favorite === 1 ? 0 : 1;
+      this.updateEntry(index, {
+        is_favorite: entry.is_favorite,
+      });
+    },
+    toggleRead(index) {
+      const entry = this.paginatedEntries[index];
+      entry.status = entry.status === "unread" ? "read" : "unread";
+      this.updateEntry(index, {
+        status: entry.status,
+      });
+    },
+    toggleModalReadStatus() {
+      const entry = this.selectedEntry;
+      const newStatus = entry.status === "unread" ? "read" : "unread";
+      entry.status = newStatus;
 
-        toggleFavorite(index) {
-            const entry = this.entries[index];
-            entry.is_favorite = entry.is_favorite === 1 ? 0 : 1;
-            this.updateEntry(index, {
-                is_favorite: entry.is_favorite
-            });
-        },
-        toggleRead(index) {
-            const entry = this.paginatedEntries[index];
-            entry.status = entry.status === "unread" ? "read" : "unread";
-            this.updateEntry(index, {
-                status: entry.status
-            });
-        },
-        toggleModalReadStatus() {
-            const entry = this.selectedEntry;
-            const newStatus = entry.status === "unread" ? "read" : "unread";
-            entry.status = newStatus;
+      const index = this.entries.findIndex((e) => e.id === entry.id);
+      if (index !== -1) {
+        this.entries[index].status = newStatus;
+        this.updateEntry(index, {
+          status: newStatus,
+        });
+      }
+    },
+    async updateSelectedEntry(changes = {}) {
+      const entryId = this.selectedEntry.id;
 
-            const index = this.entries.findIndex((e) => e.id === entry.id);
-            if (index !== -1) {
-                this.entries[index].status = newStatus;
-                this.updateEntry(index, {
-                    status: newStatus
-                });
-            }
-        },
-        async updateSelectedEntry(changes = {}) {
-            const entryId = this.selectedEntry.id;
+      const index = this.entries.findIndex((e) => e.id === entryId);
+      if (index === -1) {
+        // FEM_I18N: Use translatable string
+        console.error(femStrings.entryNotFound);
+        return;
+      }
 
-            const index = this.entries.findIndex((e) => e.id === entryId);
-            if (index === -1) {
-                // FEM_I18N: Use translatable string
-                console.error(femStrings.entryNotFound);
-                return;
-            }
+      // Merge changes into selectedEntry
+      Object.assign(this.selectedEntry, changes);
 
-            // Merge changes into selectedEntry
-            Object.assign(this.selectedEntry, changes);
+      const payload = {
+        id: this.selectedEntry.id,
+        form_id: this.selectedEntry.form_id,
+        entry: this.selectedEntry.entry,
+        status: this.selectedEntry.status,
+        is_favorite: Number(this.selectedEntry.is_favorite),
+        note: this.selectedEntry.note,
+        exported_to_csv: Number(this.selectedEntry.exported_to_csv),
+        synced_to_gsheet: Number(this.selectedEntry.synced),
+        printed_at: this.selectedEntry.printed_at,
+        resent_at: this.selectedEntry.resent_at,
+      };
 
-            const payload = {
-                id: this.selectedEntry.id,
-                form_id: this.selectedEntry.form_id,
-                entry: this.selectedEntry.entry,
-                status: this.selectedEntry.status,
-                is_favorite: Number(this.selectedEntry.is_favorite),
-                note: this.selectedEntry.note,
-                exported_to_csv: Number(this.selectedEntry.exported_to_csv),
-                synced_to_gsheet: Number(this.selectedEntry.synced),
-                printed_at: this.selectedEntry.printed_at,
-                resent_at: this.selectedEntry.resent_at,
-            };
-
-            try {
-                const res = await fetch(
-                    `${aemfwSettings.restUrl}aem/v1/entries/${
+      try {
+        const res = await fetch(
+          `${aemfwSettings.restUrl}aem/v1/entries/${
             payload.id
-          }?form_id=${encodeURIComponent(payload.form_id)}`, {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "X-WP-Nonce": aemfwSettings.nonce,
-                        },
-                        body: JSON.stringify(payload),
-                    }
-                );
+          }?form_id=${encodeURIComponent(payload.form_id)}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-WP-Nonce": aemfwSettings.nonce,
+            },
+            body: JSON.stringify(payload),
+          }
+        );
 
-                const data = await res.json();
+        const data = await res.json();
 
-                this.$dispatch("toast", {
-                    type: "success",
-                    // FEM_I18N: Use translatable string
-                    message: femStrings.changesSavedSuccess,
-                });
+        this.$dispatch("toast", {
+          type: "success",
+          // FEM_I18N: Use translatable string
+          message: femStrings.changesSavedSuccess,
+        });
 
-                window.dispatchEvent(new CustomEvent("note-saved"));
+        window.dispatchEvent(new CustomEvent("note-saved"));
 
-                this.entries[index] = { ...this.selectedEntry
-                };
-            } catch (err) {
+        this.entries[index] = { ...this.selectedEntry };
+      } catch (err) {
+        // FEM_I18N: Use translatable string
+        console.error(femStrings.saveFailed, err);
+      }
+    },
+    validateAndSaveNote() {
+      const note = this.selectedEntry.note?.trim() || "";
+
+      if (note.length > 1000) {
+        // FEM_I18N: Use translatable string
+        alert(femStrings.noteTooLong);
+        return;
+      }
+
+      this.updateSelectedEntry({
+        note,
+      });
+    },
+    async toggleGoogleSheetSync(index) {
+      const entry = this.entries[index];
+      const entryId = entry.id;
+      const nonce = aemfwSettings.nonce;
+
+      const isCurrentlySynced = !!entry.synced;
+      const action = isCurrentlySynced ? "unsync" : "sync";
+      const apiUrl = `${aemfwSettings.restUrl}aem/v1/entries/${entryId}/${action}`;
+
+      try {
+        const response = await fetch(apiUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-WP-Nonce": nonce,
+          },
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          window.dispatchEvent(
+            new CustomEvent("toast", {
+              detail: {
                 // FEM_I18N: Use translatable string
-                console.error(femStrings.saveFailed, err);
-            }
-        },
-        validateAndSaveNote() {
-            const note = this.selectedEntry.note?.trim() || "";
-
-            if (note.length > 1000) {
+                message: femStrings.syncDone,
+                type: "success",
+              },
+            })
+          );
+        } else {
+          window.dispatchEvent(
+            new CustomEvent("toast", {
+              detail: {
                 // FEM_I18N: Use translatable string
-                alert(
-                    femStrings.noteTooLong
-                );
-                return;
-            }
+                message: femStrings.syncFailed + " " + (data?.message || ""),
+                type: "error",
+              },
+            })
+          );
+        }
 
-            this.updateSelectedEntry({
-                note
-            });
-        },
-        async toggleGoogleSheetSync(index) {
-            const entry = this.entries[index];
-            const entryId = entry.id;
-            const nonce = aemfwSettings.nonce;
+        if (!response.ok) {
+          return;
+        }
 
-            const isCurrentlySynced = !!entry.synced;
-            const action = isCurrentlySynced ? "unsync" : "sync";
-            const apiUrl = `${aemfwSettings.restUrl}aem/v1/entries/${entryId}/${action}`;
+        entry.synced_to_gsheet = isCurrentlySynced ? 0 : 1;
+        this.updateEntry(index, {
+          synced_to_gsheet: entry.synced_to_gsheet,
+        });
+      } catch (error) {
+        console.error("Fetch Error:", error);
+        // FEM_I18N: Use translatable string
+        alert(femStrings.networkError);
+      }
+    },
+    printEntry(index) {
+      const entry = this.entries[index];
+      const formTitle = entry.form_title || "Form Entry";
 
-            try {
-                const response = await fetch(apiUrl, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-WP-Nonce": nonce,
-                    },
-                });
+      entry.printed_at = new Date()
+        .toISOString()
+        .slice(0, 19)
+        .replace("T", " ");
+      this.updateEntry(index, {
+        printed_at: entry.printed_at,
+      });
 
-                const data = await response.json();
-
-                if (data.success) {
-                    window.dispatchEvent(
-                        new CustomEvent("toast", {
-                            detail: {
-                                // FEM_I18N: Use translatable string
-                                message: femStrings.syncDone,
-                                type: "success",
-                            },
-                        })
-                    );
-                } else {
-                    window.dispatchEvent(
-                        new CustomEvent("toast", {
-                            detail: {
-                                // FEM_I18N: Use translatable string
-                                message: femStrings.syncFailed + ' ' + (data?.message || ""),
-                                type: "error",
-                            },
-                        })
-                    );
-                }
-
-                if (!response.ok) {
-                    return;
-                }
-
-                entry.synced_to_gsheet = isCurrentlySynced ? 0 : 1;
-                this.updateEntry(index, {
-                    synced_to_gsheet: entry.synced_to_gsheet
-                });
-            } catch (error) {
-                console.error("Fetch Error:", error);
-                // FEM_I18N: Use translatable string
-                alert(femStrings.networkError);
-            }
-        },
-        printEntry(index) {
-            const entry = this.entries[index];
-            const formTitle = entry.form_title || "Form Entry";
-
-            entry.printed_at = new Date()
-                .toISOString()
-                .slice(0, 19)
-                .replace("T", " ");
-            this.updateEntry(index, {
-                printed_at: entry.printed_at
-            });
-
-            const entryData = entry.entry || {};
-            const formattedFields = Object.entries(entryData)
-                .map(([key, value]) => {
-                    return `
+      const entryData = entry.entry || {};
+      const formattedFields = Object.entries(entryData)
+        .map(([key, value]) => {
+          return `
                 <div style="margin-bottom: 16px;">
                     <div style="font-weight: 600; font-size: 15px; color: #2d3748;">${key}</div>
                     <div style="margin-top: 4px; font-size: 14px; color: #1a202c;">${value}</div>
                     <hr style="border-top: 1px dashed #ddd; margin-top: 10px;" />
                 </div>
             `;
-                })
-                .join("");
+        })
+        .join("");
 
-            const printWindow = window.open("", "", "width=1000,height=700");
-            printWindow.document.write(`
+      const printWindow = window.open("", "", "width=1000,height=700");
+      printWindow.document.write(`
                 <html>
                 <head>
                     <title>${formTitle} - Entry Details</title>
@@ -648,615 +668,628 @@ function formTable(form) {
                 </body>
                 </html>
             `);
-            printWindow.document.close();
-            printWindow.focus();
-            printWindow.print();
-        },
-        exportSingleEntry(entry) {
-            const csvContent =
-                `"Field","Value"\n` +
-                Object.entries(entry.entry)
-                .map(
-                    ([key, val]) =>
-                    `"${key.replace(/\r?\n|\r/g, " ")}","${(val ?? "")
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+    },
+    exportSingleEntry(entry) {
+      const csvContent =
+        `"Field","Value"\n` +
+        Object.entries(entry.entry)
+          .map(
+            ([key, val]) =>
+              `"${key.replace(/\r?\n|\r/g, " ")}","${(val ?? "")
                 .toString()
                 .replace(/"/g, '""')}"`
-                )
-                .join("\n");
+          )
+          .join("\n");
 
-            const blob = new Blob([csvContent], {
-                type: "text/csv;charset=utf-8;"
-            });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = `entry-${entry.id}.csv`;
-            link.click();
-        },
-        timeAgo(dateString) {
-            const utcDateString = dateString.replace(" ", "T") + "Z";
-            const date = new Date(utcDateString);
-            const now = new Date();
-            const seconds = Math.floor((now - date) / 1000);
+      const blob = new Blob([csvContent], {
+        type: "text/csv;charset=utf-8;",
+      });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `entry-${entry.id}.csv`;
+      link.click();
+    },
+    timeAgo(dateString) {
+      const utcDateString = dateString.replace(" ", "T") + "Z";
+      const date = new Date(utcDateString);
+      const now = new Date();
+      const seconds = Math.floor((now - date) / 1000);
 
-            if (seconds < 60) return femStrings.timeAgoJustNow;
-            if (seconds < 3600) return femStrings.timeAgoMinutes.replace('%d', Math.floor(seconds / 60));
-            if (seconds < 86400) return femStrings.timeAgoHours.replace('%d', Math.floor(seconds / 3600));
+      if (seconds < 60) return femStrings.timeAgoJustNow;
+      if (seconds < 3600)
+        return femStrings.timeAgoMinutes.replace(
+          "%d",
+          Math.floor(seconds / 60)
+        );
+      if (seconds < 86400)
+        return femStrings.timeAgoHours.replace(
+          "%d",
+          Math.floor(seconds / 3600)
+        );
 
-            const yesterday = new Date();
-            yesterday.setDate(now.getDate() - 1);
+      const yesterday = new Date();
+      yesterday.setDate(now.getDate() - 1);
 
-            if (
-                date.getDate() === yesterday.getDate() &&
-                date.getMonth() === yesterday.getMonth() &&
-                date.getFullYear() === yesterday.getFullYear()
-            ) {
-                return femStrings.timeAgoYesterday;
-            }
+      if (
+        date.getDate() === yesterday.getDate() &&
+        date.getMonth() === yesterday.getMonth() &&
+        date.getFullYear() === yesterday.getFullYear()
+      ) {
+        return femStrings.timeAgoYesterday;
+      }
 
-            const optionsSameYear = {
-                day: "numeric",
-                month: "long"
-            };
-            const optionsLastYear = {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-            };
-            const isThisYear = now.getFullYear() === date.getFullYear();
+      const optionsSameYear = {
+        day: "numeric",
+        month: "long",
+      };
+      const optionsLastYear = {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      };
+      const isThisYear = now.getFullYear() === date.getFullYear();
 
-            return date.toLocaleDateString(
-                "en-US",
-                isThisYear ? optionsSameYear : optionsLastYear
-            );
-        },
-        get visiblePages() {
-            const pages = [];
-            const delta = 2;
-            const range = [];
-            const total = this.totalPages;
-            const current = this.currentPage;
+      return date.toLocaleDateString(
+        "en-US",
+        isThisYear ? optionsSameYear : optionsLastYear
+      );
+    },
+    get visiblePages() {
+      const pages = [];
+      const delta = 2;
+      const range = [];
+      const total = this.totalPages;
+      const current = this.currentPage;
 
-            const left = current - delta;
-            const right = current + delta;
+      const left = current - delta;
+      const right = current + delta;
 
-            for (let i = 1; i <= total; i++) {
-                if (i === 1 || i === total || (i >= left && i <= right)) {
-                    range.push(i);
-                }
-            }
+      for (let i = 1; i <= total; i++) {
+        if (i === 1 || i === total || (i >= left && i <= right)) {
+          range.push(i);
+        }
+      }
 
-            let lastPage = 0;
-            for (let page of range) {
-                if (lastPage && page - lastPage > 1) {
-                    pages.push("...");
-                }
-                pages.push(page);
-                lastPage = page;
-            }
+      let lastPage = 0;
+      for (let page of range) {
+        if (lastPage && page - lastPage > 1) {
+          pages.push("...");
+        }
+        pages.push(page);
+        lastPage = page;
+      }
 
-            return pages;
-        },
-        formatNumber(n) {
-            const num = Number(n);
+      return pages;
+    },
+    formatNumber(n) {
+      const num = Number(n);
 
-            if (num >= 1_000_000) {
-                return (num / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
-            } else if (num >= 1_000) {
-                return (num / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
-            }
+      if (num >= 1_000_000) {
+        return (num / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
+      } else if (num >= 1_000) {
+        return (num / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
+      }
 
-            return num.toString();
-        },
-        formatFullNumber(n) {
-            return Number(n).toLocaleString("en-US"); // e.g. 1,234,567
-        },
-    };
+      return num.toString();
+    },
+    formatFullNumber(n) {
+      return Number(n).toLocaleString("en-US"); // e.g. 1,234,567
+    },
+  };
 }
 
 function entriesApp() {
-    return {
-        forms: [],
-        entries: [],
-        totalEntries: 0,
-        formId: null, // currently selected form
-        currentPage: 1,
-        pageSize: 10,
-        filterStatus: "all",
-        searchQuery: "",
-        onlyFavorites: false,
-        setError: false,
-        loading: false,
+  return {
+    forms: [],
+    entries: [],
+    totalEntries: 0,
+    formId: null, // currently selected form
+    currentPage: 1,
+    pageSize: 10,
+    filterStatus: "all",
+    searchQuery: "",
+    onlyFavorites: false,
+    setError: false,
+    loading: false,
 
-        async fetchForms() {
-            this.loading = true;
-            try {
-                const res = await fetch(`${aemfwSettings.restUrl}aem/v1/forms`, {
-                    headers: {
-                        "X-WP-Nonce": aemfwSettings.nonce,
-                    },
-                });
-                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-                const data = await res.json();
-                this.forms = data;
-                this.loading = false;
-            } catch (error) {
-                this.setError = true;
-                this.loading = false;
-                // FEM_I18N: Use translatable string
-                console.error(femStrings.fetchFormsError, error);
+    async fetchForms() {
+      this.loading = true;
+      try {
+        const res = await fetch(`${aemfwSettings.restUrl}aem/v1/forms`, {
+          headers: {
+            "X-WP-Nonce": aemfwSettings.nonce,
+          },
+        });
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        const data = await res.json();
+        this.forms = data;
+        this.loading = false;
+      } catch (error) {
+        this.setError = true;
+        this.loading = false;
+        // FEM_I18N: Use translatable string
+        console.error(femStrings.fetchFormsError, error);
+      }
+    },
+
+    async fetchEntries() {
+      if (!this.formId) return;
+
+      const query = new URLSearchParams({
+        form_id: this.formId,
+        per_page: this.pageSize,
+        page: this.currentPage,
+        ...(this.filterStatus !== "all"
+          ? {
+              status: this.filterStatus,
             }
-        },
-
-        async fetchEntries() {
-            if (!this.formId) return;
-
-            const query = new URLSearchParams({
-                form_id: this.formId,
-                per_page: this.pageSize,
-                page: this.currentPage,
-                ...(this.filterStatus !== "all" ? {
-                    status: this.filterStatus
-                } : {}),
-                ...(this.searchQuery ? {
-                    search: this.searchQuery
-                } : {}),
-            });
-
-            try {
-                const res = await fetch(
-                    `${aemfwSettings.restUrl}aem/v1/entries?${query}`, {
-                        headers: {
-                            "X-WP-Nonce": aemfwSettings.nonce,
-                        },
-                    }
-                );
-                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-                const data = await res.json();
-
-                this.entries = JSON.parse(JSON.stringify(data.entries || []));
-                this.totalEntries = data.total || 0;
-            } catch (error) {
-                // FEM_I18N: Use translatable string
-                console.error(femStrings.fetchEntriesError, error);
+          : {}),
+        ...(this.searchQuery
+          ? {
+              search: this.searchQuery,
             }
-        },
+          : {}),
+      });
 
-        handleSearchInput: _.debounce(function() {
-            this.currentPage = 1;
-            this.fetchEntries();
-        }, 500),
+      try {
+        const res = await fetch(
+          `${aemfwSettings.restUrl}aem/v1/entries?${query}`,
+          {
+            headers: {
+              "X-WP-Nonce": aemfwSettings.nonce,
+            },
+          }
+        );
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        const data = await res.json();
 
-        handleFilterChange() {
-            this.currentPage = 1;
-            this.fetchEntries();
-        },
+        this.entries = JSON.parse(JSON.stringify(data.entries || []));
+        this.totalEntries = data.total || 0;
+      } catch (error) {
+        // FEM_I18N: Use translatable string
+        console.error(femStrings.fetchEntriesError, error);
+      }
+    },
 
-        changePage(page) {
-            this.currentPage = page;
-            this.fetchEntries();
-        },
-    };
+    handleSearchInput: _.debounce(function () {
+      this.currentPage = 1;
+      this.fetchEntries();
+    }, 500),
+
+    handleFilterChange() {
+      this.currentPage = 1;
+      this.fetchEntries();
+    },
+
+    changePage(page) {
+      this.currentPage = page;
+      this.fetchEntries();
+    },
+  };
 }
 
-// function formEntriesApp(formId, entryCount) {
-//     return {
-//         entries: [],
-//         total: entryCount || 0,
-//         searchQuery: "",
-//         filterStatus: "all",
-//         onlyFavorites: false,
-//         currentPage: 1,
-//         perPage: 10,
-//         loading: false,
-//         searchType: "email",
-//         dateFrom: "", // Added
-//         dateTo: "",   // Added
-
-//         async fetchEntries() {
-//             this.loading = true;
-
-//             let queryParams = new URLSearchParams({
-//                 form_id: formId,
-//                 page: this.currentPage,
-//                 per_page: this.perPage,
-//             });
-
-//             if (this.searchQuery.trim() !== "") {
-//                 queryParams.append("search", this.searchQuery.trim());
-//                 queryParams.append("search_type", this.searchType.trim());
-//             }
-
-//             if (this.filterStatus !== "all") {
-//                 queryParams.append("status", this.filterStatus);
-//             }
-
-//             if (this.dateFrom) {
-//                 queryParams.append("date_from", this.dateFrom);
-//             }
-
-//             if (this.dateTo) {
-//                 queryParams.append("date_to", this.dateTo);
-//             }
-
-//             try {
-//                 const res = await fetch(
-//                     `${aemfwSettings.restUrl}aem/v1/entries?${queryParams}`, {
-//                         headers: {
-//                             "X-WP-Nonce": aemfwSettings.nonce,
-//                         },
-//                     }
-//                 );
-//                 const data = await res.json();
-
-//                 this.entries = this.onlyFavorites ?
-//                     data.entries.filter((e) => e.is_favorite) :
-//                     data.entries;
-
-//                 this.total = data.total;
-//             } catch (err) {
-//                 console.error("Fetch failed:", err);
-//             } finally {
-//                 this.loading = false;
-//             }
-//         },
-
-//         handleSearchInput() {
-//             this.currentPage = 1;
-//             this.fetchEntries();
-//         },
-//         handleStatusChange() {
-//             this.currentPage = 1;
-//             this.fetchEntries();
-//         },
-//         handleFavoriteToggle() {
-//             this.currentPage = 1;
-//             this.fetchEntries();
-//         },
-//         handleDateChange() { // Added
-//             this.currentPage = 1;
-//             this.fetchEntries();
-//         },
-//         goToPage(pageNum) {
-//             this.currentPage = pageNum;
-//             this.fetchEntries();
-//         },
-//     };
-// }
-
 function toastHandler() {
-    return {
-        message: "",
-        type: "success",
-        visible: false,
-        init() {
-            window.addEventListener("toast", (e) => {
-                this.message = e.detail.message;
-                this.type = e.detail.type || "success";
-                this.visible = true;
+  return {
+    message: "",
+    type: "success",
+    visible: false,
+    init() {
+      window.addEventListener("toast", (e) => {
+        this.message = e.detail.message;
+        this.type = e.detail.type || "success";
+        this.visible = true;
 
-                setTimeout(() => (this.visible = false), 3000);
-            });
-        },
-    };
+        setTimeout(() => (this.visible = false), 3000);
+      });
+    },
+  };
 }
 
 function settingsForm() {
-    return {
-        isSaving: false,
-        message: "",
+  return {
+    isSaving: false,
+    message: "",
 
-        async saveSettings() {
-            this.isSaving = true;
-            this.message = "";
+    async saveSettings() {
+      this.isSaving = true;
+      this.message = "";
 
-            const form = document.querySelector("#fem-settings-form");
-            const formData = new FormData(form);
+      const form = document.querySelector("#fem-settings-form");
+      const formData = new FormData(form);
 
-            formData.delete("option_page");
-            formData.delete("action");
-            formData.delete("_wpnonce");
-            formData.delete("_wp_http_referer");
+      formData.delete("option_page");
+      formData.delete("action");
+      formData.delete("_wpnonce");
+      formData.delete("_wp_http_referer");
 
-            formData.append("action", "femsave_settings");
-            formData.append("_wpnonce", aemfwSettings.nonce);
+      formData.append("action", "femsave_settings");
+      formData.append("_wpnonce", aemfwSettings.nonce);
 
-            try {
-                const res = await fetch(ajaxurl, {
-                    method: "POST",
-                    body: formData,
-                });
+      try {
+        const res = await fetch(ajaxurl, {
+          method: "POST",
+          body: formData,
+        });
 
-                const data = await res.json();
+        const data = await res.json();
 
-                if (data.success) {
-                    window.dispatchEvent(
-                        new CustomEvent("toast", {
-                            detail: {
-                                // FEM_I18N: Use translatable string
-                                message: femStrings.settingsSavedSuccess,
-                                type: "success",
-                            },
-                        })
-                    );
-                } else {
-                    window.dispatchEvent(
-                        new CustomEvent("toast", {
-                            detail: {
-                                // FEM_I18N: Use translatable string
-                                message: femStrings.saveFailed + ' ' + (data.data?.message || ""),
-                                type: "error",
-                            },
-                        })
-                    );
-                }
-            } catch (err) {
-                console.error(err);
+        if (data.success) {
+          window.dispatchEvent(
+            new CustomEvent("toast", {
+              detail: {
                 // FEM_I18N: Use translatable string
-                this.message = femStrings.unexpectedError;
-            }
+                message: femStrings.settingsSavedSuccess,
+                type: "success",
+              },
+            })
+          );
+        } else {
+          window.dispatchEvent(
+            new CustomEvent("toast", {
+              detail: {
+                // FEM_I18N: Use translatable string
+                message:
+                  femStrings.saveFailed + " " + (data.data?.message || ""),
+                type: "error",
+              },
+            })
+          );
+        }
+      } catch (err) {
+        console.error(err);
+        // FEM_I18N: Use translatable string
+        this.message = femStrings.unexpectedError;
+      }
 
-            this.isSaving = false;
-        },
-    };
+      this.isSaving = false;
+    },
+  };
 }
 
 function exportSettings() {
-    return {
-        forms: [],
-        selectedFormId: "",
-        fields: [],
-        excludedFields: [],
-        dateFrom: "",
-        dateTo: "",
-        isExporting: false,
-        exportJobId: null,
-        exportProgress: 0,
-        exportInterval: null,
-        processedCount: 0,
-        totalEntries: 0,
-        isExportComplete: false,
+  return {
+    forms: [],
+    selectedFormId: "",
+    fields: [],
+    excludedFields: [],
+    dateFrom: "",
+    dateTo: "",
+    isExporting: false,
+    exportJobId: null,
+    exportProgress: 0,
+    exportInterval: null,
+    processedCount: 0,
+    totalEntries: 0,
+    isExportComplete: false,
 
-        showProgressModal: false,
-        errorMessage: "",
-        isOntheGoExport: false,
-        formTitle: "",
+    showProgressModal: false,
+    errorMessage: "",
+    isOntheGoExport: false,
+    formTitle: "",
 
-        init() {
-            console.log("Alpine exportSettings initialized");
-            this.fetchForms();
+    init() {
+      console.log("Alpine exportSettings initialized");
+      this.fetchForms();
 
-            const savedJobId = localStorage.getItem("femexport_job_id");
-            if (savedJobId) {
-                this.exportJobId = savedJobId;
-                this.isExporting = true;
-                this.startPolling();
-                console.log(`Resuming export job: ${this.exportJobId}`);
-            }
-        },
+      const savedJobId = localStorage.getItem("femexport_job_id");
+      if (savedJobId) {
+        this.exportJobId = savedJobId;
+        this.isExporting = true;
+        this.startPolling();
+        console.log(`Resuming export job: ${this.exportJobId}`);
+      }
+    },
 
-        async fetchForms() {
-            try {
-                const res = await fetch(`${aemfwSettings.restUrl}aem/v1/forms`, {
-                    headers: {
-                        "X-WP-Nonce": aemfwSettings.nonce
-                    },
-                });
-                const data = await res.json();
-                this.forms = data;
-            } catch (e) {
-                // FEM_I18N: Use translatable string
-                console.error(femStrings.fetchFormsError, e);
-            }
-        },
- 
-        async fetchFormFields() {
-            if (!this.selectedFormId) {
-                this.fields = [];
-                this.excludedFields = [];
-                return;
-            }
+    async fetchForms() {
+      try {
+        const res = await fetch(`${aemfwSettings.restUrl}aem/v1/forms`, {
+          headers: {
+            "X-WP-Nonce": aemfwSettings.nonce,
+          },
+        });
+        const data = await res.json();
+        this.forms = data;
+      } catch (e) {
+        // FEM_I18N: Use translatable string
+        console.error(femStrings.fetchFormsError, e);
+      }
+    },
 
-            this.errorMessage = "";
-            try {
-                const res = await fetch(
-                    `${aemfwSettings.restUrl}aem/v1/forms/${this.selectedFormId}/fields`, {
-                        headers: {
-                            "X-WP-Nonce": aemfwSettings.nonce
-                        },
-                    }
-                );
-                const data = await res.json();
-                this.fields = data.fields;
-                this.excludedFields = [];
-            } catch (e) {
-                // FEM_I18N: Use translatable string
-                console.error(femStrings.fetchFieldsError, e);
-                this.errorMessage = femStrings.fetchFieldsError;
-            }
-        },
+    async fetchFormFields() {
+      if (!this.selectedFormId) {
+        this.fields = [];
+        this.excludedFields = [];
+        return;
+      }
 
-        async exportAllBatchesAsync() {
-            if (!this.selectedFormId) {
-                // FEM_I18N: Use translatable string
-                this.errorMessage = femStrings.exportSelectForm;
-                return;
-            }
+      this.errorMessage = "";
+      try {
+        const res = await fetch(
+          `${aemfwSettings.restUrl}aem/v1/forms/${this.selectedFormId}/fields`,
+          {
+            headers: {
+              "X-WP-Nonce": aemfwSettings.nonce,
+            },
+          }
+        );
+        const data = await res.json();
+        this.fields = data.fields;
+        this.excludedFields = [];
+      } catch (e) {
+        // FEM_I18N: Use translatable string
+        console.error(femStrings.fetchFieldsError, e);
+        this.errorMessage = femStrings.fetchFieldsError;
+      }
+    },
 
-            this.resetExportState();
-            this.isExportComplete = false;
+    async exportAllBatchesAsync() {
+      if (!this.selectedFormId) {
+        // FEM_I18N: Use translatable string
+        this.errorMessage = femStrings.exportSelectForm;
+        return;
+      }
 
-            this.errorMessage = "";
-            this.isExporting = true;
-            this.exportProgress = 0;
-            this.exportJobId = null;
-            this.dateFrom = document.getElementById("femexport_date_from").value;
-            this.dateTo = document.getElementById("femexport_date_to").value;
+      this.resetExportState();
+      this.isExportComplete = false;
 
-            const exportData = {
-                form_id: this.selectedFormId,
-                date_from: this.dateFrom,
-                date_to: this.dateTo,
-                exclude_fields: this.excludedFields,
-            };
+      this.errorMessage = "";
+      this.isExporting = true;
+      this.exportProgress = 0;
+      this.exportJobId = null;
+      this.dateFrom = document.getElementById("femexport_date_from").value;
+      this.dateTo = document.getElementById("femexport_date_to").value;
 
-            try {
-                const res = await fetch(`${aemfwSettings.restUrl}aem/v1/export/start`, {
-                    method: "POST",
-                    headers: {
-                        "X-WP-Nonce": aemfwSettings.nonce,
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(exportData),
-                });
+      const exportData = {
+        form_id: this.selectedFormId,
+        date_from: this.dateFrom,
+        date_to: this.dateTo,
+        exclude_fields: this.excludedFields,
+      };
 
-                const contentType = res.headers.get("content-type");
+      try {
+        const res = await fetch(`${aemfwSettings.restUrl}aem/v1/export/start`, {
+          method: "POST",
+          headers: {
+            "X-WP-Nonce": aemfwSettings.nonce,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(exportData),
+        });
 
-                if (contentType.includes("text/csv")) {
-                    const text = await res.text();
-                    this.isOntheGoExport = true;
+        const contentType = res.headers.get("content-type");
 
-                    if (text.startsWith("id,") && text.includes("\n")) {
-                        const blob = new Blob([text], {
-                            type: "text/csv"
-                        });
-                        const url = window.URL.createObjectURL(blob);
+        if (contentType.includes("text/csv")) {
+          const text = await res.text();
+          this.isOntheGoExport = true;
 
-                        const a = document.createElement("a");
-                        a.href = url;
-                        a.download = `aem-entries-${this.formTitle}-${Date.now()}.csv`;
-                        document.body.appendChild(a);
-                        a.click();
-                        a.remove();
-                        URL.revokeObjectURL(url);
-                        this.exportProgress = 100;
-                        this.isExportComplete = true;
-                        return;
-                    } else {
-                        // FEM_I18N: Use translatable string
-                        throw new Error(femStrings.exportInvalidCSV);
-                    }
-                }
+          if (text.startsWith("id,") && text.includes("\n")) {
+            const blob = new Blob([text], {
+              type: "text/csv",
+            });
+            const url = window.URL.createObjectURL(blob);
 
-                const result = await res.json();
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `aem-entries-${this.formTitle}-${Date.now()}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+            this.exportProgress = 100;
+            this.isExportComplete = true;
+            return;
+          } else {
+            // FEM_I18N: Use translatable string
+            throw new Error(femStrings.exportInvalidCSV);
+          }
+        }
 
-                if (res.ok && result.success) {
-                    this.exportJobId = result.job_id;
-                    localStorage.setItem("femexport_job_id", this.exportJobId);
-                    this.startPolling();
-                } else {
-                    // FEM_I18N: Use translatable string
-                    throw new Error(result.message || femStrings.exportFailed);
-                }
-            } catch (e) {
-                console.error("Export start error:", e);
-                this.errorMessage = e.message;
-                this.resetExportState();
-            }
-        },
+        const result = await res.json();
 
-        startPolling() {
-            if (this.exportInterval) clearInterval(this.exportInterval);
+        if (res.ok && result.success) {
+          this.exportJobId = result.job_id;
+          localStorage.setItem("femexport_job_id", this.exportJobId);
+          this.startPolling();
+        } else {
+          // FEM_I18N: Use translatable string
+          throw new Error(result.message || femStrings.exportFailed);
+        }
+      } catch (e) {
+        console.error("Export start error:", e);
+        this.errorMessage = e.message;
+        this.resetExportState();
+      }
+    },
 
-            this.exportInterval = setInterval(async() => {
-                try {
-                    const res = await fetch(
-                        `${
+    startPolling() {
+      if (this.exportInterval) clearInterval(this.exportInterval);
+
+      this.exportInterval = setInterval(async () => {
+        try {
+          const res = await fetch(
+            `${
               aemfwSettings.restUrl
             }aem/v1/export/progress?job_id=${encodeURIComponent(
               this.exportJobId
-            )}`, {
-                            headers: {
-                                "X-WP-Nonce": aemfwSettings.nonce
-                            },
-                        }
-                    );
-                    const result = await res.json();
-
-                    if (!res.ok) {
-                        // FEM_I18N: Use translatable string
-                        throw new Error(
-                            result.message || femStrings.exportProgressFailed
-                        );
-                    }
-
-                    this.exportProgress = result.progress;
-                    this.processedCount = result.processed;
-                    this.totalEntries = result.total;
-
-                    if (result.status !== "complete" && result.status !== "failed") {
-                        this.isExporting = true;
-                    }
-
-                    if (result.status === "complete") {
-                        clearInterval(this.exportInterval);
-                        this.exportInterval = null;
-                        this.isExporting = false;
-                        this.isExportComplete = true;
-                        this.exportProgress = 100;
-
-                        this.handleDownload(result.file_url);
-
-                        // FEM_I18N: Use translatable string
-                        this.errorMessage = femStrings.exportComplete;
-                    }
-                } catch (e) {
-                    console.error("Polling error:", e);
-                    clearInterval(this.exportInterval);
-                    this.exportInterval = null;
-                    this.isExporting = false;
-                    this.errorMessage = e.message;
-                }
-            }, 2000);
-        },
-
-        // Helper function to reset state
-        resetExportState() {
-            clearInterval(this.exportInterval);
-            this.exportJobId = null;
-            this.isExporting = false;
-            this.exportProgress = 0;
-            this.processedCount = 0;
-            this.totalEntries = 0;
-            localStorage.removeItem("femexport_job_id");
-        },
-
-        async handleDownload(fileUrl) {
-            try {
-                const response = await fetch(fileUrl, {
-                    headers: {
-                        "X-WP-Nonce": aemfwSettings.nonce
-                    }
-                });
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `aem-entries-${this.formTitle}-${Date.now()}.csv`;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                window.URL.revokeObjectURL(url);
-
-                window.dispatchEvent(
-                    new CustomEvent("toast", {
-                        detail: {
-                            message: femStrings.csvExportedSuccess,
-                            type: "success",
-                        },
-                    })
-                );
-
-            } catch (e) {
-                console.error("Download failed:", e);
-                window.dispatchEvent(
-                    new CustomEvent("toast", {
-                        detail: {
-                            message: femStrings.exportFailed,
-                            type: "error",
-                        },
-                    })
-                );
+            )}`,
+            {
+              headers: {
+                "X-WP-Nonce": aemfwSettings.nonce,
+              },
             }
-        },
-    };
+          );
+          const result = await res.json();
+
+          if (!res.ok) {
+            // FEM_I18N: Use translatable string
+            throw new Error(result.message || femStrings.exportProgressFailed);
+          }
+
+          this.exportProgress = result.progress;
+          this.processedCount = result.processed;
+          this.totalEntries = result.total;
+
+          if (result.status !== "complete" && result.status !== "failed") {
+            this.isExporting = true;
+          }
+
+          if (result.status === "complete") {
+            clearInterval(this.exportInterval);
+            this.exportInterval = null;
+            this.isExporting = false;
+            this.isExportComplete = true;
+            this.exportProgress = 100;
+
+            this.handleDownload(result.file_url);
+
+            // FEM_I18N: Use translatable string
+            this.errorMessage = femStrings.exportComplete;
+          }
+        } catch (e) {
+          console.error("Polling error:", e);
+          clearInterval(this.exportInterval);
+          this.exportInterval = null;
+          this.isExporting = false;
+          this.errorMessage = e.message;
+        }
+      }, 2000);
+    },
+
+    // Helper function to reset state
+    resetExportState() {
+      clearInterval(this.exportInterval);
+      this.exportJobId = null;
+      this.isExporting = false;
+      this.exportProgress = 0;
+      this.processedCount = 0;
+      this.totalEntries = 0;
+      localStorage.removeItem("femexport_job_id");
+    },
+
+    async handleDownload(fileUrl) {
+      try {
+        const response = await fetch(fileUrl, {
+          headers: {
+            "X-WP-Nonce": aemfwSettings.nonce,
+          },
+        });
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `aem-entries-${this.formTitle}-${Date.now()}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+
+        window.dispatchEvent(
+          new CustomEvent("toast", {
+            detail: {
+              message: femStrings.csvExportedSuccess,
+              type: "success",
+            },
+          })
+        );
+      } catch (e) {
+        console.error("Download failed:", e);
+        window.dispatchEvent(
+          new CustomEvent("toast", {
+            detail: {
+              message: femStrings.exportFailed,
+              type: "error",
+            },
+          })
+        );
+      }
+    },
+  };
+}
+function customColumnsForm() {
+  return {
+    // State to hold forms, fields, and user selections
+    forms: [],
+    allFields: {}, // { form_id: [field1, field2] }
+    selectedColumns: {}, // { form_id: [selectedFieldKeys] }
+    loading: {
+      forms: false,
+      fields: false,
+      save: false,
+    },
+
+    // Initialization method
+    init() {
+      this.fetchForms();
+
+      // Load existing options from PHP variable if available
+      if (
+        typeof aemfwSettings !== "undefined" &&
+        aemfwSettings.initialColumns
+      ) {
+        this.selectedColumns = aemfwSettings.initialColumns;
+        // Expected format: { 22: ['field1','field2'], 25: ['fieldA'] }
+      }
+    },
+
+    // Fetches all available forms from the REST API
+    async fetchForms() {
+      this.loading.forms = true;
+      try {
+        const response = await fetch(`${aemfwSettings.restUrl}aem/v1/forms`, {
+          headers: { "X-WP-Nonce": aemfwSettings.nonce },
+        });
+        const data = await response.json();
+        this.forms = data;
+
+        // Initialize selectedColumns for any new form if not already set
+        this.forms.forEach((f) => {
+          if (!this.selectedColumns[f.form_id]) {
+            this.selectedColumns[f.form_id] = [];
+          }
+        });
+
+        console.log("Fetched forms:", this.forms);
+
+        // --- FIX: Call fetchFields for each form here ---
+        // This ensures the fields are loaded for each form found.
+        // Using Promise.all to fetch fields for all forms concurrently
+        // for better performance.
+        const fieldFetches = this.forms.map((form) =>
+          this.fetchFields(form.form_id)
+        );
+        await Promise.all(fieldFetches);
+      } catch (error) {
+        console.error("Error fetching forms or fields:", error);
+      } finally {
+        this.loading.forms = false;
+      }
+    },
+
+    // Fetches fields for a specific form
+    async fetchFields(form_id) {
+      if (!form_id) return;
+
+      // Mark a specific form's fields as loading
+      this.loading.fields = true;
+      try {
+        const response = await fetch(
+          `${aemfwSettings.restUrl}aem/v1/forms/${form_id}/fields`,
+          {
+            headers: { "X-WP-Nonce": aemfwSettings.nonce },
+          }
+        );
+        const data = await response.json();
+        this.allFields[form_id] = data.entry_schema;
+      } catch (error) {
+        console.error(`Error fetching fields for form ${form_id}:`, error);
+        this.allFields[form_id] = [];
+      } finally {
+        // Re-evaluate if all fields have been fetched
+        this.loading.fields = false;
+      }
+    },
+  };
 }
