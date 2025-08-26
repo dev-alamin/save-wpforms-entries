@@ -1214,7 +1214,7 @@ function customColumnsForm() {
     forms: [],
     allFields: {}, // { form_id: [field1, field2] }
     selectedColumns: {}, // { form_id: [selectedFieldKeys] }
-    loading: {
+    loadingSettings: {
       forms: false,
       fields: false,
       save: false,
@@ -1236,7 +1236,7 @@ function customColumnsForm() {
 
     // Fetches all available forms from the REST API
     async fetchForms() {
-      this.loading.forms = true;
+      this.loadingSettings.forms = true;
       try {
         const response = await fetch(`${aemfwSettings.restUrl}aem/v1/forms`, {
           headers: { "X-WP-Nonce": aemfwSettings.nonce },
@@ -1264,7 +1264,7 @@ function customColumnsForm() {
       } catch (error) {
         console.error("Error fetching forms or fields:", error);
       } finally {
-        this.loading.forms = false;
+        this.loadingSettings.forms = false;
       }
     },
 
@@ -1272,8 +1272,8 @@ function customColumnsForm() {
     async fetchFields(form_id) {
       if (!form_id) return;
 
-      // Mark a specific form's fields as loading
-      this.loading.fields = true;
+      // Mark a specific form's fields as loadingSettings
+      this.loadingSettings.fields = true;
       try {
         const response = await fetch(
           `${aemfwSettings.restUrl}aem/v1/forms/${form_id}/fields`,
@@ -1288,7 +1288,7 @@ function customColumnsForm() {
         this.allFields[form_id] = [];
       } finally {
         // Re-evaluate if all fields have been fetched
-        this.loading.fields = false;
+        this.loadingSettings.fields = false;
       }
     },
   };
