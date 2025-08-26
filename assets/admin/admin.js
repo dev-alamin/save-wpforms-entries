@@ -964,14 +964,12 @@ function exportSettings() {
     processedCount: 0,
     totalEntries: 0,
     isExportComplete: false,
-
     showProgressModal: false,
     errorMessage: "",
     isOntheGoExport: false,
     formTitle: "",
 
     init() {
-      console.log("Alpine exportSettings initialized");
       this.fetchForms();
 
       const savedJobId = localStorage.getItem("femexport_job_id");
@@ -979,7 +977,6 @@ function exportSettings() {
         this.exportJobId = savedJobId;
         this.isExporting = true;
         this.startPolling();
-        console.log(`Resuming export job: ${this.exportJobId}`);
       }
     },
 
@@ -993,8 +990,7 @@ function exportSettings() {
         const data = await res.json();
         this.forms = data;
       } catch (e) {
-        // FEM_I18N: Use translatable string
-        console.error(femStrings.fetchFormsError, e);
+
       }
     },
 
@@ -1102,6 +1098,14 @@ function exportSettings() {
         this.errorMessage = e.message;
         this.resetExportState();
       }
+    },
+
+    showExportProgress(){
+        this.showProgressModal = true;
+    },
+
+    closeProgressModal(){
+        this.showProgressModal = false;
     },
 
     startPolling() {
@@ -1250,8 +1254,6 @@ function customColumnsForm() {
             this.selectedColumns[f.form_id] = [];
           }
         });
-
-        console.log("Fetched forms:", this.forms);
 
         // --- FIX: Call fetchFields for each form here ---
         // This ensures the fields are loaded for each form found.
