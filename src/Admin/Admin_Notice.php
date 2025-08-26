@@ -6,6 +6,11 @@ defined( 'ABSPATH' ) || exit;
 
 use App\AdvancedEntryManager\Utility\Helper;
 
+defined( 'ABSPATH' ) || exit;
+
+/**
+ * Handles all admin-related notices, links, and UI elements.
+ */
 class Admin_Notice {
 
 
@@ -13,11 +18,17 @@ class Admin_Notice {
 	 * Constructor.
 	 */
 	public function __construct() {
+		// Display a link to the documentation on the Entries UI header.
 		add_action( 'fem_before_entries_ui_header', array( $this, 'display_doc_link' ) );
+
+		// Display a specific REST API notice on the Entries UI header.
 		add_action( 'fem_before_entries_ui_header', array( $this, 'fem_rest_notice' ) );
 
+		// General admin notices for REST API and Cron issues.
 		add_action( 'admin_notices', array( $this, 'rest_disabled_notice' ) );
+		add_action( 'admin_notices', array( $this, 'cron_issue_notice' ) );
 
+		// Add custom action links to the plugin row in the Plugins screen.
 		add_filter( 'plugin_action_links_' . FEM_PLUGIN_BASE, array( $this, 'plugin_action_links' ) );
 	}
 
@@ -71,7 +82,8 @@ class Admin_Notice {
 
 
 	/**
-	 * Display REST Error Notice in own page
+	 * Display REST Error Notice in own page.
+	 * This notice is shown on the Entries Manager page itself.
 	 */
 	public function fem_rest_notice() {
 		if ( Helper::is_rest_enabled() ) {
@@ -114,6 +126,50 @@ class Admin_Notice {
 					</svg>
 				</button>
 			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Display a notice if wp-cron is not running reliably.
+	 *
+	 * This notice advises the user to set up a real cron job for reliable
+	 * background processing.
+	 */
+	public function cron_issue_notice() {
+		if ( ! defined( 'DISABLE_WP_CRON' ) || ! DISABLE_WP_CRON ) {
+			return; // Only show if wp-cron has been disabled.
+		}
+
+		// Only show to users who can manage options.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		?>
+		<div
+			x-data="{ show: true }"
+			x-show="show"
+			x-transition
+			class="notice notice-warning is-dismissible fem-notice"
+			role="alert">
+			<p class="font-medium text-lg leading-6 mb-2">
+				<strong><?php esc_html_e( 'Action Required: Improve Cron Reliability', 'forms-entries-manager' ); ?></strong>
+			</p>
+			<p>
+				<?php
+				echo wp_kses_post(
+					sprintf(
+						/* translators: %s: a URL to the WordPress documentation */
+						__(
+							'Your site has the <code>DISABLE_WP_CRON</code> constant enabled, which can prevent scheduled tasks (like Google Sheets syncing) from running reliably. For consistent background processing, we recommend setting up a server-side cron job. %s',
+							'forms-entries-manager'
+						),
+						'<a href="' . esc_url( 'https://developer.wordpress.org/plugins/cron/hooking-wp-cron-into-the-system-task-scheduler/' ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Learn more about this here.', 'forms-entries-manager' ) . '</a>'
+					)
+				);
+				?>
+			</p>
 		</div>
 		<?php
 	}
@@ -237,6 +293,13 @@ class Admin_Notice {
 							<path d="M12 2L3 21h18L12 2zm0 3.84L17.53 19H6.47L12 5.84zM11 10h2v4h-2v-4zm0 6h2v2h-2v-2z" />
 						</svg>
 						<span><?php echo esc_html__( 'Entry Migration Guide', 'forms-entries-manager' ); ?></span>
+					</a>
+
+					<a href="https://entriesmanager.com/doc#wp-cron" target="blank" rel="noopener noreferrer" class="flex items-start space-x-2 bg-white/60 border border-red-100 rounded-lg p-3 hover:bg-red-100 transition shadow-sm">
+						<svg class="w-5 h-5 text-yellow-600 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor">
+						<path d="M480-80q-134 0-227-93t-93-227q0-134 93-227t227-93q134 0 227 93t93 227q0 134-93 227t-227 93Zm0-80q101 0 190.5-47T770-290q-51-68-51-125.5v-274.5l-44 44q-26 26-62.5 40.5t-75.5 14.5v-80q48 0 91.5-16.5T703-677l57-57q31-31 31-72t-31-72l-57-57q-31-31-72-31t-72 31l-57 57q-29 29-45 74t-16 93v169q0 39-16 75.5t-46 62.5q-54 54-124 54H480Zm0 80q174 0 297-123t123-297q0-174-123-297t-297-123q-174 0-297 123t-123 297q0 174 123 297t297 123Z" />
+						</svg>
+						<span><?php echo esc_html_e( 'Fix Cron Issues Guide', 'forms-entries-manager' ); ?></span>
 					</a>
 				</div>
 			</div>

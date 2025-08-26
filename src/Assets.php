@@ -134,7 +134,7 @@ class Assets {
 				'nonce'          => wp_create_nonce( 'wp_rest' ),
 				'perPage'        => Helper::get_option( 'entries_per_page', 20 ),
 				'ajax_url'       => admin_url( 'admin-ajax.php' ),
-				'initialColumns' => json_decode( $initial_columns ),
+				'initialColumns' => $initial_columns ? json_decode( $initial_columns ) : array(),
 			)
 		);
 

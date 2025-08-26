@@ -547,54 +547,59 @@ class Export_Entries {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function download_export_file( WP_REST_Request $request ) {
-		// Sanitize the job ID from the request
 		$job_id = sanitize_key( $request->get_param( 'job_id' ) );
 		if ( empty( $job_id ) ) {
-			return new WP_Error( 'missing_job_id', __( 'Job ID is required.', 'forms-entries-manager' ), array( 'status' => 400 ) );
+			return new WP_Error(
+				'missing_job_id',
+				__( 'Job ID is required.', 'forms-entries-manager' ),
+				array( 'status' => 400 )
+			);
 		}
 
-		// Get the job state from the transient
 		$transient_key = self::JOB_TRANSIENT_PREFIX . $job_id;
 		$job_state     = Helper::get_transient( $transient_key );
 
-		// Check if the job exists and is complete
 		if ( false === $job_state || $job_state['status'] !== 'complete' ) {
-			return new WP_Error( 'invalid_job', __( 'Export job not found or not yet complete.', 'forms-entries-manager' ), array( 'status' => 404 ) );
+			return new WP_Error(
+				'invalid_job',
+				__( 'Export job not found or not yet complete.', 'forms-entries-manager' ),
+				array( 'status' => 404 )
+			);
 		}
 
-		// Check if a file path is set and if the file exists using the FileSystem class
 		$file_path = $job_state['file_path'];
-
-		// Instantiate your FileSystem class.
-		$fs = new FileSystem();
+		$fs        = new FileSystem();
 
 		if ( empty( $file_path ) || ! $fs->exists( $file_path ) ) {
-			return new WP_Error( 'file_not_found', __( 'Export file not found on the server.', 'forms-entries-manager' ), array( 'status' => 404 ) );
+			return new WP_Error(
+				'file_not_found',
+				__( 'Export file not found on the server.', 'forms-entries-manager' ),
+				array( 'status' => 404 )
+			);
 		}
 
-		// --- All checks passed. Now serve the file ---
-
-		// Get the file content and other details using the FileSystem class methods.
-		$file_name    = basename( $file_path );
-		$file_content = $fs->read( $file_path );
-
-		if ( false === $file_content ) {
-			return new WP_Error( 'file_read_error', __( 'Error reading the export file.', 'forms-entries-manager' ), array( 'status' => 500 ) );
+		// Clean any buffers to avoid "ob_end_flush" fatal
+		while ( ob_get_level() ) {
+			ob_end_clean();
 		}
 
-		// Set headers for file download
+		$file_name = basename( $file_path );
+
+		// Headers for direct download
+		header( 'Content-Description: File Transfer' );
 		header( 'Content-Type: text/csv' );
 		header( 'Content-Disposition: attachment; filename="' . $file_name . '"' );
-		header( 'Content-Length: ' . strlen( $file_content ) );
+		header( 'Content-Length: ' . filesize( $file_path ) );
 		header( 'Pragma: no-cache' );
 		header( 'Expires: 0' );
 
-		// Send the content directly to the output.
-        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		echo $file_content;
+		// Stream the file instead of loading into memory
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile
+		readfile( $file_path );
 
-		exit;
+		exit; // Important: stop WP from continuing
 	}
+
 
 	/**
 	 * REST API endpoint to securely delete a completed export file.
