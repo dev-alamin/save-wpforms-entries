@@ -53,7 +53,7 @@ msgid "Upgrade PRO"
 msgstr ""
 
 #: src/Admin/Admin_Notice.php:69
-msgid "🚫 Your site is blocking REST API access required by Advanced Entries Manager. Please whitelist /wp-json/aem/entries/v1/* to ensure full functionality."
+msgid "🚫 Your site is blocking REST API access required by Advanced Entries Manager. Please whitelist /wp-json/fem/entries/v1/* to ensure full functionality."
 msgstr ""
 
 #: src/Admin/Admin_Notice.php:100

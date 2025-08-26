@@ -26,7 +26,7 @@ class Options {
 
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 
-		add_action( 'wp_ajax_femsave_settings', array( $this, 'save_settings' ) );
+		add_action( 'wp_ajax_fem_save_settings', array( $this, 'save_settings' ) );
 	}
 
 	/**
@@ -38,21 +38,20 @@ class Options {
 	public function save_settings() {
 		check_ajax_referer( 'wp_rest' );
 
-		Helper::update_option( 'export_limit', absint( $_POST['femexport_limit'] ?? 100 ) );
+		Helper::update_option( 'export_limit', absint( $_POST['fem_export_limit'] ?? 100 ) );
 		Helper::update_option( 'entries_per_page', absint( $_POST['fem_entries_per_page'] ?? 20 ) );
 
-        if ( ! empty( $_POST['fem_custom_columns'] ) && is_array( $_POST['fem_custom_columns'] ) ) {
-            $sanitized = [];
+		if ( ! empty( $_POST['fem_custom_columns'] ) && is_array( $_POST['fem_custom_columns'] ) ) {
+			$sanitized = array();
 
-            foreach ( $_POST['fem_custom_columns'] as $form_id => $fields ) {
-                $sanitized[ absint( $form_id ) ] = array_map( 'sanitize_text_field', (array) $fields );
-            }
+			foreach ( $_POST['fem_custom_columns'] as $form_id => $fields ) {
+				$sanitized[ absint( $form_id ) ] = array_map( 'sanitize_text_field', (array) $fields );
+			}
 
-            Helper::update_option( 'cusom_form_columns_settings', json_encode( $sanitized ) );
-        } else {
-            Helper::update_option( 'cusom_form_columns_settings', [] );
-        }
-
+			Helper::update_option( 'cusom_form_columns_settings', json_encode( $sanitized ) );
+		} else {
+			Helper::update_option( 'cusom_form_columns_settings', array() );
+		}
 
 		wp_send_json_success( array( 'message' => 'Saved' ) );
 	}
@@ -66,8 +65,8 @@ class Options {
 	public function register_settings() {
 		// OAuth credentials
 		register_setting(
-			'femgoogle_settings',
-			'femgoogle_sheet_tab',
+			'fem_google_settings',
+			'fem_google_sheet_tab',
 			array(
 				'type'              => 'string',
 				'sanitize_callback' => 'sanitize_text_field',
@@ -76,7 +75,7 @@ class Options {
 
 		// New custom options
 		register_setting(
-			'femgoogle_settings',
+			'fem_google_settings',
 			'fem_entries_per_page',
 			array(
 				'type'              => 'integer',
@@ -86,8 +85,8 @@ class Options {
 		);
 
 		register_setting(
-			'femgoogle_settings',
-			'femgoogle_sheet_id',
+			'fem_google_settings',
+			'fem_google_sheet_id',
 			array(
 				'type'              => 'string',
 				'sanitize_callback' => 'sanitize_text_field',
@@ -95,8 +94,8 @@ class Options {
 		);
 
 		register_setting(
-			'femgoogle_settings',
-			'femgoogle_sheet_auto_sync',
+			'fem_google_settings',
+			'fem_google_sheet_auto_sync',
 			array(
 				'type'              => 'boolean',
 				'sanitize_callback' => function ( $val ) {

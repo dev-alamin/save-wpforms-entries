@@ -446,8 +446,8 @@ class Helper {
 			return array();
 		}
 
-		$cache_key = 'aem_entries_' . md5( implode( ',', $ids ) );
-		$entries   = wp_cache_get( $cache_key, 'aem' );
+		$cache_key = 'fem_entries_' . md5( implode( ',', $ids ) );
+		$entries   = wp_cache_get( $cache_key, 'fem' );
 
         // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 		if ( false === $entries ) {
@@ -468,7 +468,7 @@ class Helper {
 				ARRAY_A
 			);
 
-			wp_cache_set( $cache_key, $entries, 'aem', 300 ); // cache 5 mins
+			wp_cache_set( $cache_key, $entries, 'fem', 300 ); // cache 5 mins
 		}
 
 		return $entries ?: array();
@@ -483,7 +483,7 @@ class Helper {
 		$result = $wpdb->update( $table, $data, array( 'id' => $id ) );
 
 		if ( $result !== false ) {
-			wp_cache_delete( 'aem_entries_' . $id, 'aem' );
+			wp_cache_delete( 'fem_entries_' . $id, 'fem' );
 		}
 
 		return $result !== false;
@@ -497,7 +497,7 @@ class Helper {
 		$result = $wpdb->delete( $table, array( 'id' => $id ) );
 
 		if ( $result !== false ) {
-			wp_cache_delete( 'aem_entries_' . $id, 'aem' );
+			wp_cache_delete( 'fem_entries_' . $id, 'fem' );
 		}
 
 		return $result !== false;

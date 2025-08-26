@@ -57,7 +57,7 @@ class Delete_Single_Entry {
 			);
 		}
 
-		do_action( 'fembefore_entry_delete', $id, $form_id );
+		do_action( 'fem_before_entry_delete', $id, $form_id );
 
 		$table = Helper::get_table_name(); // e.g., 'fem_entries_manager'
 
@@ -72,7 +72,7 @@ class Delete_Single_Entry {
 		);
 
 		if ( $deleted ) {
-			do_action( 'femafter_entry_delete', $id, $form_id );
+			do_action( 'fem_after_entry_delete', $id, $form_id );
 
 			return new WP_REST_Response(
 				array(

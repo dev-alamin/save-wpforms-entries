@@ -15,9 +15,9 @@ class Sync_Google_Sheet_Action {
 		$this->send_data = $send_data;
 
 		// Corrected: Direct hook to the class method is the cleaner and intended way.
-		// add_action('femprocess_gsheet_entry', [$this->send_data, 'process_single_entry']);
+		// add_action('fem_process_gsheet_entry', [$this->send_data, 'process_single_entry']);
 		add_action(
-			'femprocess_gsheet_entry',
+			'fem_process_gsheet_entry',
 			function ( $entry_id ) {
 				$this->send_data->process_single_entry( array( 'entry_id' => $entry_id ) );
 			}

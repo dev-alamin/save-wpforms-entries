@@ -8,17 +8,16 @@ use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
 use App\AdvancedEntryManager\Utility\Helper;
-use App\AdvancedEntryManager\Utility\DB;
 
 class Migrate {
 
-	const AEM_PREFIX      = 'fem';
+	const FEM_PREFIX      = 'fem_';
 	const SOURCE_TABLE    = 'wpforms_db';
-	const OPTION_LAST_ID  = self::AEM_PREFIX . 'migration_last_id';
-	const OPTION_COMPLETE = self::AEM_PREFIX . 'migration_complete';
+	const OPTION_LAST_ID  = self::FEM_PREFIX . 'migration_last_id';
+	const OPTION_COMPLETE = self::FEM_PREFIX . 'migration_complete';
 	const BATCH_SIZE      = 500;
-	const ACTION_HOOK     = self::AEM_PREFIX . 'femmigrate_batch';
-	const SCHEDULE_GROUP  = self::AEM_PREFIX . 'femmigration';
+	const ACTION_HOOK     = self::FEM_PREFIX . 'migrate_batch';
+	const SCHEDULE_GROUP  = self::FEM_PREFIX . 'migration';
 
 	/**
 	 * Trigger the migration process.
@@ -31,7 +30,7 @@ class Migrate {
 		}
 
 		// Prevent triggering if migration already running and not complete
-		if ( Helper::get_option( 'femmigration_started_at' ) && ! Helper::get_option( self::OPTION_COMPLETE ) ) {
+		if ( Helper::get_option( 'migration_started_at' ) && ! Helper::get_option( self::OPTION_COMPLETE ) ) {
 			return new WP_Error( 'migration_already_running', __( 'Migration is already in progress.', 'forms-entries-manager' ) );
 		}
 
@@ -39,8 +38,8 @@ class Migrate {
 		Helper::update_option( self::OPTION_LAST_ID, 0 );
 		Helper::delete_option( self::OPTION_COMPLETE );
 
-		if ( ! Helper::get_option( 'femmigration_started_at' ) ) {
-			Helper::update_option( 'femmigration_started_at', time() );
+		if ( ! Helper::get_option( 'migration_started_at' ) ) {
+			Helper::update_option( 'migration_started_at', time() );
 		}
 
 		// Clear any pending/reserved duplicate actions
@@ -58,7 +57,7 @@ class Migrate {
 			array(
 				'success' => true,
 				'message' => __( 'Migration started in background.', 'forms-entries-manager' ),
-				'code'    => 'femmigration_started',
+				'code'    => 'fem_migration_started',
 			)
 		);
 	}
@@ -208,7 +207,7 @@ class Migrate {
 
 		$complete = (bool) Helper::get_option( 'migration_complete', false );
 
-		$start = (int) Helper::get_option( 'femmigration_started_at', 0 );
+		$start = (int) Helper::get_option( 'fem_migration_started_at', 0 );
 		$eta   = null;
 
 		if ( $start > 0 && $migrated > 0 && ! $complete ) {

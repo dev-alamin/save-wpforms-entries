@@ -12,7 +12,7 @@ $sheet_id  = Helper::get_option( 'google_sheet_id' );
 $auto_sync = Helper::get_option( 'google_sheet_auto_sync', true );
 $sheet_tab = Helper::get_option( 'google_sheet_tab', 'Sheet1' );
 
-$custom_columns = Helper::get_option( 'cusom_form_columns_settings', [] );
+$custom_columns = Helper::get_option( 'cusom_form_columns_settings', array() );
 
 
 ?>
@@ -94,21 +94,21 @@ $custom_columns = Helper::get_option( 'cusom_form_columns_settings', [] );
 				<?php esc_html_e( 'General Settings', 'forms-entries-manager' ); ?>
 			</button>
 		</nav>
-        
-        <div x-show="tab === 'csv'">
-            <?php require __DIR__ . '/tab/csv-export.php'; ?>
-        </div>
+		
+		<div x-show="tab === 'csv'">
+			<?php require __DIR__ . '/tab/csv-export.php'; ?>
+		</div>
 
-        <div x-show="tab === 'google'">
-            <!-- ✅ Connected Notice -->
-            <?php require __DIR__ . '/tab/google-connection.php'; ?>
-        </div>
+		<div x-show="tab === 'google'">
+			<!-- ✅ Connected Notice -->
+			<?php require __DIR__ . '/tab/google-connection.php'; ?>
+		</div>
 
 		<form id="fem-settings-form" @submit.prevent="saveSettings" class="space-y-6">
 			<div x-show="tab === 'general'">
 				<?php require __DIR__ . '/tab/general-settings.php'; ?>
 			</div>
-            
+			
 			<button type="submit"
 				class="!inline-flex mt-5 !items-center !gap-2 !px-6 !py-3 !bg-indigo-600 hover:!bg-indigo-700 !text-white !text-sm !font-semibold !rounded-lg !shadow-sm hover:!shadow-md !transition-all !duration-200"
 				:disabled="isSaving">

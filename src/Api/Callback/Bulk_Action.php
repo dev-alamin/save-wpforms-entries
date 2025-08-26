@@ -135,7 +135,7 @@ class Bulk_Action {
 		global $wp_filesystem;
 
 		// Create temp file using WordPress temp path
-		$tmp_file = wp_tempnam( 'aem-entries.csv' );
+		$tmp_file = wp_tempnam( 'fem-entries.csv' );
 		if ( ! $tmp_file ) {
 			return new WP_Error( 'fs_error', __( 'Unable to create temp file.', 'forms-entries-manager' ), array( 'status' => 500 ) );
 		}

@@ -112,7 +112,7 @@ class Update_Entries {
 		 * @param array           $data    Data to update (column => value).
 		 * @param WP_REST_Request $request Full REST request object.
 		 */
-		do_action( 'fembefore_entry_update', $id, $data, $request );
+		do_action( 'fem_before_entry_update', $id, $data, $request );
 
 		// Perform DB update
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -141,7 +141,7 @@ class Update_Entries {
 		 * @param array           $data    Data that was updated.
 		 * @param WP_REST_Request $request Full REST request object.
 		 */
-		do_action( 'femafter_entry_update', $id, $data, $request );
+		do_action( 'fem_after_entry_update', $id, $data, $request );
 
 		return new WP_REST_Response(
 			array(

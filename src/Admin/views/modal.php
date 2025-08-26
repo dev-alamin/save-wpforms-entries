@@ -116,12 +116,12 @@
 					x-show="noteOpen"
 					x-collapse
 					class="mt-4 overflow-hidden transition-all duration-300 ease-in-out">
-					<label for="femnote_fields" class="block text-sm font-medium text-gray-700 mb-1">
+					<label for="fem_note_fields" class="block text-sm font-medium text-gray-700 mb-1">
 						<?php esc_html_e( 'Your Note', 'forms-entries-manager' ); ?>
 					</label>
 					<textarea
-						id="femnote_fields"
-						name="femnote"
+						id="fem_note_fields"
+						name="fem_note"
 						x-model="selectedEntry.note"
 						rows="5"
 						maxlength="1000"

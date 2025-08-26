@@ -102,7 +102,7 @@ class Get_Forms {
 
 		if ( $form_id <= 0 ) {
 			return new WP_Error(
-				'feminvalid_form_id',
+				'fem_invalid_form_id',
 				__( 'Invalid or missing form ID.', 'forms-entries-manager' ),
 				array( 'status' => 400 )
 			);
@@ -110,11 +110,13 @@ class Get_Forms {
 
 		// Try to get data from the cache first
 		$cached_fields = $fem_cache->get_object_cache( $cache_key );
+		$cached_schema = $fem_cache->get_object_cache( $cache_key . '_entry_schema' );
 
 		if ( false !== $cached_fields ) {
 			return rest_ensure_response(
 				array(
-					'fields' => $cached_fields,
+					'fields'       => $cached_fields,
+					'entry_schema' => $cached_schema,
 				)
 			);
 		}
@@ -143,7 +145,7 @@ class Get_Forms {
 				}
 			}
 
-            $entry_schema = [];
+			$entry_schema = array();
 			// Step 2: Merge in keys from deserialized 'entry'
 			if ( isset( $row['entry'] ) ) {
 				$entry = maybe_unserialize( $row['entry'] );
@@ -151,21 +153,20 @@ class Get_Forms {
 					foreach ( array_keys( $entry ) as $field_key ) {
 						$fields[ $field_key ] = true;
 
-                        if( 
-                        strtolower( $field_key ) == 'name' 
-                        || strtolower( $field_key ) == 'email' 
-                        || strtolower( $field_key ) == 'your-name'
-                        || strtolower( $field_key ) == 'your-email'
-                        || strpos( strtolower( $field_key ), 'g-recaptcha-response' ) !== false
-                        || strpos( strtolower( $field_key ), 'file' ) !== false
-                        ) {
-                            continue;
-                        }
+						if ( strtolower( $field_key ) == 'name'
+						|| strtolower( $field_key ) == 'email'
+						|| strtolower( $field_key ) == 'your-name'
+						|| strtolower( $field_key ) == 'your-email'
+						|| strpos( strtolower( $field_key ), 'g-recaptcha-response' ) !== false
+						|| strpos( strtolower( $field_key ), 'file' ) !== false
+						) {
+							continue;
+						}
 
-                        $entry_schema[] = array(
-                            'key'      =>  $field_key,
-                            'label'    => $field_key,
-                        );
+						$entry_schema[] = array(
+							'key'   => $field_key,
+							'label' => $field_key,
+						);
 					}
 				}
 			}
@@ -175,11 +176,12 @@ class Get_Forms {
 
 		// Store the results in the cache for 1 hour.
 		$fem_cache->set_object_cache( $cache_key, $final_fields, HOUR_IN_SECONDS );
+		$fem_cache->set_object_cache( $cache_key . '_entry_schema', $entry_schema, HOUR_IN_SECONDS );
 
 		return rest_ensure_response(
 			array(
-				'fields' => $final_fields,
-                'entry_schema' => $entry_schema,
+				'fields'       => $final_fields,
+				'entry_schema' => $entry_schema,
 			)
 		);
 	}

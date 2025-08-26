@@ -142,7 +142,7 @@ class Submit_Entry {
 					if ( file_exists( $file_path ) ) {
 						// Securely copy the file to a private directory.
 						$upload_dir  = wp_upload_dir();
-						$private_dir = $upload_dir['basedir'] . '/aem-cf7-uploads';
+						$private_dir = $upload_dir['basedir'] . '/fem-cf7-uploads';
 						if ( ! is_dir( $private_dir ) ) {
 							wp_mkdir_p( $private_dir );
 						}

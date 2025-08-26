@@ -95,7 +95,7 @@ class Get_Entries {
 		}
 
 		$where = 'WHERE ' . implode( ' AND ', $where_clauses );
-		$where = apply_filters( 'femget_entries_where', $where, $params, $request );
+		$where = apply_filters( 'fem_get_entries_where', $where, $params, $request );
 
 		// First, get the total count. This query is still needed for pagination button rendering.
 		$count_sql   = $wpdb->prepare(
@@ -177,37 +177,36 @@ class Get_Entries {
 		// Add the dynamic fields from the `entry` object
 		foreach ( $unique_entry_keys as $key ) {
 
-            if( 
-            strtolower( $key ) == 'name' 
-            || strtolower( $key ) == 'email' 
-            || strtolower( $key ) == 'your-name'
-            || strtolower( $key ) == 'your-email'
-            || strpos( strtolower( $key ), 'g-recaptcha-response' ) !== false
-            || strpos( strtolower( $key ), 'file' ) !== false
-            ) {
-                continue;
-            }
+			if ( strtolower( $key ) == 'name'
+			|| strtolower( $key ) == 'email'
+			|| strtolower( $key ) == 'your-name'
+			|| strtolower( $key ) == 'your-email'
+			|| strpos( strtolower( $key ), 'g-recaptcha-response' ) !== false
+			|| strpos( strtolower( $key ), 'file' ) !== false
+			) {
+				continue;
+			}
 
-            $entry_schema[] = array(
-                'key'      =>  $key,
-                'label'    => $key,
-            );
+			$entry_schema[] = array(
+				'key'   => $key,
+				'label' => $key,
+			);
 		}
 
-		$data = apply_filters( 'femget_entries_data', $data, $results, $request );
+		$data = apply_filters( 'fem_get_entries_data', $data, $results, $request );
 
-		do_action( 'femafter_get_total_count', $total_count, $request );
+		do_action( 'fem_after_get_total_count', $total_count, $request );
 
 		$response = rest_ensure_response(
 			array(
-				'entries'       => $data,
+				'entries'      => $data,
 				'entry_schema' => $entry_schema, // Add the schema to the final response
-				'total'         => $total_count,
-				'page'          => $page,
-				'per_page'      => $per_page,
+				'total'        => $total_count,
+				'page'         => $page,
+				'per_page'     => $per_page,
 			)
 		);
 
-		return apply_filters( 'femget_entries_response', $response, $request );
+		return apply_filters( 'fem_get_entries_response', $response, $request );
 	}
 }

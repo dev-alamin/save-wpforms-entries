@@ -97,7 +97,7 @@ class Route {
 	 *
 	 * @var string
 	 */
-	private $namespace = 'aem/v1';
+	private $namespace = 'fem/v1';
 
 	/**
 	 * Constructor.
@@ -678,7 +678,7 @@ class Route {
 		 * This filter can be used to extend the existing routes
 		 * or to add new routes for custom functionality.
 		 */
-		$data = apply_filters( 'femapi_routes', $data );
+		$data = apply_filters( 'fem_api_routes', $data );
 
 		return $data;
 	}

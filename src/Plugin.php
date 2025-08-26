@@ -71,8 +71,8 @@ class Plugin {
 
 				( new Capabilities() )->add_cap();
 
-				if ( ! as_has_scheduled_action( 'femdaily_sync' ) ) {
-					as_schedule_recurring_action( strtotime( 'tomorrow 2am' ), DAY_IN_SECONDS, 'femdaily_sync' );
+				if ( ! as_has_scheduled_action( 'fem_daily_sync' ) ) {
+					as_schedule_recurring_action( strtotime( 'tomorrow 2am' ), DAY_IN_SECONDS, 'fem_daily_sync' );
 				}
 
 				if ( ! as_next_scheduled_action( 'fem_every_five_minute_sync' ) ) {

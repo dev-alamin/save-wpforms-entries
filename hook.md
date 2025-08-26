@@ -1,7 +1,7 @@
 ## REST API Hooks
 
-### fembefore_entry_delete
-do_action( 'fembefore_entry_delete', int $entry_id, int $form_id );
+### fem_before_entry_delete
+do_action( 'fem_before_entry_delete', int $entry_id, int $form_id );
 
 Fires before a form entry is deleted from the custom entries table.
 
@@ -17,8 +17,8 @@ Prevent deletion by flagging via a custom condition
 
 Trigger external sync/cleanup before local deletion
 
-### femafter_entry_delete
-do_action( 'femafter_entry_delete', int $entry_id, int $form_id );
+### fem_after_entry_delete
+do_action( 'fem_after_entry_delete', int $entry_id, int $form_id );
 
 Fires after a form entry has been successfully deleted from the database.
 
@@ -34,7 +34,7 @@ Log deletion history
 
 Sync deletion to external services like Google Sheets, Airtable, etc.
 
-### femafter_entry_update
+### fem_after_entry_update
 /**
 * Fires after an entry has been successfully updated.
 *
@@ -42,9 +42,9 @@ Sync deletion to external services like Google Sheets, Airtable, etc.
 * @param array           $data    Data that was updated.
 * @param WP_REST_Request $request Full REST request object.
 */
-do_action('femafter_entry_update', $id, $data, $request);
+do_action('fem_after_entry_update', $id, $data, $request);
 
-### fembefore_entry_update
+### fem_before_entry_update
 /**
 * Fires before an entry update is performed.
 *
@@ -52,9 +52,9 @@ do_action('femafter_entry_update', $id, $data, $request);
 * @param array           $data    Data to update (column => value).
 * @param WP_REST_Request $request Full REST request object.
 */
-do_action('fembefore_entry_update', $id, $data, $request);
+do_action('fem_before_entry_update', $id, $data, $request);
 
-### fembefore_entry_create
+### fem_before_entry_create
 /**
 * Fires before inserting a new entry.
 *
@@ -63,9 +63,9 @@ do_action('fembefore_entry_update', $id, $data, $request);
 * @param array           $params  Full request parameters.
 * @param WP_REST_Request $request REST request object.
 */
-do_action('fembefore_entry_create', $form_id, $entry, $params, $request);
+do_action('fem_before_entry_create', $form_id, $entry, $params, $request);
 
-### femafter_entry_create
+### fem_after_entry_create
 /**
 * Fires after successfully inserting a new entry.
 *
@@ -75,17 +75,17 @@ do_action('fembefore_entry_create', $form_id, $entry, $params, $request);
 * @param array           $params   Full request parameters.
 * @param WP_REST_Request $request  REST request object.
 */
-do_action('femafter_entry_create', $wpdb->insert_id, $form_id, $entry, $params, $request);
+do_action('fem_after_entry_create', $wpdb->insert_id, $form_id, $entry, $params, $request);
 
-### femget_forms
+### fem_get_forms
 /**
 * Filter the list of forms returned by get_forms().
 *
 * @param array $forms List of forms with entry counts.
 */
-return rest_ensure_response( apply_filters( 'femget_forms', $forms ) );
+return rest_ensure_response( apply_filters( 'fem_get_forms', $forms ) );
 
-### femget_entries_where
+### fem_get_entries_where
 /**
 * Filter the WHERE clause and parameters before the query is executed.
 *
@@ -93,9 +93,9 @@ return rest_ensure_response( apply_filters( 'femget_forms', $forms ) );
 * @param array           $params Query parameters.
 * @param WP_REST_Request $request The current REST request.
 */
-$where = apply_filters('femget_entries_where', $where, $params, $request);
+$where = apply_filters('fem_get_entries_where', $where, $params, $request);
 
-### femget_entries_data
+### fem_get_entries_data
 /**
     * Filter the entries data before returning the response.
     *
@@ -103,18 +103,18 @@ $where = apply_filters('femget_entries_where', $where, $params, $request);
     * @param array           $results Raw DB results.
     * @param WP_REST_Request $request The current REST request.
     */
-$data = apply_filters('femget_entries_data', $data, $results, $request);
+$data = apply_filters('fem_get_entries_data', $data, $results, $request);
 
-### femget_entries_response
+### fem_get_entries_response
 /**
     * Filter the full REST response before returning.
     *
     * @param WP_REST_Response $response The REST response object.
     * @param WP_REST_Request  $request  The current REST request.
     */
-return apply_filters('femget_entries_response', $response, $request);
+return apply_filters('fem_get_entries_response', $response, $request);
 
-## femcheck_new_entries
+## fem_check_new_entries
 /**
     * Filter the new entry result rows.
     *
@@ -123,9 +123,9 @@ return apply_filters('femget_entries_response', $response, $request);
     * @param int             $last_id The last seen entry ID.
     * @param WP_REST_Request $request The original REST request.
     */
-$rows = apply_filters('femcheck_new_entries', $rows, $form_id, $last_id, $request);
+$rows = apply_filters('fem_check_new_entries', $rows, $form_id, $last_id, $request);
 
-### femcreate_entries_table_sql
+### fem_create_entries_table_sql
 /**
     * Filter the SQL query for creating the entries table.
     * 
@@ -133,25 +133,25 @@ $rows = apply_filters('femcheck_new_entries', $rows, $form_id, $last_id, $reques
     * @param string $sql The SQL query to create the entries table.
     * @return string Modified SQL query.
     */
-$sql = apply_filters( 'femcreate_entries_table_sql', $sql );
+$sql = apply_filters( 'fem_create_entries_table_sql', $sql );
 
 ### Capabilities
 
 The following custom capabilities are available for managing entries:
 
-- `can_create_fem_entries` — Allows creating new entries.
-- `can_edit_fem_entries` — Allows editing existing entries.
-- `can_delete_fem_entries` — Allows deleting entries.
-- `can_view_fem_entries` — Allows viewing entries.
-- `can_manage_fem_entries` — Allows managing all entry-related actions.
+- `can_create_fem__entries` — Allows creating new entries.
+- `can_edit_fem__entries` — Allows editing existing entries.
+- `can_delete_fem__entries` — Allows deleting entries.
+- `can_view_fem__entries` — Allows viewing entries.
+- `can_manage_fem__entries` — Allows managing all entry-related actions.
 
 Assign these capabilities to user roles as needed to control access.
 
-### femapi_routes
+### fem_api_routes
 /**
     * Filter to allow other plugins to add custom routes.
     * 
     * This filter can be used to extend the existing routes
     * or to add new routes for custom functionality.
     */
-$data = apply_filters('femapi_routes', $data);
+$data = apply_filters('fem_api_routes', $data);

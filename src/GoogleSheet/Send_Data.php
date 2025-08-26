@@ -110,7 +110,7 @@ class Send_Data {
 	protected function get_or_create_sheet_for_form( int $form_id ) {
 		// Enforce Free Version form limitation
 		if ( ! Helper::is_pro_version() ) {
-			$linked_forms = Helper::get_option( 'aem_linked_forms', array() );
+			$linked_forms = Helper::get_option( 'fem_linked_forms', array() );
 			if ( ! in_array( $form_id, $linked_forms ) && count( $linked_forms ) >= 1 ) {
 				return new WP_Error( 'limit_exceeded', 'The free version supports synchronizing data from only one form. Please upgrade to Pro to sync more forms.' );
 			}
@@ -130,7 +130,7 @@ class Send_Data {
 		}
 
 		// Prevent multiple simultaneous creation attempts for the same form.
-		$lock_key = 'aem_gsheet_creating_lock_' . $form_id;
+		$lock_key = 'fem_gsheet_creating_lock_' . $form_id;
 		if ( get_transient( $lock_key ) ) {
 			return new WP_Error( 'locked', 'Sheet creation for this form is already in progress.' );
 		}
@@ -151,10 +151,10 @@ class Send_Data {
 			Helper::update_option( "gsheet_spreadsheet_title_{$form_id}", $spreadsheet_title ); // Save for UI
 
 			// Track linked forms for the free version
-			$linked_forms = Helper::get_option( 'aem_linked_forms', array() );
+			$linked_forms = Helper::get_option( 'fem_linked_forms', array() );
 			if ( ! in_array( $form_id, $linked_forms ) ) {
 				$linked_forms[] = $form_id;
-				Helper::update_option( 'aem_linked_forms', $linked_forms );
+				Helper::update_option( 'fem_linked_forms', $linked_forms );
 			}
 		}
 
@@ -439,7 +439,7 @@ class Send_Data {
 			$wpdb->update( $table, array( 'retry_count' => $current_retry_count + 1 ), array( 'id' => $entry_id ) );
 			// Schedule retry with exponential backoff
 			$delay = 60 * pow( 2, $current_retry_count ); // 1 min, 2 min, 4 min, etc.
-			as_schedule_single_action( time() + $delay, 'femprocess_gsheet_entry', array( 'entry_id' => $entry_id ) );
+			as_schedule_single_action( time() + $delay, 'fem_process_gsheet_entry', array( 'entry_id' => $entry_id ) );
 		} else {
 			$this->logger->log( 'Max retry limit reached for entry ID ' . $entry_id . '. Sync abandoned.', 'ERROR' );
 			// Optionally, mark as failed in the DB
@@ -514,8 +514,8 @@ class Send_Data {
 			$scheduled_time = $now + ( $index * $delay_between );
 
 			// Check if already scheduled to avoid duplicates
-			if ( ! as_next_scheduled_action( 'femprocess_gsheet_entry', array( 'entry_id' => $entry->id ) ) ) {
-				as_schedule_single_action( $scheduled_time, 'femprocess_gsheet_entry', array( 'entry_id' => $entry->id ) );
+			if ( ! as_next_scheduled_action( 'fem_process_gsheet_entry', array( 'entry_id' => $entry->id ) ) ) {
+				as_schedule_single_action( $scheduled_time, 'fem_process_gsheet_entry', array( 'entry_id' => $entry->id ) );
 			}
 		}
 

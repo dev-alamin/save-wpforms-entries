@@ -1,14 +1,14 @@
 <div class="flex flex-wrap gap-4 items-center py-4 px-4">
 	<?php
 	require_once __DIR__ . '/../template-functions.php';
-	$fembulk_actions = bulk_action_items();
+	$fem_bulk_actions = bulk_action_items();
 	?>
 	<div
 		class="flex items-center justify-between gap-4"
 		x-data='{
 			showBulkMenu: false,
 			selectedBulkAction: "",
-			bulkActions: <?php echo json_encode( $fembulk_actions ); ?>,
+			bulkActions: <?php echo json_encode( $fem_bulk_actions ); ?>,
 			bulkIcon() {
 				const action = this.bulkActions.find(a => a.key === this.selectedBulkAction);
 				return action ? action.icon : "";

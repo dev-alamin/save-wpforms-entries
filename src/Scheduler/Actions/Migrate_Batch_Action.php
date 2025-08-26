@@ -18,6 +18,6 @@ class Migrate_Batch_Action {
 	public function __construct( Migrate $migrate ) {
 		$this->migrate = $migrate;
 
-		add_action( 'femmigrate_batch', array( $this->migrate, 'migrate_from_wpformsdb_plugin' ), 10, 1 );
+		add_action( 'fem_migrate_batch', array( $this->migrate, 'migrate_from_wpformsdb_plugin' ), 10, 1 );
 	}
 }

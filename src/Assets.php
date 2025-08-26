@@ -123,18 +123,18 @@ class Assets {
 		}
 
 		wp_enqueue_script( 'lodash.min.js' );
-        // Get the existing custom columns from the database.
-        $initial_columns = Helper::get_option( 'cusom_form_columns_settings', [] );
+		// Get the existing custom columns from the database.
+		$initial_columns = Helper::get_option( 'cusom_form_columns_settings', array() );
 		// Localize main admin JS
 		wp_localize_script(
 			'fem-admin-js',
-			'aemfwSettings',
+			'femSettings',
 			array(
-                'restUrl'        => esc_url_raw( rest_url() ),
-                'nonce'          => wp_create_nonce( 'wp_rest' ),
-                'perPage'        => Helper::get_option( 'entries_per_page', 20 ),
-                'ajax_url'       => admin_url( 'admin-ajax.php' ),
-                'initialColumns' => $initial_columns,
+				'restUrl'        => esc_url_raw( rest_url() ),
+				'nonce'          => wp_create_nonce( 'wp_rest' ),
+				'perPage'        => Helper::get_option( 'entries_per_page', 20 ),
+				'ajax_url'       => admin_url( 'admin-ajax.php' ),
+				'initialColumns' => json_decode( $initial_columns ),
 			)
 		);
 

@@ -10,7 +10,7 @@ function formTable(form) {
     totalEntries: form.entry_count,
     entries: [],
     currentPage: 1,
-    pageSize: aemfwSettings.perPage,
+    pageSize: femSettings.perPage,
     totalPages: 1,
     sortAsc: true,
     sortAscStatus: true,
@@ -90,12 +90,12 @@ function formTable(form) {
       try {
         if (action === "export_csv") {
           const res = await fetch(
-            `${aemfwSettings.restUrl}aem/v1/export/bulk`,
+            `${femSettings.restUrl}fem/v1/export/bulk`,
             {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
-                "X-WP-Nonce": aemfwSettings.nonce,
+                "X-WP-Nonce": femSettings.nonce,
               },
               body: JSON.stringify({
                 ids: this.bulkSelected,
@@ -108,7 +108,7 @@ function formTable(form) {
 
           const a = document.createElement("a");
           a.href = url;
-          a.download = `aem-entries-${Date.now()}.csv`;
+          a.download = `fem-entries-${Date.now()}.csv`;
           document.body.appendChild(a);
           a.click();
           a.remove();
@@ -125,12 +125,12 @@ function formTable(form) {
           const uniqueIds = [...new Set(this.bulkSelected)];
 
           const res = await fetch(
-            `${aemfwSettings.restUrl}aem/v1/entries/bulk`,
+            `${femSettings.restUrl}fem/v1/entries/bulk`,
             {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
-                "X-WP-Nonce": aemfwSettings.nonce,
+                "X-WP-Nonce": femSettings.nonce,
               },
               body: JSON.stringify({
                 ids: uniqueIds,
@@ -229,10 +229,10 @@ function formTable(form) {
 
       try {
         const res = await fetch(
-          `${aemfwSettings.restUrl}aem/v1/entries?${query}`,
+          `${femSettings.restUrl}fem/v1/entries?${query}`,
           {
             headers: {
-              "X-WP-Nonce": aemfwSettings.nonce,
+              "X-WP-Nonce": femSettings.nonce,
             },
           }
         );
@@ -380,14 +380,14 @@ function formTable(form) {
 
       try {
         const res = await fetch(
-          `${aemfwSettings.restUrl}aem/v1/entries/${
+          `${femSettings.restUrl}fem/v1/entries/${
             payload.id
           }?form_id=${encodeURIComponent(payload.form_id)}`,
           {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "X-WP-Nonce": aemfwSettings.nonce,
+              "X-WP-Nonce": femSettings.nonce,
             },
             body: JSON.stringify(payload),
           }
@@ -404,14 +404,14 @@ function formTable(form) {
 
       try {
         const response = await fetch(
-          `${aemfwSettings.restUrl}aem/v1/entries/${
+          `${femSettings.restUrl}fem/v1/entries/${
             this.selectedEntry.id
           }?form_id=${encodeURIComponent(this.selectedEntry.form_id)}`,
           {
             method: "DELETE",
             headers: {
               "Content-Type": "application/json",
-              "X-WP-Nonce": aemfwSettings.nonce,
+              "X-WP-Nonce": femSettings.nonce,
             },
           }
         );
@@ -507,14 +507,14 @@ function formTable(form) {
 
       try {
         const res = await fetch(
-          `${aemfwSettings.restUrl}aem/v1/entries/${
+          `${femSettings.restUrl}fem/v1/entries/${
             payload.id
           }?form_id=${encodeURIComponent(payload.form_id)}`,
           {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "X-WP-Nonce": aemfwSettings.nonce,
+              "X-WP-Nonce": femSettings.nonce,
             },
             body: JSON.stringify(payload),
           }
@@ -552,11 +552,11 @@ function formTable(form) {
     async toggleGoogleSheetSync(index) {
       const entry = this.entries[index];
       const entryId = entry.id;
-      const nonce = aemfwSettings.nonce;
+      const nonce = femSettings.nonce;
 
       const isCurrentlySynced = !!entry.synced;
       const action = isCurrentlySynced ? "unsync" : "sync";
-      const apiUrl = `${aemfwSettings.restUrl}aem/v1/entries/${entryId}/${action}`;
+      const apiUrl = `${femSettings.restUrl}fem/v1/entries/${entryId}/${action}`;
 
       try {
         const response = await fetch(apiUrl, {
@@ -798,9 +798,9 @@ function entriesApp() {
     async fetchForms() {
       this.loading = true;
       try {
-        const res = await fetch(`${aemfwSettings.restUrl}aem/v1/forms`, {
+        const res = await fetch(`${femSettings.restUrl}fem/v1/forms`, {
           headers: {
-            "X-WP-Nonce": aemfwSettings.nonce,
+            "X-WP-Nonce": femSettings.nonce,
           },
         });
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -836,10 +836,10 @@ function entriesApp() {
 
       try {
         const res = await fetch(
-          `${aemfwSettings.restUrl}aem/v1/entries?${query}`,
+          `${femSettings.restUrl}fem/v1/entries?${query}`,
           {
             headers: {
-              "X-WP-Nonce": aemfwSettings.nonce,
+              "X-WP-Nonce": femSettings.nonce,
             },
           }
         );
@@ -905,8 +905,8 @@ function settingsForm() {
       formData.delete("_wpnonce");
       formData.delete("_wp_http_referer");
 
-      formData.append("action", "femsave_settings");
-      formData.append("_wpnonce", aemfwSettings.nonce);
+      formData.append("action", "fem_save_settings");
+      formData.append("_wpnonce", femSettings.nonce);
 
       try {
         const res = await fetch(ajaxurl, {
@@ -949,8 +949,10 @@ function settingsForm() {
   };
 }
 
+
 function exportSettings() {
   return {
+    // Reactive State
     forms: [],
     selectedFormId: "",
     fields: [],
@@ -964,36 +966,43 @@ function exportSettings() {
     processedCount: 0,
     totalEntries: 0,
     isExportComplete: false,
+
+    // UI State
     showProgressModal: false,
     errorMessage: "",
     isOntheGoExport: false,
     formTitle: "",
 
     init() {
+      console.log("Alpine exportSettings initialized");
       this.fetchForms();
 
-      const savedJobId = localStorage.getItem("femexport_job_id");
+      // Check for a saved job on page load
+      const savedJobId = localStorage.getItem("fem_export_job_id");
       if (savedJobId) {
         this.exportJobId = savedJobId;
         this.isExporting = true;
         this.startPolling();
+        // CHANGED: Automatically show the modal on reload for better UX.
+        // this.showProgressModal = true;
+        console.log(`Resuming export job: ${this.exportJobId}`);
       }
     },
 
+    // Fetches forms from the REST API
     async fetchForms() {
       try {
-        const res = await fetch(`${aemfwSettings.restUrl}aem/v1/forms`, {
-          headers: {
-            "X-WP-Nonce": aemfwSettings.nonce,
-          },
+        const res = await fetch(`${femSettings.restUrl}fem/v1/forms`, {
+          headers: { "X-WP-Nonce": femSettings.nonce },
         });
         const data = await res.json();
         this.forms = data;
       } catch (e) {
-
+        console.error("Error fetching forms:", e);
       }
     },
 
+    // Fetches form fields when a form is selected
     async fetchFormFields() {
       if (!this.selectedFormId) {
         this.fields = [];
@@ -1004,30 +1013,28 @@ function exportSettings() {
       this.errorMessage = "";
       try {
         const res = await fetch(
-          `${aemfwSettings.restUrl}aem/v1/forms/${this.selectedFormId}/fields`,
+          `${femSettings.restUrl}fem/v1/forms/${this.selectedFormId}/fields`,
           {
-            headers: {
-              "X-WP-Nonce": aemfwSettings.nonce,
-            },
+            headers: { "X-WP-Nonce": femSettings.nonce },
           }
         );
         const data = await res.json();
         this.fields = data.fields;
         this.excludedFields = [];
       } catch (e) {
-        // FEM_I18N: Use translatable string
-        console.error(femStrings.fetchFieldsError, e);
-        this.errorMessage = femStrings.fetchFieldsError;
+        console.error("Error fetching form fields:", e);
+        this.errorMessage = "Failed to fetch form fields. Please try again.";
       }
     },
 
+    // Initiates the async export job
     async exportAllBatchesAsync() {
       if (!this.selectedFormId) {
-        // FEM_I18N: Use translatable string
-        this.errorMessage = femStrings.exportSelectForm;
+        this.errorMessage = "Please select a form before exporting.";
         return;
       }
 
+      // CHANGED: Reset state from any previous completed job before starting a new one.
       this.resetExportState();
       this.isExportComplete = false;
 
@@ -1035,8 +1042,9 @@ function exportSettings() {
       this.isExporting = true;
       this.exportProgress = 0;
       this.exportJobId = null;
-      this.dateFrom = document.getElementById("femexport_date_from").value;
-      this.dateTo = document.getElementById("femexport_date_to").value;
+      this.dateFrom = document.getElementById("fem_export_date_from").value;
+      this.dateTo = document.getElementById("fem_export_date_to").value;
+
 
       const exportData = {
         form_id: this.selectedFormId,
@@ -1046,10 +1054,10 @@ function exportSettings() {
       };
 
       try {
-        const res = await fetch(`${aemfwSettings.restUrl}aem/v1/export/start`, {
+        const res = await fetch(`${femSettings.restUrl}fem/v1/export/start`, {
           method: "POST",
           headers: {
-            "X-WP-Nonce": aemfwSettings.nonce,
+            "X-WP-Nonce": femSettings.nonce,
             "Content-Type": "application/json",
           },
           body: JSON.stringify(exportData),
@@ -1062,24 +1070,21 @@ function exportSettings() {
           this.isOntheGoExport = true;
 
           if (text.startsWith("id,") && text.includes("\n")) {
-            const blob = new Blob([text], {
-              type: "text/csv",
-            });
+            const blob = new Blob([text], { type: "text/csv" });
             const url = window.URL.createObjectURL(blob);
 
             const a = document.createElement("a");
             a.href = url;
-            a.download = `aem-entries-${this.formTitle}-${Date.now()}.csv`;
+            a.download = `fem-entries-${this.formTitle}-${Date.now()}.csv`;
             document.body.appendChild(a);
             a.click();
             a.remove();
             URL.revokeObjectURL(url);
             this.exportProgress = 100;
             this.isExportComplete = true;
-            return;
+            return; // Done: no polling needed
           } else {
-            // FEM_I18N: Use translatable string
-            throw new Error(femStrings.exportInvalidCSV);
+            throw new Error("Invalid CSV content.");
           }
         }
 
@@ -1087,11 +1092,10 @@ function exportSettings() {
 
         if (res.ok && result.success) {
           this.exportJobId = result.job_id;
-          localStorage.setItem("femexport_job_id", this.exportJobId);
+          localStorage.setItem("fem_export_job_id", this.exportJobId);
           this.startPolling();
         } else {
-          // FEM_I18N: Use translatable string
-          throw new Error(result.message || femStrings.exportFailed);
+          throw new Error(result.message || "Failed to start export.");
         }
       } catch (e) {
         console.error("Export start error:", e);
@@ -1100,14 +1104,7 @@ function exportSettings() {
       }
     },
 
-    showExportProgress(){
-        this.showProgressModal = true;
-    },
-
-    closeProgressModal(){
-        this.showProgressModal = false;
-    },
-
+    // Starts the polling for job progress
     startPolling() {
       if (this.exportInterval) clearInterval(this.exportInterval);
 
@@ -1115,21 +1112,20 @@ function exportSettings() {
         try {
           const res = await fetch(
             `${
-              aemfwSettings.restUrl
-            }aem/v1/export/progress?job_id=${encodeURIComponent(
+              femSettings.restUrl
+            }fem/v1/export/progress?job_id=${encodeURIComponent(
               this.exportJobId
             )}`,
             {
-              headers: {
-                "X-WP-Nonce": aemfwSettings.nonce,
-              },
+              headers: { "X-WP-Nonce": femSettings.nonce },
             }
           );
           const result = await res.json();
 
           if (!res.ok) {
-            // FEM_I18N: Use translatable string
-            throw new Error(result.message || femStrings.exportProgressFailed);
+            throw new Error(
+              result.message || "Failed to fetch export progress."
+            );
           }
 
           this.exportProgress = result.progress;
@@ -1141,77 +1137,308 @@ function exportSettings() {
           }
 
           if (result.status === "complete") {
+            // CHANGED: Major logic change here. Do not reset the full state.
+            // Just stop polling and set the completion flags.
+            // The exportJobId is intentionally kept to allow re-download/delete.
             clearInterval(this.exportInterval);
             this.exportInterval = null;
             this.isExporting = false;
             this.isExportComplete = true;
-            this.exportProgress = 100;
+            this.exportProgress = 100; // Ensure it shows 100%
 
-            this.handleDownload(result.file_url);
+            this.handleDownload(result.file_url); // Trigger the download
 
-            // FEM_I18N: Use translatable string
-            this.errorMessage = femStrings.exportComplete;
+            this.errorMessage =
+              "Export complete! Your download should start shortly.";
+            this.showProgressModal = false; // Close modal on completion
+          }
+
+          if (result.status === "failed") {
+            throw new Error(result.message || "Export job failed.");
           }
         } catch (e) {
-          console.error("Polling error:", e);
-          clearInterval(this.exportInterval);
-          this.exportInterval = null;
-          this.isExporting = false;
+          console.error("Progress polling failed:", e);
           this.errorMessage = e.message;
+          this.resetExportState(); // Full reset is correct for a failure
+          this.showProgressModal = false;
         }
-      }, 2000);
+      }, 3000); // Poll every 3 seconds
     },
 
-    // Helper function to reset state
+    // Handles the file download
+    handleDownload(fileUrl) {
+      if (!this.exportJobId) {
+        console.error("No export job ID found for download.");
+        this.errorMessage = "Cannot download file: Export Job ID is missing.";
+        return;
+      }
+      // This implementation is fine. It uses a dedicated endpoint which is good practice.
+      const downloadUrl = `${
+        femSettings.restUrl
+      }fem/v1/export/download?job_id=${encodeURIComponent(this.exportJobId)}`;
+      window.open(downloadUrl, "_blank");
+    },
+
+    // Resets the state variables. Called on new export, on failure, or after deletion.
     resetExportState() {
-      clearInterval(this.exportInterval);
-      this.exportJobId = null;
+      if (this.exportInterval) {
+        clearInterval(this.exportInterval);
+        this.exportInterval = null;
+      }
       this.isExporting = false;
+      this.exportJobId = null;
       this.exportProgress = 0;
       this.processedCount = 0;
       this.totalEntries = 0;
-      localStorage.removeItem("femexport_job_id");
+      // Note: isExportComplete is NOT reset here. It's handled separately.
+      localStorage.removeItem("fem_export_job_id");
     },
 
-    async handleDownload(fileUrl) {
-      try {
-        const response = await fetch(fileUrl, {
-          headers: {
-            "X-WP-Nonce": aemfwSettings.nonce,
-          },
-        });
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `aem-entries-${this.formTitle}-${Date.now()}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
+    showExportProgress() {
+      this.showProgressModal = true;
+    },
 
-        window.dispatchEvent(
-          new CustomEvent("toast", {
-            detail: {
-              message: femStrings.csvExportedSuccess,
-              type: "success",
+    closeProgressModal() {
+      this.showProgressModal = false;
+    },
+
+    async deleteExportFile() {
+      if (
+        !confirm(
+          "Are you sure you want to delete the export file? This action cannot be undone."
+        )
+      ) {
+        return;
+      }
+
+      this.errorMessage = "";
+      try {
+        const res = await fetch(
+          `${
+            femSettings.restUrl
+          }fem/v1/export/delete?job_id=${encodeURIComponent(this.exportJobId)}`,
+          {
+            method: "POST",
+            headers: {
+              "X-WP-Nonce": femSettings.nonce,
             },
-          })
+          }
         );
+
+        const result = await res.json();
+
+        if (res.ok && result.success) {
+          alert(result.message);
+          this.isExportComplete = false;
+          // This is a correct place to call resetExportState.
+          this.resetExportState();
+        } else {
+          throw new Error(result.message || "Failed to delete the file.");
+        }
       } catch (e) {
-        console.error("Download failed:", e);
-        window.dispatchEvent(
-          new CustomEvent("toast", {
-            detail: {
-              message: femStrings.exportFailed,
-              type: "error",
-            },
-          })
-        );
+        console.error("Delete file error:", e);
+        this.errorMessage = e.message;
       }
     },
   };
 }
+
+function migrationHandler() {
+  return {
+    totalEntries: 0,
+    batchSize: 50,
+    migrating: false,
+    complete: false,
+    progress: 0,
+    log: [],
+    pollInterval: null,
+
+    migrated: 0,
+    total: 0,
+    estimatedTime: "",
+    startTime: null,
+    lastLoggedProgress: null,
+    entryFetchStarted: false,
+
+    // New flag to track ongoing migration even if not showing progress UI
+    migrationInProgress: false,
+
+    init() {
+      // Load batch size from localStorage if you want to persist that too
+      const savedBatch = localStorage.getItem("fem_batch_size");
+      if (savedBatch) this.batchSize = parseInt(savedBatch, 10);
+
+      // ✅ Prevent duplicate fetch
+      if (!this.entryFetchStarted) {
+        this.entryFetchStarted = true;
+
+        fetch(`${femSettings.restUrl}fem/v1/legacy/source/count`, {
+          headers: { "X-WP-Nonce": femSettings.nonce },
+        })
+          .then((res) => {
+            if (!res.ok) throw new Error("Failed to fetch entry counts");
+            return res.json();
+          })
+          .then((data) => {
+            this.totalEntries = data.reduce(
+              (sum, item) => sum + parseInt(item.entry_count),
+              0
+            );
+            this.log.push(
+              `📊 Found total ${this.totalEntries} entries to migrate`
+            );
+          })
+          .catch((err) => {
+            this.log.push(`⚠️ Error loading total entries: ${err.message}`);
+            this.totalEntries = 0;
+          });
+      }
+
+      // Check if migration was in progress before page reload
+      const inProgress = localStorage.getItem("fem_migration_in_progress");
+      if (inProgress === "true") {
+        this.migrationInProgress = true;
+
+        // Check current backend status once and decide whether to show progress UI
+        this.checkProgress().then(() => {
+          if (!this.complete) {
+            this.migrating = false; // Not actively polling yet
+          }
+        });
+      }
+    },
+
+    async startMigration() {
+      if (this.totalEntries === 0) {
+        this.log.push("⚠️ No entries to migrate.");
+        return;
+      }
+
+      this.migrating = true;
+      this.complete = false;
+      this.log = [];
+      this.progress = 0;
+      this.startTime = Date.now();
+      this.lastLoggedProgress = null;
+
+      this.log.push(`🔁 Starting migration with batch size: ${this.batchSize}`);
+
+      localStorage.setItem("fem_migration_in_progress", "true");
+      localStorage.setItem("fem_batch_size", this.batchSize);
+
+      try {
+        const triggerRes = await fetch(
+          `${femSettings.restUrl}fem/v1/migration/trigger`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-WP-Nonce": femSettings.nonce,
+            },
+            body: JSON.stringify({ batch_size: this.batchSize }),
+          }
+        );
+        const triggerData = await triggerRes.json();
+
+        if (!triggerData.success) {
+          this.migrating = false;
+          localStorage.setItem("fem_migration_in_progress", "false");
+          this.log.push(
+            `❌ Failed to start migration: ${
+              triggerData.message || "Unknown error."
+            }`
+          );
+          return;
+        }
+
+        this.log.push("🚀 Migration triggered successfully.");
+
+        // Start polling progress every 2 seconds
+        this.pollInterval = setInterval(() => this.checkProgress(), 2000);
+      } catch (error) {
+        this.migrating = false;
+        localStorage.setItem("fem_migration_in_progress", "false");
+        this.log.push(`❌ Error starting migration: ${error.message}`);
+      }
+    },
+
+    async checkProgress() {
+      try {
+        const res = await fetch(
+          `${femSettings.restUrl}fem/v1/migration/progress`,
+          {
+            headers: { "X-WP-Nonce": femSettings.nonce },
+          }
+        );
+        const data = await res.json();
+
+        const migrated = data.migrated || 0;
+        const total = data.total || 1;
+        const progress = Math.floor((migrated / total) * 100);
+
+        this.migrated = migrated;
+        this.total = total;
+        this.progress = progress;
+
+        if (!this.startTime) this.startTime = Date.now();
+        const elapsedSec = (Date.now() - this.startTime) / 1000;
+        const rate = migrated / data.eta;
+        const remaining = total - migrated;
+        const estimatedSec = remaining / (rate || 1);
+        this.estimatedTime = this.formatTime(estimatedSec);
+
+        if (progress !== this.lastLoggedProgress) {
+          this.log.push(`📊 Progress: ${progress}% (${migrated} / ${total})`);
+          this.lastLoggedProgress = progress;
+        }
+
+        if (data.complete || progress >= 100) {
+          clearInterval(this.pollInterval);
+          this.pollInterval = null;
+          this.migrating = false;
+          this.complete = true;
+          this.progress = 100;
+          this.log.push("🎉 Migration complete!");
+          localStorage.setItem("fem_migration_in_progress", "false");
+          this.migrationInProgress = false;
+        }
+      } catch (error) {
+        this.log.push(`❌ Error checking progress: ${error.message}`);
+      }
+    },
+
+    formatTime(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins}m ${secs}s`;
+    },
+
+    stopMigration() {
+      if (this.pollInterval) {
+        clearInterval(this.pollInterval);
+        this.pollInterval = null;
+      }
+      this.migrating = false;
+      this.complete = false;
+      this.progress = 0;
+      this.log.push("🛑 Migration stopped.");
+      localStorage.setItem("fem_migration_in_progress", "false");
+      this.migrationInProgress = false;
+    },
+
+    // New method: Show migration progress UI when user clicks "See Progress"
+    seeProgress() {
+      this.migrating = true;
+      this.migrationInProgress = true;
+
+      // Start polling progress every 2 seconds
+      if (!this.pollInterval) {
+        this.pollInterval = setInterval(() => this.checkProgress(), 2000);
+      }
+    },
+  };
+}
+
 function customColumnsForm() {
   return {
     // State to hold forms, fields, and user selections
@@ -1230,11 +1457,10 @@ function customColumnsForm() {
 
       // Load existing options from PHP variable if available
       if (
-        typeof aemfwSettings !== "undefined" &&
-        aemfwSettings.initialColumns
+        typeof femSettings !== "undefined" &&
+        femSettings.initialColumns
       ) {
-        this.selectedColumns = aemfwSettings.initialColumns;
-        // Expected format: { 22: ['field1','field2'], 25: ['fieldA'] }
+        this.selectedColumns = femSettings.initialColumns;
       }
     },
 
@@ -1242,8 +1468,8 @@ function customColumnsForm() {
     async fetchForms() {
       this.loadingSettings.forms = true;
       try {
-        const response = await fetch(`${aemfwSettings.restUrl}aem/v1/forms`, {
-          headers: { "X-WP-Nonce": aemfwSettings.nonce },
+        const response = await fetch(`${femSettings.restUrl}fem/v1/forms`, {
+          headers: { "X-WP-Nonce": femSettings.nonce },
         });
         const data = await response.json();
         this.forms = data;
@@ -1278,9 +1504,9 @@ function customColumnsForm() {
       this.loadingSettings.fields = true;
       try {
         const response = await fetch(
-          `${aemfwSettings.restUrl}aem/v1/forms/${form_id}/fields`,
+          `${femSettings.restUrl}fem/v1/forms/${form_id}/fields`,
           {
-            headers: { "X-WP-Nonce": aemfwSettings.nonce },
+            headers: { "X-WP-Nonce": femSettings.nonce },
           }
         );
         const data = await response.json();

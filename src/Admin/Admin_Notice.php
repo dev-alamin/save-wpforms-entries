@@ -13,8 +13,8 @@ class Admin_Notice {
 	 * Constructor.
 	 */
 	public function __construct() {
-		add_action( 'fembefore_entries_ui_header', array( $this, 'display_doc_link' ) );
-		add_action( 'fembefore_entries_ui_header', array( $this, 'aem_rest_notice' ) );
+		add_action( 'fem_before_entries_ui_header', array( $this, 'display_doc_link' ) );
+		add_action( 'fem_before_entries_ui_header', array( $this, 'fem_rest_notice' ) );
 
 		add_action( 'admin_notices', array( $this, 'rest_disabled_notice' ) );
 
@@ -45,7 +45,7 @@ class Admin_Notice {
 			// Upgrade PRO link.
 			'upgrade_pro' => sprintf(
 				'<a href="%s" target="_blank" style="color:#d54e21;font-weight:bold;">%s</a>',
-				'https://entriesmanager.com/aem/pro',
+				'https://entriesmanager.com/fem/pro',
 				esc_html__( 'Upgrade PRO', 'forms-entries-manager' )
 			),
 		);
@@ -63,8 +63,8 @@ class Admin_Notice {
 	 */
 	public function rest_disabled_notice() {
 		if ( ! Helper::is_rest_enabled() ) {
-			echo '<div class="notice notice-error aem-notice"><p>';
-			esc_html_e( '🚫 Your site is blocking REST API access required by Advanced Entries Manager. Please whitelist /wp-json/aem/entries/v1/* to ensure full functionality.', 'forms-entries-manager' );
+			echo '<div class="notice notice-error fem-notice"><p>';
+			esc_html_e( '🚫 Your site is blocking REST API access required by Advanced Entries Manager. Please whitelist /wp-json/fem/entries/v1/* to ensure full functionality.', 'forms-entries-manager' );
 			echo '</p></div>';
 		}
 	}
@@ -73,7 +73,7 @@ class Admin_Notice {
 	/**
 	 * Display REST Error Notice in own page
 	 */
-	public function aem_rest_notice() {
+	public function fem_rest_notice() {
 		if ( Helper::is_rest_enabled() ) {
 			return; // REST API working, no notice needed
 		}

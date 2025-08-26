@@ -115,9 +115,9 @@ use App\AdvancedEntryManager\Plugin;
  *
  * This function is called to start the plugin and set up necessary components.
  */
-function feminit() {
+function fem_init() {
     return Plugin::init();
 }
 
 // Kick-off the plugin initialization
-feminit();
+fem_init();

@@ -22,8 +22,8 @@ msgstr "Dokumentation"
 msgid "Upgrade PRO"
 msgstr "PRO-Version aktualisieren"
 
-msgid "🚫 Your site is blocking REST API access required by Advanced Entries Manager. Please whitelist /wp-json/aem/entries/v1/* to ensure full functionality."
-msgstr "🚫 Ihre Website blockiert den für den Advanced Entries Manager erforderlichen REST-API-Zugriff. Bitte setzen Sie /wp-json/aem/entries/v1/* auf die Whitelist, um die volle Funktionalität sicherzustellen."
+msgid "🚫 Your site is blocking REST API access required by Advanced Entries Manager. Please whitelist /wp-json/fem/entries/v1/* to ensure full functionality."
+msgstr "🚫 Ihre Website blockiert den für den Advanced Entries Manager erforderlichen REST-API-Zugriff. Bitte setzen Sie /wp-json/fem/entries/v1/* auf die Whitelist, um die volle Funktionalität sicherzustellen."
 
 msgid "Your site is blocking the REST API endpoints required by Advanced Entries Manager. Please whitelist <code>/wp-json/wpforms/entries/v1/*</code> in your firewall or security plugin (e.g., Wordfence, Sucuri) to ensure full functionality."
 msgstr "Ihre Website blockiert die für den Advanced Entries Manager erforderlichen REST-API-Endpunkte. Bitte setzen Sie <code>/wp-json/wpforms/entries/v1/*</code> in Ihrer Firewall oder Sicherheits-Plugin (z. B. Wordfence, Sucuri) auf die Whitelist, um die volle Funktionalität sicherzustellen."
