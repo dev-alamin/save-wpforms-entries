@@ -140,7 +140,7 @@ class Assets {
 
 		wp_localize_script(
 			'fem-admin-js',
-			'aemfwMigrationNotice',
+			'femMigrationNotice',
 			array(
 				'title'      => __( 'Migrate from WPFormsDB', 'forms-entries-manager' ),
 				'message'    => __( 'We found data in the legacy', 'forms-entries-manager' ) . ' <code>wpforms_db</code> ' . __( 'table. You can migrate all your entries into our advanced manager in just a few clicks.', 'forms-entries-manager' ),

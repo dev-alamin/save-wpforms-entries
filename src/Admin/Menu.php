@@ -32,51 +32,6 @@ class Menu {
 		$this->log_viewer_page = new LogViewerPage();
 		add_action( 'admin_menu', array( $this, 'add_menu' ) );
 		add_action( 'admin_head', array( $this, 'hide_update_notices' ) );
-		// add_action( 'admin_init', array( $this, 'register_settings' ) );
-	}
-
-	public function register_settings() {
-		// OAuth credentials
-		register_setting(
-			'femgoogle_settings',
-			'femgoogle_sheet_tab',
-			array(
-				'type'              => 'string',
-				'sanitize_callback' => 'sanitize_text_field',
-			)
-		);
-
-		// New custom options
-		register_setting(
-			'femgoogle_settings',
-			'fem_entries_per_page',
-			array(
-				'type'              => 'integer',
-				'sanitize_callback' => 'absint',
-				'default'           => 25,
-			)
-		);
-
-		register_setting(
-			'femgoogle_settings',
-			'femgoogle_sheet_id',
-			array(
-				'type'              => 'string',
-				'sanitize_callback' => 'sanitize_text_field',
-			)
-		);
-
-		register_setting(
-			'femgoogle_settings',
-			'femgoogle_sheet_auto_sync',
-			array(
-				'type'              => 'boolean',
-				'sanitize_callback' => function ( $val ) {
-					return $val === '1' || $val === 1;
-				},
-				'default'           => true,
-			)
-		);
 	}
 
 	/**

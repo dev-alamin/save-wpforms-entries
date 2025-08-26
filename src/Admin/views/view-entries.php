@@ -58,9 +58,9 @@ do_action('fembefore_entries_ui');
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-yellow-700" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M20 2H4C2.9 2 2 2.9 2 4v4c0 1.1.9 2 2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 8H4V4h16v6z" />
                         </svg>
-                        <span x-text="aemfwMigrationNotice.title"></span>
+                        <span x-text="femMigrationNotice.title"></span>
                     </h2>
-                    <p class="text-sm" x-html="aemfwMigrationNotice.message"></p>
+                    <p class="text-sm" x-html="femMigrationNotice.message"></p>
                 </div>
 
                 <div class="flex gap-2">
@@ -71,13 +71,13 @@ do_action('fembefore_entries_ui');
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M20 2c-2 0-3.94.79-5.38 2.21l-1.44 1.44 4.24 4.24 1.44-1.44C21.21 8.94 22 7 22 5c0-1.1-.9-2-2-2zm-8.49 4.91l-7.07 7.07c-.28.28-.49.63-.61 1.01l-1.82 5.55c-.18.56.37 1.1.93.93l5.55-1.82c.38-.12.73-.33 1.01-.61l7.07-7.07-4.06-4.06zM5 20h4v2H5v-2z" />
                         </svg>
-                        <span x-text="aemfwMigrationNotice.start"></span>
+                        <span x-text="femMigrationNotice.start"></span>
                     </button>
 
                     <button
                         @click="showMigrationNotice = false"
                         class="text-sm text-gray-600 hover:text-gray-900 transition"
-                        :aria-label="aemfwMigrationNotice.dismissAlt">
+                        :aria-label="femMigrationNotice.dismissAlt">
                         <!-- Material Icon: close -->
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
@@ -175,8 +175,11 @@ do_action('fembefore_entries_ui');
                     <?php
                     require __DIR__ . '/table/filter-section.php';
                     $custom_column = Helper::get_option( 'cusom_form_columns_settings', [] );
-                    ?>
 
+                    echo '<pre>';
+                    print_r( $custom_column );
+                    echo '</pre>';
+                    ?>
 
                     <!-- Header Row -->
                     <div
@@ -244,12 +247,25 @@ do_action('fembefore_entries_ui');
                             </div>
                         </template>
 
-                        <div x-show="loading" x-transition class="absolute inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-sm">
-                        </div>
-                    </div>
+						<!-- Loader Overlay -->
+						<div
+							x-show="loading"
+							x-transition
+							class="absolute inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-sm">
+							<lottie-player
+								src="<?php echo esc_url( FEM_URL . 'assets/admin/lottie/loading.json' ); ?>"
+								background="transparent"
+								speed="1"
+								class="w-auto h-auto"
+								loop
+								autoplay>
+							</lottie-player>
+						</div>
 
-                    <!-- Pagination Controls -->
-                    <?php require __DIR__ . '/table/pagination.php'; ?>
+					</div>
+
+					<!-- Pagination Controls -->
+					<?php require __DIR__ . '/table/pagination.php'; ?>
                 </div>
             </div>
 

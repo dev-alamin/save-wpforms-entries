@@ -48,7 +48,7 @@ class Options {
                 $sanitized[ absint( $form_id ) ] = array_map( 'sanitize_text_field', (array) $fields );
             }
 
-            Helper::update_option( 'cusom_form_columns_settings', $sanitized );
+            Helper::update_option( 'cusom_form_columns_settings', json_encode( $sanitized ) );
         } else {
             Helper::update_option( 'cusom_form_columns_settings', [] );
         }
