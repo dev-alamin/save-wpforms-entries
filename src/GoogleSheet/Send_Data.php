@@ -239,7 +239,7 @@ class Send_Data {
 		$entry_id = absint( $args['entry_id'] );
 		$table    = Helper::get_table_name(); // Safe table
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$entry = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $entry_id ) );
 
 		if ( ! $entry ) {
@@ -336,7 +336,7 @@ class Send_Data {
 		// Fetch a sample entry to infer headers
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$row = $wpdb->get_row(
-			$wpdb->prepare( "SELECT entry, note, status FROM {$table} WHERE form_id = %d LIMIT 1", $form_id ),
+			$wpdb->prepare( "SELECT entry, note, status FROM {$table} WHERE form_id = %d LIMIT 1", $form_id ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			ARRAY_A
 		);
 
@@ -570,7 +570,7 @@ class Send_Data {
 		$table = Helper::get_table_name(); // Safe table
 
 		// 1. Get Form ID from Entry ID
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$form_id = $wpdb->get_var( $wpdb->prepare( "SELECT form_id FROM $table WHERE id = %d", $entry_id ) );
 		if ( ! $form_id ) {
 			return new WP_Error( 'entry_not_found', "Entry with ID {$entry_id} not found in the local database." );

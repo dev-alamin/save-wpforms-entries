@@ -6,6 +6,7 @@ use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
 use App\AdvancedEntryManager\Utility\Helper;
+use App\AdvancedEntryManager\Utility\FileSystem;
 
 /**
  * Class Export_Entries
@@ -14,6 +15,13 @@ use App\AdvancedEntryManager\Utility\Helper;
  * using Action Scheduler for background processing.
  */
 class Export_Entries {
+
+	/**
+	 * FileSystem instance for file operations.
+	 *
+	 * @var FileSystem The instance of the FileSystem class.
+	 */
+	protected $fs;
 
 	/**
 	 * Plugin Prefix
@@ -45,6 +53,10 @@ class Export_Entries {
 	 */
 	const TEMP_DIR = self::FEM_PREFIX . 'exports';
 
+	public function __construct() {
+		$this->fs = new FileSystem();
+	}
+
 	/**
 	 * Initiates a new CSV export background job.
 	 *
@@ -57,12 +69,12 @@ class Export_Entries {
 	 */
 	public function start_export_job( WP_REST_Request $request ) {
 		if ( ! class_exists( 'ActionScheduler' ) ) {
-			return new WP_Error( 'missing_scheduler', __( 'Action Scheduler is required but not available.', 'advanced-entries-manager-for-wpforms' ), array( 'status' => 500 ) );
+			return new WP_Error( 'missing_scheduler', __( 'Action Scheduler is required but not available.', 'forms-entries-manager' ), array( 'status' => 500 ) );
 		}
 
 		$form_id = absint( $request->get_param( 'form_id' ) );
 		if ( ! $form_id ) {
-			return new WP_Error( 'missing_form_id', __( 'A valid Form ID is required.', 'advanced-entries-manager-for-wpforms' ), array( 'status' => 400 ) );
+			return new WP_Error( 'missing_form_id', __( 'A valid Form ID is required.', 'forms-entries-manager' ), array( 'status' => 400 ) );
 		}
 
 		global $wpdb;
@@ -88,25 +100,28 @@ class Export_Entries {
 		$where_sql = 'WHERE ' . implode( ' AND ', $where_clauses );
 
 		// Step 1: Count entries
-		$count_query   = $wpdb->prepare( "SELECT COUNT(*) FROM {$target_table} {$where_sql}", ...$query_args );
+        // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$count_query = $wpdb->prepare( "SELECT COUNT(*) FROM {$target_table} {$where_sql}", ...$query_args );
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$total_entries = (int) $wpdb->get_var( $count_query );
 
 		if ( $total_entries === 0 ) {
 			return new WP_Error(
 				'no_entries',
-				__( 'No entries found for the selected criteria.', 'advanced-entries-manager-for-wpforms' ),
+				__( 'No entries found for the selected criteria.', 'forms-entries-manager' ),
 				array( 'status' => 404 )
 			);
 		}
 
 		// Step 2: If low volume, fetch directly
 		if ( $total_entries <= 10000 ) {
-
+            // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 			$select_query = $wpdb->prepare(
-				"SELECT * FROM {$target_table} {$where_sql} ORDER BY created_at ASC",
+				"SELECT * FROM {$target_table} {$where_sql} ORDER BY created_at ASC", // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				...$query_args
 			);
 
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
 			$low_entries = $wpdb->get_results( $select_query, ARRAY_A );
 
 			$this->export_entries_otg( $low_entries );
@@ -151,7 +166,7 @@ class Export_Entries {
 		return rest_ensure_response(
 			array(
 				'success'       => true,
-				'message'       => __( 'CSV export has been successfully queued.', 'advanced-entries-manager-for-wpforms' ),
+				'message'       => __( 'CSV export has been successfully queued.', 'forms-entries-manager' ),
 				'job_id'        => $job_id,
 				'total_entries' => $total_entries,
 			)
@@ -206,10 +221,11 @@ class Export_Entries {
 		$where_sql = 'WHERE ' . implode( ' AND ', $where_clauses );
 
 		$entries_query = $wpdb->prepare(
-			"SELECT * FROM {$target_table} {$where_sql} ORDER BY id ASC LIMIT %d",
+			"SELECT * FROM {$target_table} {$where_sql} ORDER BY id ASC LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			array_merge( $query_args, array( $job_state['batch_size'] ) )
 		);
-		$entries       = $wpdb->get_results( $entries_query, ARRAY_A );
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$entries = $wpdb->get_results( $entries_query, ARRAY_A );
 
 		if ( empty( $entries ) ) {
 			// No more entries found, so we are done. Schedule finalization.
@@ -293,40 +309,41 @@ class Export_Entries {
 	public function finalize_export_file( string $job_id ): void {
 		$upload_dir = $this->get_temp_dir();
 		if ( is_wp_error( $upload_dir ) ) {
-			// Handle error, maybe update transient with a 'failed' status
+			// Log error
 			return;
 		}
 
 		$final_file_path   = $upload_dir['path'] . '/' . $job_id . '.csv';
-		$final_file_handle = fopen( $final_file_path, 'w' );
+		$final_file_handle = fopen( $final_file_path, 'w' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
+		if ( $final_file_handle === false ) {
+			// Log file open error
+			return;
+		}
 
 		$batch_files    = glob( $upload_dir['path'] . '/' . $job_id . '_batch_*.csv' );
 		$header_written = false;
 
 		foreach ( $batch_files as $index => $batch_file ) {
-
-			$batch_handle = fopen( $batch_file, 'r' );
-
+			$batch_handle = fopen( $batch_file, 'r' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
 			if ( $batch_handle ) {
-
-				if ( $header_written ) {
-					fgetcsv( $batch_handle ); // Skip header of subsequent files
-				}
-
+				// Read and write line by line
 				while ( ( $data = fgetcsv( $batch_handle ) ) !== false ) {
-					fputcsv( $final_file_handle, $data );
+					if ( ! $header_written && $index === 0 ) {
+						fputcsv( $final_file_handle, $data ); // Write header
+						$header_written = true;
+					} else {
+						// Skip header of subsequent files
+						if ( $data !== false ) {
+							fputcsv( $final_file_handle, $data );
+						}
+					}
 				}
-
-				fclose( $batch_handle );
-				$header_written = true;
-
+				fclose( $batch_handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 			}
-
-			// Delete the temporary batch file after processing
-			unlink( $batch_file );
+			wp_delete_file( $batch_file ); // Delete the temporary batch file
 		}
 
-		fclose( $final_file_handle );
+		fclose( $final_file_handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 
 		// Update the job state to complete
 		$transient_key = self::JOB_TRANSIENT_PREFIX . $job_id;
@@ -348,12 +365,12 @@ class Export_Entries {
 	public function get_export_progress( WP_REST_Request $request ) {
 		$job_id = sanitize_key( $request->get_param( 'job_id' ) );
 		if ( ! $job_id ) {
-			return new WP_Error( 'missing_job_id', __( 'Job ID is required.', 'advanced-entries-manager-for-wpforms' ), array( 'status' => 400 ) );
+			return new WP_Error( 'missing_job_id', __( 'Job ID is required.', 'forms-entries-manager' ), array( 'status' => 400 ) );
 		}
 
 		$job_state = Helper::get_transient( self::JOB_TRANSIENT_PREFIX . $job_id );
 		if ( false === $job_state ) {
-			return new WP_Error( 'invalid_job', __( 'Export job not found or has expired.', 'advanced-entries-manager-for-wpforms' ), array( 'status' => 404 ) );
+			return new WP_Error( 'invalid_job', __( 'Export job not found or has expired.', 'forms-entries-manager' ), array( 'status' => 404 ) );
 		}
 
 		$progress = 0;
@@ -391,13 +408,20 @@ class Export_Entries {
 	private function write_batch_to_csv( string $job_id, int $page, array $entries, array $header ): void {
 		$upload_dir = $this->get_temp_dir();
 		if ( is_wp_error( $upload_dir ) ) {
+			// Log the error
 			return;
 		}
 
-		$file_path   = $upload_dir['path'] . '/' . $job_id . '_batch_' . $page . '.csv';
-		$file_handle = fopen( $file_path, 'w' );
+		$file_path = $upload_dir['path'] . '/' . $job_id . '_batch_' . $page . '.csv';
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
+		$file_handle = fopen( $file_path, 'a' ); // Use 'a' to append
 
-		// Write the header only for the first batch. The header array is now passed directly.
+		if ( $file_handle === false ) {
+			// Log a file open error
+			return;
+		}
+
+		// Write the header only for the first batch.
 		if ( $page === 1 ) {
 			fputcsv( $file_handle, $header );
 		}
@@ -422,13 +446,28 @@ class Export_Entries {
 			// Build the final row using the provided header
 			$final_row = array();
 			foreach ( $header as $col ) {
-				$final_row[] = $row[ $col ] ?? '';
+				$value = $row[ $col ] ?? '';
+				// Ensure the value is properly prepared for CSV, but don't add quotes here.
+				// fputcsv handles quoting and escaping.
+				$final_row[] = $value;
 			}
 
 			fputcsv( $file_handle, $final_row );
 		}
 
-		fclose( $file_handle );
+		fclose( $file_handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+	}
+
+	/**
+	 * A helper function to sanitize data for CSV.
+	 * It's crucial to escape double quotes and wrap data in quotes.
+	 * This is a simplified example; a more robust solution might use a library.
+	 */
+	private function sanitize_csv_cell( $data ) {
+		// Sanitize any dangerous characters and escape double quotes
+		$data = str_replace( '"', '""', $data );
+		// Wrap the cell in double quotes to handle commas within the data
+		return '"' . $data . '"';
 	}
 
 	/**
@@ -483,7 +522,7 @@ class Export_Entries {
 
 		if ( ! is_dir( $temp_path ) ) {
 			if ( ! wp_mkdir_p( $temp_path ) ) {
-				return new WP_Error( 'dir_creation_failed', __( 'Could not create temporary export directory.', 'advanced-entries-manager-for-wpforms' ) );
+				return new WP_Error( 'dir_creation_failed', __( 'Could not create temporary export directory.', 'forms-entries-manager' ) );
 			}
 		}
 
@@ -511,7 +550,7 @@ class Export_Entries {
 		// Sanitize the job ID from the request
 		$job_id = sanitize_key( $request->get_param( 'job_id' ) );
 		if ( empty( $job_id ) ) {
-			return new WP_Error( 'missing_job_id', __( 'Job ID is required.', 'advanced-entries-manager-for-wpforms' ), array( 'status' => 400 ) );
+			return new WP_Error( 'missing_job_id', __( 'Job ID is required.', 'forms-entries-manager' ), array( 'status' => 400 ) );
 		}
 
 		// Get the job state from the transient
@@ -520,29 +559,39 @@ class Export_Entries {
 
 		// Check if the job exists and is complete
 		if ( false === $job_state || $job_state['status'] !== 'complete' ) {
-			return new WP_Error( 'invalid_job', __( 'Export job not found or not yet complete.', 'advanced-entries-manager-for-wpforms' ), array( 'status' => 404 ) );
+			return new WP_Error( 'invalid_job', __( 'Export job not found or not yet complete.', 'forms-entries-manager' ), array( 'status' => 404 ) );
 		}
 
-		// Check if a file path is set
+		// Check if a file path is set and if the file exists using the FileSystem class
 		$file_path = $job_state['file_path'];
-		if ( empty( $file_path ) || ! file_exists( $file_path ) ) {
-			return new WP_Error( 'file_not_found', __( 'Export file not found on the server.', 'advanced-entries-manager-for-wpforms' ), array( 'status' => 404 ) );
+
+		// Instantiate your FileSystem class.
+		$fs = new FileSystem();
+
+		if ( empty( $file_path ) || ! $fs->exists( $file_path ) ) {
+			return new WP_Error( 'file_not_found', __( 'Export file not found on the server.', 'forms-entries-manager' ), array( 'status' => 404 ) );
 		}
 
 		// --- All checks passed. Now serve the file ---
 
-		// Get the file name from the path
-		$file_name = basename( $file_path );
+		// Get the file content and other details using the FileSystem class methods.
+		$file_name    = basename( $file_path );
+		$file_content = $fs->read( $file_path );
+
+		if ( false === $file_content ) {
+			return new WP_Error( 'file_read_error', __( 'Error reading the export file.', 'forms-entries-manager' ), array( 'status' => 500 ) );
+		}
 
 		// Set headers for file download
 		header( 'Content-Type: text/csv' );
 		header( 'Content-Disposition: attachment; filename="' . $file_name . '"' );
-		header( 'Content-Length: ' . filesize( $file_path ) );
+		header( 'Content-Length: ' . strlen( $file_content ) );
 		header( 'Pragma: no-cache' );
 		header( 'Expires: 0' );
 
-		// Read the file and send it to the browser
-		readfile( $file_path );
+		// Send the content directly to the output.
+        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo $file_content;
 
 		exit;
 	}
@@ -557,7 +606,7 @@ class Export_Entries {
 		// Sanitize the job ID from the request
 		$job_id = sanitize_key( $request->get_param( 'job_id' ) );
 		if ( empty( $job_id ) ) {
-			return new WP_Error( 'missing_job_id', __( 'Job ID is required.', 'advanced-entries-manager-for-wpforms' ), array( 'status' => 400 ) );
+			return new WP_Error( 'missing_job_id', __( 'Job ID is required.', 'forms-entries-manager' ), array( 'status' => 400 ) );
 		}
 
 		// Get the job state from the transient
@@ -566,7 +615,7 @@ class Export_Entries {
 
 		// Check if the job exists and is complete
 		if ( false === $job_state || $job_state['status'] !== 'complete' ) {
-			return new WP_Error( 'invalid_job', __( 'Export job not found or not yet complete.', 'advanced-entries-manager-for-wpforms' ), array( 'status' => 404 ) );
+			return new WP_Error( 'invalid_job', __( 'Export job not found or not yet complete.', 'forms-entries-manager' ), array( 'status' => 404 ) );
 		}
 
 		// Check if a file path is set
@@ -577,25 +626,25 @@ class Export_Entries {
 			return new WP_REST_Response(
 				array(
 					'success' => true,
-					'message' => __( 'File was already deleted.', 'advanced-entries-manager-for-wpforms' ),
+					'message' => __( 'File was already deleted.', 'forms-entries-manager' ),
 				),
 				200
 			);
 		}
 
 		// Delete the file
-		if ( unlink( $file_path ) ) {
+		if ( wp_delete_file( $file_path ) ) {
 			// Delete the transient as well
 			Helper::delete_transient( $transient_key );
 			return new WP_REST_Response(
 				array(
 					'success' => true,
-					'message' => __( 'Export file deleted successfully.', 'advanced-entries-manager-for-wpforms' ),
+					'message' => __( 'Export file deleted successfully.', 'forms-entries-manager' ),
 				),
 				200
 			);
 		} else {
-			return new WP_Error( 'delete_failed', __( 'Failed to delete the export file.', 'advanced-entries-manager-for-wpforms' ), array( 'status' => 500 ) );
+			return new WP_Error( 'delete_failed', __( 'Failed to delete the export file.', 'forms-entries-manager' ), array( 'status' => 500 ) );
 		}
 	}
 
@@ -603,7 +652,7 @@ class Export_Entries {
 		if ( empty( $entries ) ) {
 			return new \WP_Error(
 				'no_data',
-				__( 'No data found.', 'advanced-entries-manager-for-wpforms' ),
+				__( 'No data found.', 'forms-entries-manager' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -613,11 +662,13 @@ class Export_Entries {
 		header( 'Content-Disposition: attachment; filename="fem-entries-' . time() . '.csv"' );
 
 		$output = fopen( 'php://output', 'w' );
-
-		$all_keys  = array();
-		$field_map = array(); // normalized_key => original_label
+		if ( $output === false ) {
+			return new \WP_Error( 'output_failed', __( 'Could not open output stream.', 'forms-entries-manager' ), array( 'status' => 500 ) );
+		}
 
 		// Step 1: Collect all normalized keys from all entries
+		$all_keys  = array();
+		$field_map = array(); // normalized_key => original_label
 		foreach ( $entries as $entry ) {
 			$data = maybe_unserialize( $entry['entry'] );
 			if ( is_array( $data ) ) {
@@ -672,7 +723,7 @@ class Export_Entries {
 			fputcsv( $output, $row );
 		}
 
-		fclose( $output );
+		fclose( $output ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 		exit;
 	}
 

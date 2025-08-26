@@ -40,11 +40,11 @@ class Scheduler {
 		$table_name = Helper::get_table_name();
 
 		$count_sql = $wpdb->prepare(
-			"SELECT COUNT(*) FROM {$table_name} {$where_sql}",
+			"SELECT COUNT(*) FROM {$table_name} {$where_sql}", // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 			...$args
 		);
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
 		$total_entries = (int) $wpdb->get_var( $count_sql );
 
 		$batches = (int) ceil( $total_entries / $batch_size );

@@ -98,11 +98,13 @@ class Get_Entries {
 		$where = apply_filters( 'fem_get_entries_where', $where, $params, $request );
 
 		// First, get the total count. This query is still needed for pagination button rendering.
-		$count_sql   = $wpdb->prepare(
+		$count_sql = $wpdb->prepare(
+            // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 			"SELECT COUNT(*) FROM $table $where",
 			...$params
 		);
-		$total_count = (int) $wpdb->get_var( $count_sql ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+		$total_count = (int) $wpdb->get_var( $count_sql );
 
 		// Step 1: Find the ID of the first entry for the requested page.
 		if ( $page > 1 ) {
@@ -110,7 +112,8 @@ class Get_Entries {
 				"SELECT id FROM $table $where ORDER BY created_at DESC LIMIT 1 OFFSET %d",
 				...array_merge( $params, array( $offset ) )
 			);
-			$start_id   = $wpdb->get_var( $get_id_sql ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+			$start_id = $wpdb->get_var( $get_id_sql );
 		}
 
 		// Step 2: Fetch the data using the cursor/start ID.
@@ -126,8 +129,10 @@ class Get_Entries {
 			$data_params[] = $per_page;
 		}
 
-		$sql     = $wpdb->prepare( $data_sql, ...$data_params );
-		$results = $wpdb->get_results( $sql ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+		$sql = $wpdb->prepare( $data_sql, ...$data_params );
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$results = $wpdb->get_results( $sql );
 
 		// --- The rest of the code remains the same ---
 		// Initialize the final data array

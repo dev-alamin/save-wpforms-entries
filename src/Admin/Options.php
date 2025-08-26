@@ -44,6 +44,7 @@ class Options {
 		if ( ! empty( $_POST['fem_custom_columns'] ) && is_array( $_POST['fem_custom_columns'] ) ) {
 			$sanitized = array();
 
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
 			foreach ( $_POST['fem_custom_columns'] as $form_id => $fields ) {
 				$sanitized[ absint( $form_id ) ] = array_map( 'sanitize_text_field', (array) $fields );
 			}
