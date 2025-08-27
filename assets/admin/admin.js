@@ -22,6 +22,7 @@ function formTable(form) {
     bulkSelected: [],
     selectAll: false,
     lastCheckedIndex: null,
+    chosenFields: [],
 
     // New property to store the complete fields schema from the API
     allFields: [],
@@ -50,18 +51,18 @@ function formTable(form) {
     },
 
     get gridStyle() {
-      // Start with fixed columns: checkbox + email
-      let columns = ["50px", "1fr"];
+    let columns = ["50px", "1fr"];
 
-      // Add 150px for each field in the entry_schema
-      this.allFields.forEach(() => {
-        columns.push("150px");
-      });
+    // Add a fixed width for each field in the chosenFields array
+    // The number of columns now directly corresponds to the number of chosen fields
+    this.chosenFields.forEach(() => {
+        columns.push("150px"); 
+    });
 
-      // Add fixed columns: Date, Status, Actions
-      columns.push("150px", "150px", "250px");
+    // Add fixed columns for Date, Status, and Actions
+    columns.push("150px", "150px", "250px");
 
-      return columns.join(" ");
+    return columns.join(" ");
     },
 
     // Method to get the fields that should be displayed as columns
@@ -240,6 +241,17 @@ function formTable(form) {
 
         // Set the fields schema based on the API response
         this.allFields = apiResponse.entry_schema;
+
+        // Tweak starts here
+        // Get the form's user choices from the provided data
+        const formChoices = femSettings.initialColumns[this.formId] || [];;
+
+        // Map the chosen labels to their corresponding field objects using a case-insensitive comparison
+        this.chosenFields = formChoices.map(label => {
+        // Use .toLowerCase() on both sides for the comparison
+        const normalizedLabel = label.toLowerCase();
+        return this.allFields.find(field => field.label.toLowerCase() === normalizedLabel);
+        }).filter(field => field !== undefined);
 
         // Set the entries directly from the API response
         this.entries = apiResponse.entries;
@@ -1461,6 +1473,7 @@ function customColumnsForm() {
         femSettings.initialColumns
       ) {
         this.selectedColumns = femSettings.initialColumns;
+        console.log(this.selectedColumns);
       }
     },
 

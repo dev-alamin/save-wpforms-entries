@@ -160,7 +160,6 @@ do_action( 'fem_before_entries_ui' );
 				</div>
 			</div>
 
-
 			<!-- Entries Table -->
 			<div
 				x-show="open"
@@ -188,7 +187,8 @@ do_action( 'fem_before_entries_ui' );
 
 						<div role="columnheader"><?php esc_html_e( 'Email', 'forms-entries-manager' ); ?></div>
 
-						<template x-for="field in allFields" :key="field.key">
+						<!-- Custom Columns -->
+						<template x-for="field in chosenFields" :key="field.key">
 							<div role="columnheader" class="text-center">
 								<span x-text="field.label"></span>
 							</div>
@@ -227,8 +227,8 @@ do_action( 'fem_before_entries_ui' );
 									<span class="text-xs text-gray-400" x-text="'#' + entry.id"></span>
 								</div>
 
-								<template x-for="field in allFields" :key="field.key">
-									<!-- <span x-text="field.key"></span> -->
+								<!-- Custom Columns -->
+								<template x-for="field in chosenFields" :key="field.key">
 									<div class="text-center truncate" x-text="getEntryData(entry.entry, field.key)"></div>
 								</template>
 

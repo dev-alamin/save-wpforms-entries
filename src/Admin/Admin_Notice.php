@@ -13,7 +13,6 @@ defined( 'ABSPATH' ) || exit;
  */
 class Admin_Notice {
 
-
 	/**
 	 * Constructor.
 	 */

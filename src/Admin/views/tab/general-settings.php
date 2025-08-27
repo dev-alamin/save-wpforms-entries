@@ -22,14 +22,7 @@ use App\AdvancedEntryManager\Utility\Helper;
 				class="!w-full !px-4 !py-2 !border !border-gray-300 !rounded-md !shadow-sm !text-sm !focus:ring !focus:ring-indigo-200 !focus:border-indigo-500">
 		</div>
 	</div>
-	<?php
-
-	$custom_column = Helper::get_option( 'cusom_form_columns_settings', array() );
-
-	echo '<pre>';
-	print_r( json_decode( $custom_column ) );
-	echo '</pre>';
-	?>
+	
 	<!-- New block for Custom Columns -->
 	<div class="bg-white border border-indigo-100 shadow p-6">
 		<h3 class="text-xl font-bold text-indigo-700 mb-3">

@@ -159,6 +159,8 @@ class Get_Forms {
 						|| strtolower( $field_key ) == 'your-email'
 						|| strpos( strtolower( $field_key ), 'g-recaptcha-response' ) !== false
 						|| strpos( strtolower( $field_key ), 'file' ) !== false
+						|| strtolower( $field_key ) === 'name'
+						|| strtolower( $field_key ) === 'email'
 						) {
 							continue;
 						}
