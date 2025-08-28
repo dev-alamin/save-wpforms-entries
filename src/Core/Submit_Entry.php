@@ -80,6 +80,14 @@ class Submit_Entry {
 			),
 			array( '%d', '%s', '%s', '%s', '%s', '%s' )
 		);
+
+        // Send data to Google Sheets if enabled
+        $has_access_token = Helper::has_access_token();
+        sleep(1); // to get the correct entry id
+        if( $has_access_token ) {
+            $send_data = new Send_Data();
+            $send_data->process_single_entry( ['entry_id' => $wpdb->insert_id ] );
+        }
 	}
 
 	/**

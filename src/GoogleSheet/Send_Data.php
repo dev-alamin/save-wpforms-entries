@@ -313,6 +313,9 @@ class Send_Data {
 			array( 'id' => $entry_id )
 		);
 
+
+        error_log('Processing entry: ' . print_r( $entry, true ));
+
 		return true;
 	}
 

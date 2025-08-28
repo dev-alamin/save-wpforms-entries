@@ -56,13 +56,13 @@
 	<!-- Sync to Google Sheet -->
 	<button @click="toggleGoogleSheetSync(i)" title="<?php esc_attr_e( 'Sync to Google Sheet', 'forms-entries-manager' ); ?>" class="mr-4 cursor-pointer">
 		<!-- Not Synced -->
-		<svg x-show="entry.synced_to_gsheet" xmlns="http://www.w3.org/2000/svg" height="24px"
+		<svg x-show="entry.synced" xmlns="http://www.w3.org/2000/svg" height="24px"
 			viewBox="0 -960 960 960" width="24px" fill="#4f46e5">
 			<path d="M160-160v-80h110l-16-14q-52-46-73-105t-21-119q0-111 66.5-197.5T400-790v84q-72 26-116 88.5T240-478q0 45 17 87.5t53 78.5l10 10v-98h80v240H160Zm400-10v-84q72-26 116-88.5T720-482q0-45-17-87.5T650-648l-10-10v98h-80v-240h240v80H690l16 14q49 49 71.5 106.5T800-482q0 111-66.5 197.5T560-170Z" />
 		</svg>
 
 		<!-- Synced -->
-		<svg x-show="!entry.synced_to_gsheet" xmlns="http://www.w3.org/2000/svg" height="24px"
+		<svg x-show="!entry.synced" xmlns="http://www.w3.org/2000/svg" height="24px"
 			viewBox="0 -960 960 960" width="24px" fill="#4f46e5">
 			<path d="M792-56 643-205q-19 11-39.5 20T560-170v-84q6-2 12-4.5t12-5.5L264-584q-11 25-17.5 51.5T240-478q0 45 17 87.5t53 78.5l10 10v-98h80v240H160v-80h110l-16-14q-49-49-71.5-106.5T160-478q0-45 11.5-86.5T205-643L56-792l57-57 736 736-57 57Zm-35-263-60-60q11-24 17-50t6-53q0-45-17-87.5T650-648l-10-10v98h-80v-240h240v80H690l16 14q49 49 71.5 106.5T800-482q0 45-11.5 85.5T757-319Z" />
 		</svg>

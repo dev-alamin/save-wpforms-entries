@@ -384,7 +384,7 @@ function formTable(form) {
         is_favorite: Number(entry.is_favorite),
         note: entry.note,
         exported_to_csv: Number(entry.exported_to_csv),
-        synced_to_gsheet: Number(entry.synced),
+        synced_to_gsheet: Number(entry.synced_to_gsheet),
         printed_at: entry.printed_at,
         resent_at: entry.resent_at,
         ...changes,
@@ -512,7 +512,7 @@ function formTable(form) {
         is_favorite: Number(this.selectedEntry.is_favorite),
         note: this.selectedEntry.note,
         exported_to_csv: Number(this.selectedEntry.exported_to_csv),
-        synced_to_gsheet: Number(this.selectedEntry.synced),
+        synced_to_gsheet: Number(this.selectedEntry.synced_to_gsheet),
         printed_at: this.selectedEntry.printed_at,
         resent_at: this.selectedEntry.resent_at,
       };
@@ -561,62 +561,56 @@ function formTable(form) {
         note,
       });
     },
-    async toggleGoogleSheetSync(index) {
-      const entry = this.entries[index];
-      const entryId = entry.id;
-      const nonce = femSettings.nonce;
+   async toggleGoogleSheetSync(index) {
+    const entry = this.entries[index];
+    const entryId = entry.id;
+    const nonce = femSettings.nonce;
 
-      const isCurrentlySynced = !!entry.synced;
-      const action = isCurrentlySynced ? "unsync" : "sync";
-      const apiUrl = `${femSettings.restUrl}fem/v1/entries/${entryId}/${action}`;
+    const isCurrentlySynced = !!entry.synced; // use consistent property
+    const action = isCurrentlySynced ? "unsync" : "sync";
+    const apiUrl = `${femSettings.restUrl}fem/v1/entries/${entryId}/${action}`;
 
-      try {
+    try {
         const response = await fetch(apiUrl, {
-          method: "POST",
-          headers: {
+        method: "POST",
+        headers: {
             "Content-Type": "application/json",
             "X-WP-Nonce": nonce,
-          },
+        },
         });
+
+        if (!response.ok) {
+        throw new Error(`Request failed: ${response.status}`);
+        }
 
         const data = await response.json();
 
         if (data.success) {
-          window.dispatchEvent(
-            new CustomEvent("toast", {
-              detail: {
-                // FEM_I18N: Use translatable string
-                message: femStrings.syncDone,
-                type: "success",
-              },
-            })
-          );
+        window.dispatchEvent(new CustomEvent("toast", {
+            detail: {
+            message: femStrings.syncDone,
+            type: "success",
+            },
+        }));
         } else {
-          window.dispatchEvent(
-            new CustomEvent("toast", {
-              detail: {
-                // FEM_I18N: Use translatable string
-                message: femStrings.syncFailed + " " + (data?.message || ""),
-                type: "error",
-              },
-            })
-          );
+        window.dispatchEvent(new CustomEvent("toast", {
+            detail: {
+            message: femStrings.syncFailed + " " + (data?.message || ""),
+            type: "error",
+            },
+        }));
         }
 
-        if (!response.ok) {
-          return;
-        }
+        // Update local entry state
+        entry.synced = isCurrentlySynced ? 0 : 1;
+        this.updateEntry(index, { synced_to_gsheet: entry.synced });
 
-        entry.synced_to_gsheet = isCurrentlySynced ? 0 : 1;
-        this.updateEntry(index, {
-          synced_to_gsheet: entry.synced_to_gsheet,
-        });
-      } catch (error) {
+    } catch (error) {
         console.error("Fetch Error:", error);
-        // FEM_I18N: Use translatable string
         alert(femStrings.networkError);
-      }
+    }
     },
+
     printEntry(index) {
       const entry = this.entries[index];
       const formTitle = entry.form_title || "Form Entry";
