@@ -653,4 +653,127 @@ class Send_Data {
 
 		return true;
 	}
+
+	/**
+	 * Synchronizes data from Google Sheets to the local database.
+	 * This is designed to be called by a scheduled action.
+	 *
+	 * @param int $form_id The ID of the form to sync.
+	 * @return void
+	 */
+	public function sync_from_sheet_to_db( int $form_id ) {
+		global $wpdb;
+
+		// Step 1: Get the sheet and spreadsheet info.
+		$spreadsheet_id = Helper::get_option( "gsheet_spreadsheet_id_{$form_id}" );
+		$sheet_title    = Helper::get_option( "gsheet_sheet_title_{$form_id}" );
+
+		if ( ! $spreadsheet_id || ! $sheet_title ) {
+			$this->logger->log( 'Sync from GSheet skipped for form ' . $form_id . ': No spreadsheet configured.', 'INFO' );
+			return;
+		}
+
+		// Step 2: Fetch all data from the Google Sheet.
+		// We'll read the entire sheet content.
+		$range    = rawurlencode( $sheet_title ) . '!A:Z';
+		$url      = "https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheet_id}/values/{$range}";
+		$response = $this->_make_google_api_request( $url, array(), 'GET' );
+
+		if ( is_wp_error( $response ) ) {
+			$this->logger->log( 'GSheet sync failed for form ' . $form_id . ': Could not read sheet. ' . $response->get_error_message(), 'ERROR' );
+			return;
+		}
+
+		$sheet_rows = $response['values'] ?? array();
+		if ( empty( $sheet_rows ) || count( $sheet_rows ) < 2 ) {
+			$this->logger->log( 'GSheet sync skipped for form ' . $form_id . ': Sheet is empty or headers are missing.', 'INFO' );
+			return;
+		}
+
+		// The first row is the header.
+		$sheet_headers = $sheet_rows[0];
+		unset( $sheet_rows[0] ); // Remove the header row from the data.
+
+		// Step 3: Get the canonical headers from your database to ensure we can map the data correctly.
+		$db_headers = $this->get_form_headers( $form_id );
+
+		// Step 4: Process and update the local database.
+		$table = Helper::get_table_name();
+
+		foreach ( $sheet_rows as $row ) {
+			// A quick check to make sure the row has data.
+			if ( empty( array_filter( $row ) ) ) {
+				continue;
+			}
+
+			// Map the Google Sheet data to a key-value pair based on headers.
+			$mapped_data = array();
+			foreach ( $sheet_headers as $index => $header ) {
+				if ( isset( $row[ $index ] ) ) {
+					$mapped_data[ $header ] = $row[ $index ];
+				}
+			}
+
+			// The 'Entry ID' column is our unique identifier.
+			$entry_id = isset( $mapped_data['Entry ID'] ) ? absint( $mapped_data['Entry ID'] ) : 0;
+			if ( ! $entry_id ) {
+				// If there's no entry ID, we can't sync it back.
+				continue;
+			}
+
+			// Step 5: Update the database entry.
+			$update_data = array();
+
+			// Map the updated data from the sheet back to the database fields.
+			// This is a crucial step that needs to handle each field type.
+			foreach ( $db_headers as $header_title ) {
+				$value = $mapped_data[ $header_title ] ?? null;
+
+				if ( is_null( $value ) ) {
+					continue;
+				}
+
+				switch ( $header_title ) {
+					case 'Email':
+						$update_data['email'] = sanitize_email( $value );
+						break;
+					case 'Name':
+						$update_data['name'] = sanitize_text_field( $value );
+						break;
+					case 'Status':
+						$update_data['status'] = sanitize_text_field( $value );
+						break;
+					case 'Note':
+						$update_data['note'] = sanitize_textarea_field( $value );
+						break;
+					// ... add other fixed fields here if they can be edited.
+				}
+			}
+
+			// To handle the `entry` column (the serialized data), we need to fetch the existing data
+			// and merge the changes.
+			$existing_entry = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $entry_id ) );
+			if ( $existing_entry ) {
+				$entry_data = maybe_unserialize( $existing_entry->entry );
+
+				foreach ( $mapped_data as $key => $value ) {
+					// Check if the key exists in the original form headers and if it's an editable field
+					// This prevents syncing the fixed headers like 'Entry ID' and 'Submission Date' back into the serialized array.
+					if ( ! in_array( $key, array( 'Entry ID', 'Submission Date', 'Name', 'Email', 'Status', 'Note' ) ) ) {
+						$entry_data[ $key ] = sanitize_text_field( $value );
+					}
+				}
+				$update_data['entry'] = maybe_serialize( $entry_data );
+			}
+
+			// Now perform the database update.
+			$wpdb->update(
+				$table,
+				$update_data,
+				array( 'id' => $entry_id )
+			);
+		}
+
+		$this->logger->log( 'GSheet data successfully synchronized to DB for form ' . $form_id, 'INFO' );
+	}
 }

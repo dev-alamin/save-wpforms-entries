@@ -1,6 +1,3 @@
-<?php
-use App\AdvancedEntryManager\Utility\Helper;
-?>
 <div
 	x-data="customColumnsForm()"
 	x-init="init()"

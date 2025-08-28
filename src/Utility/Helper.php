@@ -14,8 +14,11 @@ class Helper {
 	const OPTION_PREFIX = 'fem_';
 	protected static $logger;
 
-	public function __construct() {
-		self::$logger = new FileLogger();
+	protected static function getLogger() {
+		if ( ! self::$logger ) {
+			self::$logger = new FileLogger();
+		}
+		return self::$logger;
 	}
 
 	/**
@@ -319,6 +322,10 @@ class Helper {
 		return false;
 	}
 
+	public static function has_access_token(): bool {
+		return (bool) self::get_option( 'google_access_token' );
+	}
+
 	/**
 	 * Revokes the Google Sheets connection by making a request to the proxy service.
 	 * Deletes local tokens upon a successful response.
@@ -345,11 +352,11 @@ class Helper {
 
 		// Check for a successful response from the proxy.
 		if ( is_wp_error( $response ) || wp_remote_retrieve_response_code( $response ) !== 200 ) {
-			self::$logger->log( 'Proxy-based token revocation failed: ' . wp_remote_retrieve_body( $response ), 'ERROR' );
+			self::getLogger()->log( 'Proxy-based token revocation failed: ' . wp_remote_retrieve_body( $response ), 'ERROR' );
 			// Even if the proxy fails, we can still try to clear our local data to show a disconnected state.
 		}
 
-		self::$logger->log( 'Proxy revocation response: ' . wp_remote_retrieve_body( $response ), 'INFO' );
+		self::getLogger()->log( 'Proxy revocation response: ' . wp_remote_retrieve_body( $response ), 'INFO' );
 
 		// Step 2: Delete the local tokens from your database.
 		// This is crucial regardless of the proxy's response to ensure your app reflects the disconnected state.
@@ -358,9 +365,11 @@ class Helper {
 
 		self::update_option( 'user_remvoked_google_connection', true );
 
-		// Unschedule the synchronization action
+		// Unschedule all synchronization actions.
 		if ( $deleted_access || $deleted_expires ) {
 			as_unschedule_all_actions( 'fem_every_five_minute_sync' );
+			// The key addition: also unschedule the daily sync.
+			as_unschedule_all_actions( 'fem_daily_sync' );
 		}
 
 		// Return true if the local deletion was successful, confirming the disconnected state.

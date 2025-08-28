@@ -7,7 +7,7 @@
 			?>
 		</h3>
 
-		<?php if ( $access_token ) : ?>
+		<?php if ( $has_access_token ) : ?>
 			<div class="flex justify-center !mb-6">
 				<div class="flex items-center gap-4 p-5 rounded-lg bg-green-50 border border-green-200 text-green-800 shadow max-w-md mx-auto">
 					<div class="relative w-5 h-5">
@@ -41,10 +41,6 @@
 						<path d="M12 8v4l3 3"></path>
 						<circle cx="12" cy="12" r="10"></circle>
 					</svg>
-					<span class="font-medium">
-						<?php esc_html_e( 'Token expires in:', 'forms-entries-manager' ); ?>
-						<strong><?php echo esc_html( $expires_label ); ?></strong>
-					</span>
 				</div>
 				<a href="<?php echo esc_url( FEM_GOOGLE_PROXY_URL . '?site=' . rawurlencode( Helper::get_settings_page_url() ) ); ?>"
 				class="text-green-700 hover:text-green-900 underline font-semibold"
@@ -60,10 +56,9 @@
 					add_query_arg(
 						array(
 							'action'   => 'revoke_google_connection',
-							'page'     => 'form-entries-settings',
 							'_wpnonce' => wp_create_nonce( 'revoke_connection_nonce' ),
 						),
-						''
+						'admin.php?page=form-entries-settings'
 					)
 				)
 			);
@@ -73,7 +68,8 @@
 			<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#fff"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
 			<?php esc_html_e( 'Revoke Connection', 'forms-entries-manager' ); ?>
 		</a>
-
+		
+		<!-- No access token then show connection way -->
 		<?php else : ?>
 			<p class="!mb-6 text-gray-600">
 				<?php esc_html_e( 'To start syncing WPForms entries with Google Sheets, please connect your Google account. This will enable live synchronization and easy data management.', 'forms-entries-manager' ); ?>

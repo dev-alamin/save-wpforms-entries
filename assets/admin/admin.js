@@ -1494,7 +1494,6 @@ function customColumnsForm() {
           }
         });
 
-        // --- FIX: Call fetchFields for each form here ---
         // This ensures the fields are loaded for each form found.
         // Using Promise.all to fetch fields for all forms concurrently
         // for better performance.
