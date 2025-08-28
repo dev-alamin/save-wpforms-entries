@@ -53,18 +53,18 @@ class Submit_Entry {
 		$serialized_data = array();
 
 		foreach ( $fields as $field ) {
+			// Check for 'name' and 'email' field types and handle them separately
 			if ( ! empty( $field['type'] ) && $field['type'] === 'name' ) {
 				$first = $field['first'] ?? '';
 				$last  = $field['last'] ?? '';
 				$name  = trim( $first . ' ' . $last );
-			}
-
-			if ( ! empty( $field['type'] ) && $field['type'] === 'email' ) {
+			} elseif ( ! empty( $field['type'] ) && $field['type'] === 'email' ) {
 				$email = $field['value'] ?? '';
+			} else {
+				// For all other fields, add them to the serialized data array
+				$value                             = is_array( $field['value'] ) ? implode( ',', $field['value'] ) : $field['value'];
+				$serialized_data[ $field['name'] ] = $value;
 			}
-
-			$value                             = is_array( $field['value'] ) ? implode( ',', $field['value'] ) : $field['value'];
-			$serialized_data[ $field['name'] ] = $value;
 		}
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
@@ -81,13 +81,13 @@ class Submit_Entry {
 			array( '%d', '%s', '%s', '%s', '%s', '%s' )
 		);
 
-        // Send data to Google Sheets if enabled
-        $has_access_token = Helper::has_access_token();
-        sleep(1); // to get the correct entry id
-        if( $has_access_token ) {
-            $send_data = new Send_Data();
-            $send_data->process_single_entry( ['entry_id' => $wpdb->insert_id ] );
-        }
+		// Send data to Google Sheets if enabled
+		$has_access_token = Helper::has_access_token();
+
+		if ( $has_access_token ) {
+			$send_data = new Send_Data();
+			$send_data->process_single_entry( array( 'entry_id' => $wpdb->insert_id ) );
+		}
 	}
 
 	/**

@@ -521,4 +521,28 @@ class Helper {
 		global $wp_filesystem;
 		$wp_filesystem->fwrite( $handle, $line );
 	}
+
+	/**
+	 * Get all unique form IDs from the entries table.
+	 *
+	 * @return string[] Array of unique form IDs.
+	 */
+	public static function get_all_forms() {
+		// Get all published Forms From Our DB
+		global $wpdb;
+		$table = self::get_table_name();
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$forms = $wpdb->get_results( "SELECT DISTINCT form_id FROM {$table} WHERE form_id IS NOT NULL AND form_id != 0", ARRAY_A );
+
+		// Flaten the array to get just form IDs
+		$forms = array_map(
+			function ( $item ) {
+				return $item['form_id'];
+			},
+			$forms
+		);
+
+		return $forms;
+	}
 }

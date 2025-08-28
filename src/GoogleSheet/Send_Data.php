@@ -313,8 +313,7 @@ class Send_Data {
 			array( 'id' => $entry_id )
 		);
 
-
-        error_log('Processing entry: ' . print_r( $entry, true ));
+		error_log( 'Processing entry: ' . print_r( $entry, true ) );
 
 		return true;
 	}
@@ -329,30 +328,30 @@ class Send_Data {
 	 */
 	protected function get_form_headers( int $form_id ): array {
 		$cached_headers = Helper::get_option( "gsheet_headers_{$form_id}" );
+
 		if ( $cached_headers && is_array( $cached_headers ) ) {
 			return $cached_headers;
 		}
 
 		global $wpdb;
-		$table = Helper::get_table_name(); // Safe table
+		$table = Helper::get_table_name();
 
-		// Fetch a sample entry to infer headers
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// Fetch a sample entry to infer dynamic headers
 		$row = $wpdb->get_row(
-			$wpdb->prepare( "SELECT entry, note, status FROM {$table} WHERE form_id = %d LIMIT 1", $form_id ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->prepare( "SELECT entry, note, status FROM {$table} WHERE form_id = %d LIMIT 1", $form_id ),
 			ARRAY_A
 		);
 
-		// If sample entry is unavailable somehow, use WPFORMS Default
-		// $default = wpforms()->form->get($form_id);
+		// Use a temporary array to build a unique set of headers
+		$unique_headers = array();
 
-		$headers = array(
-			__( 'Entry ID', 'forms-entries-manager' ),
-			__( 'Submission Date', 'forms-entries-manager' ),
-			__( 'Name', 'forms-entries-manager' ),
-			__( 'Email', 'forms-entries-manager' ),
-		);
+		// 1. Add standard headers from database columns
+		$unique_headers[ __( 'Entry ID', 'forms-entries-manager' ) ]        = true;
+		$unique_headers[ __( 'Submission Date', 'forms-entries-manager' ) ] = true;
+		$unique_headers[ __( 'Name', 'forms-entries-manager' ) ]            = true;
+		$unique_headers[ __( 'Email', 'forms-entries-manager' ) ]           = true;
 
+		// 2. Add dynamic field headers from serialized data
 		$entry_data = array();
 		if ( ! empty( $row['entry'] ) ) {
 			$entry_data = maybe_unserialize( $row['entry'] );
@@ -360,12 +359,16 @@ class Send_Data {
 
 		if ( is_array( $entry_data ) ) {
 			foreach ( $entry_data as $field_label => $field_value ) {
-				$headers[] = $field_label;
+				$unique_headers[ $field_label ] = true;
 			}
 		}
 
-		$headers[] = __( 'Status', 'forms-entries-manager' );
-		$headers[] = __( 'Note', 'forms-entries-manager' );
+		// 3. Add final standard headers
+		$unique_headers[ __( 'Status', 'forms-entries-manager' ) ] = true;
+		$unique_headers[ __( 'Note', 'forms-entries-manager' ) ]   = true;
+
+		// Convert the unique keys back to a simple, ordered array
+		$headers = array_keys( $unique_headers );
 
 		Helper::update_option( "gsheet_headers_{$form_id}", $headers );
 
@@ -414,18 +417,22 @@ class Send_Data {
 					$value = $entry->note ?? '';
 					break;
 				default:
+					// Pull dynamic field values (like "Comment or Message")
 					if ( isset( $entry_data[ $header_title ] ) ) {
 						$value = $entry_data[ $header_title ];
 					}
 					break;
 			}
 
+			// Prevent Google Sheets formula injection
 			if ( is_string( $value ) && preg_match( '/^[=+]/', trim( $value ) ) ) {
 				$value = "'" . $value;
 			}
 
 			$row[] = (string) $value;
 		}
+
+		error_log( 'Prepared row data: ' . print_r( $row, true ) );
 
 		return $row;
 	}

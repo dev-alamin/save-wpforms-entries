@@ -34,22 +34,44 @@
 				<?php esc_html_e( 'Your WPForms submissions are now syncing automatically with your Google Sheets in real-time. This connection allows you to streamline your data collection and analysis.', 'forms-entries-manager' ); ?>
 			</p>
 			
-			<div class="max-w-xs mx-auto flex justify-between items-center bg-green-100 border border-green-300 rounded-lg px-5 py-3 text-green-800 shadow-sm !text-sm">
-				<div class="flex items-center gap-2">
-					<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
-						stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-						<path d="M12 8v4l3 3"></path>
-						<circle cx="12" cy="12" r="10"></circle>
-					</svg>
+			<div class="max-w-md mx-auto bg-green-50 border border-green-200 rounded-xl px-6 py-4 text-green-800 shadow-md transition-transform transform hover:scale-105">
+				<div class="flex items-center space-x-3">
+					<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1f1f1f"><path d="M482-160q-134 0-228-93t-94-227v-7l-64 64-56-56 160-160 160 160-56 56-64-64v7q0 100 70.5 170T482-240q26 0 51-6t49-18l60 60q-38 22-78 33t-82 11Zm278-161L600-481l56-56 64 64v-7q0-100-70.5-170T478-720q-26 0-51 6t-49 18l-60-60q38-22 78-33t82-11q134 0 228 93t94 227v7l64-64 56 56-160 160Z"/></svg>
+					<span class="text-base font-semibold text-green-900">
+						<?php esc_html_e( 'Connected Google Sheets', 'forms-entries-manager' ); ?>
+					</span>
 				</div>
-				<a href="<?php echo esc_url( FEM_GOOGLE_PROXY_URL . '?site=' . rawurlencode( Helper::get_settings_page_url() ) ); ?>"
-				class="text-green-700 hover:text-green-900 underline font-semibold"
-				title="<?php esc_attr_e( 'Reconnect or switch Google Account', 'forms-entries-manager' ); ?>">
-				<?php esc_html_e( 'Reconnect', 'forms-entries-manager' ); ?>
-			</a>
-		</div>
 
-		<a href="
+				<div class="mt-4 space-y-2">
+					<?php
+					$forms = Helper::get_all_forms();
+
+					if ( ! empty( $forms ) ) {
+						foreach ( $forms as $form_id ) {
+							$form_title     = get_the_title( $form_id );
+							$spreadsheet_id = Helper::get_option( 'gsheet_spreadsheet_id_' . $form_id );
+
+							if ( $form_title && $spreadsheet_id ) {
+								$sheet_link = 'https://docs.google.com/spreadsheets/d/' . esc_attr( $spreadsheet_id );
+								echo '<div class="flex items-center space-x-2">';
+								echo '<span class="text-sm font-medium text-green-700">' . esc_html( $form_title ) . ':</span>';
+								echo '<a href="' . esc_url( $sheet_link ) . '" target="_blank" rel="noopener noreferrer" class="flex items-center space-x-1 text-sm font-medium text-green-600 hover:text-green-800 underline transition-colors">';
+								echo '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1f1f1f"><path d="m560-240-56-58 142-142H160v-80h486L504-662l56-58 240 240-240 240Z"/></svg>';
+								echo '<span>' . esc_html_e( 'View Sheet', 'forms-entries-manager' ) . '</span>';
+								echo '</a>';
+								echo '</div>';
+							}
+						}
+					} else {
+						echo '<p class="text-sm text-green-600">' . esc_html__( 'No forms are currently connected to Google Sheets.', 'forms-entries-manager' ) . '</p>';
+					}
+					?>
+				</div>
+			</div>
+
+		<a
+		title="<?php esc_attr_e( 'Revoke Google Connection. It won\'t remove your sheets just no sync anymore.', 'forms-entries-manager' ); ?>"
+		href="
 			<?php
 			echo esc_url(
 				admin_url(
