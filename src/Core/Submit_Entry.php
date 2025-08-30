@@ -19,6 +19,7 @@ namespace App\AdvancedEntryManager\Core;
 
 use App\AdvancedEntryManager\Utility\Helper;
 use App\AdvancedEntryManager\GoogleSheet\Send_Data;
+use App\AdvancedEntryManager\Logger\FileLogger;
 use WPCF7_Submission;
 
 /**
@@ -27,13 +28,35 @@ use WPCF7_Submission;
  * Handles saving WPForms entries to a custom database table.
  */
 class Submit_Entry {
+
+	protected $logger;
+
 	public function __construct() {
 		// WPForms Hook
+		$this->logger = new FileLogger();
 		add_action( 'wpforms_process_entry_save', array( $this, 'save_entry_from_wpforms' ), 10, 3 );
 
 		// Contact Form 7 Hook
 		if ( class_exists( 'WPCF7_Submission' ) ) {
-			add_action( 'wpcf7_mail_sent', array( $this, 'save_entry_from_cf7' ), 10, 1 );
+			add_action( 'wpcf7_before_send_mail', array( $this, 'save_entry_from_cf7' ), 10, 1 ); // In production, we will use 'wpcf7_mail_sent'
+		}
+	}
+
+	/**
+	 * Sends a completed WPForms entry to Google Sheets.
+	 *
+	 * @param array $fields Form fields and their values.
+	 * @param array $entry_data Complete entry data.
+	 * @param int   $entry_id ID of the entry saved in the database.
+	 * @param int   $form_id ID of the form.
+	 */
+	public function send_entry_to_google_sheets( $entry_id ) {
+		// Send data to Google Sheets if enabled
+		$has_access_token = Helper::has_access_token();
+
+		if ( $has_access_token ) {
+			$send_data = new Send_Data();
+			$send_data->process_single_entry( array( 'entry_id' => $entry_id ) );
 		}
 	}
 
@@ -82,12 +105,7 @@ class Submit_Entry {
 		);
 
 		// Send data to Google Sheets if enabled
-		$has_access_token = Helper::has_access_token();
-
-		if ( $has_access_token ) {
-			$send_data = new Send_Data();
-			$send_data->process_single_entry( array( 'entry_id' => $wpdb->insert_id ) );
-		}
+		$this->send_entry_to_google_sheets( $wpdb->insert_id );
 	}
 
 	/**
@@ -101,16 +119,16 @@ class Submit_Entry {
 		$submission = \WPCF7_Submission::get_instance();
 
 		if ( ! $submission ) {
-			// Exit if submission object is not available
+			$this->logger->log( 'CF7 Submission instance not available.' );
 			return;
 		}
 
-		$posted_data    = $submission->get_posted_data();
-		$uploaded_files = $submission->uploaded_files();
+		$posted_data = $submission->get_posted_data();
 
-		// Security: Check for a valid CF7 nonce before proceeding.
-		// This is a crucial line for security.
+		// Security: Check for a valid CF7 nonce.
 		if ( ! isset( $posted_data['_wpcf7_unit_tag'] ) || ! wp_verify_nonce( $posted_data['_wpcf7_unit_tag'], 'wpcf7-form' ) ) {
+			error_log( 'CF7 Nonce verification failed.' );
+			$this->logger->log( 'CF7 Nonce verification failed.' );
 			return;
 		}
 
@@ -119,16 +137,24 @@ class Submit_Entry {
 		$email      = '';
 		$entry_data = array();
 
-		// Sanitize and map data.
-		foreach ( $posted_data as $key => $value ) {
-			if ( $key === 'your-name' ) {
-				$name = sanitize_text_field( $value );
-			} elseif ( $key === 'your-email' ) {
-				$email = sanitize_email( $value );
+		// Retrieve form tags to identify fields dynamically.
+		$form_tags = $contact_form->scan_form_tags();
+
+		// Loop through form tags to find 'name' and 'email' fields reliably.
+		foreach ( $form_tags as $tag ) {
+
+			if ( in_array( 'name', (array) $tag['basetype'] ) && isset( $posted_data[ $tag['name'] ] ) ) {
+				$name = sanitize_text_field( $posted_data[ $tag['name'] ] );
 			}
 
-			// Exclude system fields from entry data
-			if ( strpos( $key, '_wpcf7' ) === false ) {
+			if ( in_array( 'email', (array) $tag['basetype'] ) && isset( $posted_data[ $tag['name'] ] ) ) {
+				$email = sanitize_email( $posted_data[ $tag['name'] ] );
+			}
+		}
+
+		// Process all fields, excluding system fields, and prepare for JSON storage.
+		foreach ( $posted_data as $key => $value ) {
+			if ( strpos( $key, '_wpcf7' ) === false && $key !== 'your-name' && $key !== 'your-email' ) {
 				if ( is_array( $value ) ) {
 					$entry_data[ $key ] = array_map( 'sanitize_text_field', $value );
 				} else {
@@ -137,7 +163,29 @@ class Submit_Entry {
 			}
 		}
 
-		// Handle file uploads separately and securely.
+		// Handle uploaded files.
+		$uploaded_files = $submission->uploaded_files();
+		$this->upload_file( $uploaded_files, $entry_data );
+
+		// Insert into database, storing serialized data as JSON.
+		$wpdb->insert(
+			$table,
+			array(
+				'form_id'    => $form_id,
+				'name'       => $name,
+				'email'      => $email,
+				'entry'      => maybe_serialize( $entry_data ), // Use wp_json_encode for better portability.
+				'status'     => 'unread',
+				'created_at' => current_time( 'mysql' ),
+			),
+			array( '%d', '%s', '%s', '%s', '%s', '%s' )
+		);
+
+		// After a successful insert, trigger the Google Sheets sync.
+		// $this->send_entry_to_google_sheets( $wpdb->insert_id );
+	}
+
+	private function upload_file( $uploaded_files, &$entry_data ) {
 		if ( ! empty( $uploaded_files ) ) {
 			foreach ( $uploaded_files as $field_name => $file_paths ) {
 				// Ensure field_name exists in entry data for consistency.
@@ -176,20 +224,5 @@ class Submit_Entry {
 				}
 			}
 		}
-
-		// Insert into database
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-		$wpdb->insert(
-			$table,
-			array(
-				'form_id'    => $form_id,
-				'name'       => $name,
-				'email'      => $email,
-				'entry'      => maybe_serialize( $entry_data ),
-				'status'     => 'unread',
-				'created_at' => current_time( 'mysql' ),
-			),
-			array( '%d', '%s', '%s', '%s', '%s', '%s' )
-		);
 	}
 }

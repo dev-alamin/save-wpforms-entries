@@ -24,7 +24,7 @@ class DB_Schema {
 	 */
 	public static function table() {
 		global $wpdb;
-		return $wpdb->prefix . 'aemfw_entries';
+		return $wpdb->prefix . 'forms_entries_manager';
 	}
 
 	/**

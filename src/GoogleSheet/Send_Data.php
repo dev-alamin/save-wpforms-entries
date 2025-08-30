@@ -313,8 +313,6 @@ class Send_Data {
 			array( 'id' => $entry_id )
 		);
 
-		error_log( 'Processing entry: ' . print_r( $entry, true ) );
-
 		return true;
 	}
 
@@ -431,8 +429,6 @@ class Send_Data {
 
 			$row[] = (string) $value;
 		}
-
-		error_log( 'Prepared row data: ' . print_r( $row, true ) );
 
 		return $row;
 	}

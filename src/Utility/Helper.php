@@ -39,7 +39,7 @@ class Helper {
 	public static function get_table_name(): string {
 		global $wpdb;
 		// return $wpdb->prefix . FEM_TABLE_NAME;
-		return $wpdb->prefix . 'aemfw_entries';
+		return $wpdb->prefix . 'forms_entries_manager';
 	}
 
 	/**
