@@ -61,52 +61,71 @@ class Submit_Entry {
 	}
 
 	/**
-	 * Handles WPForms entries.
-	 *
-	 * @param array $fields The fields submitted in the form.
-	 * @param array $entry The entry data from WPForms.
-	 * @param int   $form_id The ID of the form being submitted.
-	 */
-	public function save_entry_from_wpforms( $fields, $entry, $form_id ) {
-		global $wpdb;
-		$table = Helper::get_table_name();
+     * Handles WPForms entries by saving them to a relational database model.
+     *
+     * @param array $fields The fields submitted in the form.
+     * @param array $entry The entry data from WPForms.
+     * @param int   $form_id The ID of the form being submitted.
+     */
+    public function save_entry_from_wpforms( $fields, $entry, $form_id ) {
+        global $wpdb;
 
-		$name            = '';
-		$email           = '';
-		$serialized_data = array();
+        // Table names must be defined or retrieved from a helper.
+        $submissions_table = Helper::get_table_name();
+        $data_table        = Helper::data_table();
 
-		foreach ( $fields as $field ) {
-			// Check for 'name' and 'email' field types and handle them separately
-			if ( ! empty( $field['type'] ) && $field['type'] === 'name' ) {
-				$first = $field['first'] ?? '';
-				$last  = $field['last'] ?? '';
-				$name  = trim( $first . ' ' . $last );
-			} elseif ( ! empty( $field['type'] ) && $field['type'] === 'email' ) {
-				$email = $field['value'] ?? '';
-			} else {
-				// For all other fields, add them to the serialized data array
-				$value                             = is_array( $field['value'] ) ? implode( ',', $field['value'] ) : $field['value'];
-				$serialized_data[ $field['name'] ] = $value;
-			}
-		}
+        $name  = '';
+        $email = '';
+        $additional_fields = array();
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-		$wpdb->insert(
-			$table,
-			array(
-				'form_id'    => absint( $form_id ),
-				'name'       => sanitize_text_field( $name ),
-				'email'      => sanitize_email( $email ),
-				'entry'      => maybe_serialize( $serialized_data ),
-				'status'     => 'unread',
-				'created_at' => current_time( 'mysql' ),
-			),
-			array( '%d', '%s', '%s', '%s', '%s', '%s' )
-		);
+        foreach ( $fields as $field ) {
+            // Find and separate the 'name' and 'email' fields.
+            if ( ! empty( $field['type'] ) && $field['type'] === 'name' ) {
+                $first = $field['first'] ?? '';
+                $last  = $field['last'] ?? '';
+                $name  = trim( $first . ' ' . $last );
+            } elseif ( ! empty( $field['type'] ) && $field['type'] === 'email' ) {
+                $email = $field['value'] ?? '';
+            } else {
+                // Collect all other fields for the separate data table.
+                $additional_fields[ $field['name'] ] = is_array( $field['value'] ) ? implode( ',', $field['value'] ) : $field['value'];
+            }
+        }
 
-		// Send data to Google Sheets if enabled
-		$this->send_entry_to_google_sheets( $wpdb->insert_id );
-	}
+        // Step 1: Insert core submission data into the main table.
+        $wpdb->insert(
+            $submissions_table,
+            array(
+                'form_id'    => absint( $form_id ),
+                'name'       => sanitize_text_field( $name ),
+                'email'      => sanitize_email( $email ),
+                'status'     => 'unread',
+                'created_at' => current_time( 'mysql' ),
+            ),
+            array( '%d', '%s', '%s', '%s', '%s' )
+        );
+
+        // Get the ID of the newly created submission.
+        $submission_id = $wpdb->insert_id;
+
+        // Step 2: Loop through remaining fields and insert each into the data table.
+        if ( $submission_id && ! empty( $additional_fields ) ) {
+            foreach ( $additional_fields as $field_key => $field_value ) {
+                $wpdb->insert(
+                    $data_table,
+                    array(
+                        'submission_id' => $submission_id,
+                        'field_key'     => $field_key,
+                        'field_value'   => sanitize_text_field( $field_value ),
+                    ),
+                    array( '%d', '%s', '%s' )
+                );
+            }
+        }
+
+        // Send data to Google Sheets if enabled.
+        $this->send_entry_to_google_sheets( $submission_id );
+    }
 
 	/**
 	 * Handles CF7 entries
@@ -144,6 +163,7 @@ class Submit_Entry {
                     $excluded_keys[] = $tag['name'];
                 }
             }
+
             // Find email field using autocomplete attribute.
             if ( isset( $tag['options'][0] ) && strpos( $tag['options'][0], 'autocomplete:email' ) !== false ) {
                 if ( isset( $posted_data[ $tag['name'] ] ) ) {
@@ -180,19 +200,41 @@ class Submit_Entry {
 		$uploaded_files = $submission->uploaded_files();
 		$this->upload_file( $uploaded_files, $entry_data );
 
-		// Insert into database, storing serialized data as JSON.
-		$wpdb->insert(
-			$table,
-			array(
-				'form_id'    => $form_id,
-				'name'       => $name,
-				'email'      => $email,
-				'entry'      => maybe_serialize( $entry_data ), // Use wp_json_encode for better portability.
-				'status'     => 'unread',
-				'created_at' => current_time( 'mysql' ),
-			),
-			array( '%d', '%s', '%s', '%s', '%s', '%s' )
-		);
+        $wpdb->insert(
+            Helper::get_table_name(), // Assumes you have a method `table()` that returns the submissions table name.
+            array(
+                'form_id'    => $form_id,
+                'name'       => $name,
+                'email'      => $email,
+                'status'     => 'unread',
+                'created_at' => current_time( 'mysql' ),
+            ),
+            array( '%d', '%s', '%s', '%s', '%s' )
+        );
+
+        // Get the ID of the new submission.
+        $submission_id = $wpdb->insert_id;
+
+        // Now loop through all form data and save it to the data table.
+        $data_table = Helper::data_table();
+
+        foreach ( $posted_data as $key => $value ) {
+            if ( ! in_array( $key, $excluded_keys ) ) {
+                // Sanitize the value for database insertion.
+                $sanitized_value = is_array( $value ) ? wp_json_encode( array_map( 'sanitize_text_field', $value ) ) : sanitize_text_field( $value );
+
+                // Insert each field as a new row.
+                $wpdb->insert(
+                    $data_table,
+                    array(
+                        'submission_id' => $submission_id,
+                        'field_key'     => $key,
+                        'field_value'   => $sanitized_value,
+                    ),
+                    array( '%d', '%s', '%s' )
+                );
+            }
+        }
 
 		// After a successful insert, trigger the Google Sheets sync.
 		// $this->send_entry_to_google_sheets( $wpdb->insert_id );

@@ -68,6 +68,7 @@ class Plugin {
 			FEM_PLUGIN_BASE_FILE,
 			function () {
 				DB_Schema::create_table();
+                DB_Schema::data_table();
 
 				( new Capabilities() )->add_cap();
 
