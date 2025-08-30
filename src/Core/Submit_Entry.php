@@ -115,53 +115,66 @@ class Submit_Entry {
 	 */
 	public function save_entry_from_cf7( $contact_form ) {
 		global $wpdb;
-		$table      = Helper::get_table_name();
-		$submission = \WPCF7_Submission::get_instance();
+        $table      = Helper::get_table_name();
+        $submission = \WPCF7_Submission::get_instance();
+        if ( ! $submission ) {
+            $this->logger->log( 'CF7 Submission instance not found.' );
+            return;
+        }
+        $posted_data = $submission->get_posted_data();
+        if ( ! isset( $posted_data['_wpcf7_unit_tag'] ) || ! wp_verify_nonce( $posted_data['_wpcf7_unit_tag'], 'wpcf7-form' ) ) {
+            $this->logger->log( 'CF7 Nonce verification failed.' );
+            // return;
+        }
+        $form_id    = absint( $contact_form->id() );
+        $name       = '';
+        $email      = '';
+        $entry_data = [];
 
-		if ( ! $submission ) {
-			$this->logger->log( 'CF7 Submission instance not available.' );
-			return;
-		}
+        // Dynamically build a list of keys to exclude.
+        $excluded_keys = [];
 
-		$posted_data = $submission->get_posted_data();
+        // First, find and store the name and email fields.
+        $form_tags = $contact_form->scan_form_tags();
+        foreach ( $form_tags as $tag ) {
+            // Find name field using autocomplete attribute.
+            if ( isset( $tag['options'][0] ) && strpos( $tag['options'][0], 'autocomplete:name' ) !== false ) {
+                if ( isset( $posted_data[ $tag['name'] ] ) ) {
+                    $name = sanitize_text_field( $posted_data[ $tag['name'] ] );
+                    $excluded_keys[] = $tag['name'];
+                }
+            }
+            // Find email field using autocomplete attribute.
+            if ( isset( $tag['options'][0] ) && strpos( $tag['options'][0], 'autocomplete:email' ) !== false ) {
+                if ( isset( $posted_data[ $tag['name'] ] ) ) {
+                    $email = sanitize_email( $posted_data[ $tag['name'] ] );
+                    $excluded_keys[] = $tag['name'];
+                }
+            }
+        }
 
-		// Security: Check for a valid CF7 nonce.
-		if ( ! isset( $posted_data['_wpcf7_unit_tag'] ) || ! wp_verify_nonce( $posted_data['_wpcf7_unit_tag'], 'wpcf7-form' ) ) {
-			error_log( 'CF7 Nonce verification failed.' );
-			$this->logger->log( 'CF7 Nonce verification failed.' );
-			return;
-		}
+        // Add standard CF7 system fields to the exclusion list.
+        $excluded_keys = array_merge( $excluded_keys, [
+            '_wpcf7_unit_tag',
+            '_wpcf7_form_id',
+            '_wpcf7_container_post',
+            '_wpcf7_posted_data_hash',
+            '_wpcf7_locale',
+            '_wpcf7_akismet_comment_author',
+            '_wpcf7_akismet_comment_author_email',
+            '_wpcf7_akismet_comment_author_url',
+        ] );
 
-		$form_id    = absint( $contact_form->id() );
-		$name       = '';
-		$email      = '';
-		$entry_data = array();
-
-		// Retrieve form tags to identify fields dynamically.
-		$form_tags = $contact_form->scan_form_tags();
-
-		// Loop through form tags to find 'name' and 'email' fields reliably.
-		foreach ( $form_tags as $tag ) {
-
-			if ( in_array( 'name', (array) $tag['basetype'] ) && isset( $posted_data[ $tag['name'] ] ) ) {
-				$name = sanitize_text_field( $posted_data[ $tag['name'] ] );
-			}
-
-			if ( in_array( 'email', (array) $tag['basetype'] ) && isset( $posted_data[ $tag['name'] ] ) ) {
-				$email = sanitize_email( $posted_data[ $tag['name'] ] );
-			}
-		}
-
-		// Process all fields, excluding system fields, and prepare for JSON storage.
-		foreach ( $posted_data as $key => $value ) {
-			if ( strpos( $key, '_wpcf7' ) === false && $key !== 'your-name' && $key !== 'your-email' ) {
-				if ( is_array( $value ) ) {
-					$entry_data[ $key ] = array_map( 'sanitize_text_field', $value );
-				} else {
-					$entry_data[ $key ] = sanitize_text_field( $value );
-				}
-			}
-		}
+        // Process the remaining fields.
+        foreach ( $posted_data as $key => $value ) {
+            if ( ! in_array( $key, $excluded_keys ) ) {
+                if ( is_array( $value ) ) {
+                    $entry_data[ $key ] = array_map( 'sanitize_text_field', $value );
+                } else {
+                    $entry_data[ $key ] = sanitize_text_field( $value );
+                }
+            }
+        }
 
 		// Handle uploaded files.
 		$uploaded_files = $submission->uploaded_files();
