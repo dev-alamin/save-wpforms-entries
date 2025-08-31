@@ -36,14 +36,14 @@ class DB_Schema {
 	 * @return void
 	 */
 	public static function create_table() {
-        global $wpdb;
+		global $wpdb;
 
-        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
-        $table           = self::table(); // This will be your 'submissions' table
-        $charset_collate = $wpdb->get_charset_collate();
+		$table           = self::table(); // This will be your 'submissions' table
+		$charset_collate = $wpdb->get_charset_collate();
 
-        $sql = "CREATE TABLE $table (
+		$sql = "CREATE TABLE $table (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             form_id BIGINT(20) UNSIGNED NOT NULL,
             name VARCHAR(255) DEFAULT NULL,
@@ -68,36 +68,36 @@ class DB_Schema {
             KEY idx_formid_id (form_id, id)
         ) $charset_collate;";
 
-        dbDelta( $sql );
-    }
+		dbDelta( $sql );
+	}
 
-    /**
-     * Get the name of the custom data table.
-     *
-     * @global \wpdb $wpdb
-     * @return string
-     */
-    public static function data_table() {
-        global $wpdb;
-        return $wpdb->prefix . 'forms_entries_manager_data';
-    }
+	/**
+	 * Get the name of the custom data table.
+	 *
+	 * @global \wpdb $wpdb
+	 * @return string
+	 */
+	public static function data_table() {
+		global $wpdb;
+		return $wpdb->prefix . 'forms_entries_manager_data';
+	}
 
-    /**
-     * Create the custom database table for form entry data.
-     *
-     * @global \wpdb $wpdb
-     * @return void
-     */
-    public static function create_data_table() {
-        global $wpdb;
+	/**
+	 * Create the custom database table for form entry data.
+	 *
+	 * @global \wpdb $wpdb
+	 * @return void
+	 */
+	public static function create_data_table() {
+		global $wpdb;
 
-        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
-        $table           = self::data_table();
-        $main_table      = self::table();
-        $charset_collate = $wpdb->get_charset_collate();
+		$table           = self::data_table();
+		$main_table      = self::table();
+		$charset_collate = $wpdb->get_charset_collate();
 
-        $sql = "CREATE TABLE $table (
+		$sql = "CREATE TABLE $table (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             submission_id BIGINT(20) UNSIGNED NOT NULL,
             field_key VARCHAR(255) NOT NULL,
@@ -108,6 +108,6 @@ class DB_Schema {
             FOREIGN KEY (submission_id) REFERENCES $main_table(id) ON DELETE CASCADE
         ) $charset_collate;";
 
-        dbDelta( $sql );
-    }
+		dbDelta( $sql );
+	}
 }

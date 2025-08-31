@@ -42,15 +42,15 @@ class Helper {
 		return $wpdb->prefix . 'forms_entries_manager';
 	}
 
-    /**
-     * Get FEM Data Table
-     * 
-     * @return string
-     */
-    public static function data_table(): string {
-        global $wpdb;
-        return $wpdb->prefix . 'forms_entries_manager_data';
-    }
+	/**
+	 * Get FEM Data Table
+	 *
+	 * @return string
+	 */
+	public static function data_table(): string {
+		global $wpdb;
+		return $wpdb->prefix . 'forms_entries_manager_data';
+	}
 
 	/**
 	 * Get FEM Transient

@@ -55,24 +55,24 @@
 
 			<div class="max-h-[400px] overflow-y-auto pr-2">
 				<div class="space-y-3">
-                    <div class="text-base sm:text-lg text-gray-800 border-b border-dashed border-gray-300 pb-2">
-                        <strong class="font-semibold text-gray-700">
-                            <?php esc_html_e( 'Name: ', 'forms-entries-manager' ); ?>
-                        </strong>
+					<div class="text-base sm:text-lg text-gray-800 border-b border-dashed border-gray-300 pb-2">
+						<strong class="font-semibold text-gray-700">
+							<?php esc_html_e( 'Name: ', 'forms-entries-manager' ); ?>
+						</strong>
 
-                        <span class="ml-1" x-text="selectedEntry.name || '<?php echo esc_js( __( '-', 'forms-entries-manager' ) ); ?>'">
-                        </span>
-                    </div>
+						<span class="ml-1" x-text="selectedEntry.name || '<?php echo esc_js( __( '-', 'forms-entries-manager' ) ); ?>'">
+						</span>
+					</div>
 
-                           <div class="text-base sm:text-lg text-gray-800 border-b border-dashed border-gray-300 pb-2">
-                        <strong class="font-semibold text-gray-700">
-                            <?php esc_html_e( 'Email: ', 'forms-entries-manager' ); ?>
-                        </strong>
+							<div class="text-base sm:text-lg text-gray-800 border-b border-dashed border-gray-300 pb-2">
+						<strong class="font-semibold text-gray-700">
+							<?php esc_html_e( 'Email: ', 'forms-entries-manager' ); ?>
+						</strong>
 
-                        <span class="ml-1" x-text="selectedEntry.email || '<?php echo esc_js( __( '-', 'forms-entries-manager' ) ); ?>'">
-                        </span>
-                    </div>
-                    
+						<span class="ml-1" x-text="selectedEntry.email || '<?php echo esc_js( __( '-', 'forms-entries-manager' ) ); ?>'">
+						</span>
+					</div>
+					
 					<template x-for="(value, key) in selectedEntry.entry" :key="key">
 						<div class="text-base sm:text-lg text-gray-800 border-b border-dashed border-gray-300 pb-2">
 							<strong
