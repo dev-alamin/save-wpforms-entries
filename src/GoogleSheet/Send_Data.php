@@ -10,16 +10,15 @@ use WP_Error;
 
 class Send_Data {
 
-
 	protected $logger;
 
 	public function __construct() {
 		$this->logger = new FileLogger();
 		// Capture token on init
-		add_action( 'admin_init', array( $this, 'capture_token' ) );
+		add_action( 'admin_init', [ $this, 'capture_token' ] );
 
 		// Add a new hook to handle the revocation action
-		add_action( 'admin_init', array( $this, 'handle_google_revocation_action' ) );
+		add_action( 'admin_init', [ $this, 'handle_google_revocation_action' ] );
 	}
 
 	/**

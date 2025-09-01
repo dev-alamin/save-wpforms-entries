@@ -19,8 +19,8 @@ namespace App\AdvancedEntryManager\Core;
 
 use App\AdvancedEntryManager\Utility\Helper;
 use App\AdvancedEntryManager\GoogleSheet\Send_Data;
-use App\AdvancedEntryManager\Logger\FileLogger;
 use WPCF7_Submission;
+use App\AdvancedEntryManager\Logger\FileLogger;
 
 /**
  * Class Submit_Entry
@@ -28,22 +28,21 @@ use WPCF7_Submission;
  * Handles saving WPForms entries to a custom database table.
  */
 class Submit_Entry {
-
-	protected $logger;
+    protected $logger;
 
 	public function __construct() {
+        $this->logger = new FileLogger('submit_entry.log');
 		// WPForms Hook
-		$this->logger = new FileLogger();
 		add_action( 'wpforms_process_entry_save', array( $this, 'save_entry_from_wpforms' ), 10, 3 );
 
 		// Contact Form 7 Hook
 		if ( class_exists( 'WPCF7_Submission' ) ) {
-			add_action( 'wpcf7_before_send_mail', array( $this, 'save_entry_from_cf7' ), 10, 1 ); // In production, we will use 'wpcf7_mail_sent'
+			add_action( 'wpcf7_before_send_mail', array( $this, 'save_entry_from_cf7' ), 10, 1 );
 		}
 	}
 
 	/**
-	 * Handles WPForms entries by saving them to a relational database model.
+	 * Handles WPForms entries.
 	 *
 	 * @param array $fields The fields submitted in the form.
 	 * @param array $entry The entry data from WPForms.
@@ -51,16 +50,14 @@ class Submit_Entry {
 	 */
 	public function save_entry_from_wpforms( $fields, $entry, $form_id ) {
 		global $wpdb;
+		$table = Helper::get_table_name();
 
-		// Table names must be defined or retrieved from a helper.
-		$submissions_table = Helper::get_table_name();
-
-		$name              = '';
-		$email             = '';
-		$additional_fields = array();
+		$name            = '';
+		$email           = '';
+		$serialized_data = array();
 
 		foreach ( $fields as $field ) {
-			// Find and separate the 'name' and 'email' fields.
+			// Check for 'name' and 'email' field types and handle them separately
 			if ( ! empty( $field['type'] ) && $field['type'] === 'name' ) {
 				$first = $field['first'] ?? '';
 				$last  = $field['last'] ?? '';
@@ -68,31 +65,29 @@ class Submit_Entry {
 			} elseif ( ! empty( $field['type'] ) && $field['type'] === 'email' ) {
 				$email = $field['value'] ?? '';
 			} else {
-				// Collect all other fields for the separate data table.
-				$additional_fields[ $field['name'] ] = is_array( $field['value'] ) ? implode( ',', $field['value'] ) : $field['value'];
+				// For all other fields, add them to the serialized data array
+				$value                             = is_array( $field['value'] ) ? implode( ',', $field['value'] ) : $field['value'];
+				$serialized_data[ $field['name'] ] = $value;
 			}
 		}
 
-		// Step 1: Insert core submission data into the main table.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$wpdb->insert(
-			$submissions_table,
+			$table,
 			array(
 				'form_id'    => absint( $form_id ),
 				'name'       => sanitize_text_field( $name ),
 				'email'      => sanitize_email( $email ),
-                'entry' => maybe_serialize( $additional_fields ),
+				'entry'      => maybe_serialize( $serialized_data ),
 				'status'     => 'unread',
 				'created_at' => current_time( 'mysql' ),
 			),
 			array( '%d', '%s', '%s', '%s', '%s', '%s' )
 		);
 
-		// Get the ID of the newly created submission.
-		$submission_id = $wpdb->insert_id;
-
-		// Send data to Google Sheets if enabled.
-        $gsheet = new Send_Data();
-        $gsheet->process_single_entry( [ 'entry_id' => $submission_id ] );
+		// Send data to Google Sheets if enabled
+        $send_data = new Send_Data();
+        $send_data->process_single_entry( array( 'entry_id' => $wpdb->insert_id ) );
 	}
 
 	/**
@@ -104,61 +99,53 @@ class Submit_Entry {
 		global $wpdb;
 		$table      = Helper::get_table_name();
 		$submission = \WPCF7_Submission::get_instance();
+
 		if ( ! $submission ) {
-			$this->logger->log( 'CF7 Submission instance not found.' );
+			// Exit if submission object is not available
+            $this->logger->log('No submission instance found.', 'error');
 			return;
 		}
-		$posted_data = $submission->get_posted_data();
+
+		$posted_data    = $submission->get_posted_data();
+		$uploaded_files = $submission->uploaded_files();
+
+		// Security: Check for a valid CF7 nonce before proceeding.
+		// This is a crucial line for security.
 		if ( ! isset( $posted_data['_wpcf7_unit_tag'] ) || ! wp_verify_nonce( $posted_data['_wpcf7_unit_tag'], 'wpcf7-form' ) ) {
-			$this->logger->log( 'CF7 Nonce verification failed.' );
+            $this->logger->log('Invalid nonce in CF7 submission.', 'error');
 			// return;
 		}
+
 		$form_id    = absint( $contact_form->id() );
-		$name       = '';
-		$email      = '';
 		$entry_data = array();
 
-		// Dynamically build a list of keys to exclude.
-		$excluded_keys = array();
+        // Get all form tags.
+        $form_tags = $contact_form->scan_form_tags();
 
-		// First, find and store the name and email fields.
-		$form_tags = $contact_form->scan_form_tags();
-		foreach ( $form_tags as $tag ) {
-			// Find name field using autocomplete attribute.
-			if ( isset( $tag['options'][0] ) && strpos( $tag['options'][0], 'autocomplete:name' ) !== false ) {
-				if ( isset( $posted_data[ $tag['name'] ] ) ) {
-					$name            = sanitize_text_field( $posted_data[ $tag['name'] ] );
-					$excluded_keys[] = $tag['name'];
-				}
-			}
+        $name_field_name = '';
+        $email_field_name = '';
 
-			// Find email field using autocomplete attribute.
-			if ( isset( $tag['options'][0] ) && strpos( $tag['options'][0], 'autocomplete:email' ) !== false ) {
-				if ( isset( $posted_data[ $tag['name'] ] ) ) {
-					$email           = sanitize_email( $posted_data[ $tag['name'] ] );
-					$excluded_keys[] = $tag['name'];
-				}
-			}
-		}
+        // Find the field names dynamically.
+        foreach ( $form_tags as $tag ) {
+            // Check for a name field. This is a common pattern for required text fields.
+            if ( $tag->basetype === 'text' && str_contains( $tag->name, 'name' ) ) {
+                $name_field_name = $tag->name;
+            }
+            // The email field is a specific type, which makes it easy to identify.
+            if ( $tag->basetype === 'email' ) {
+                $email_field_name = $tag->name;
+            }
+        }
 
-		// Add standard CF7 system fields to the exclusion list.
-		$excluded_keys = array_merge(
-			$excluded_keys,
-			array(
-				'_wpcf7_unit_tag',
-				'_wpcf7_form_id',
-				'_wpcf7_container_post',
-				'_wpcf7_posted_data_hash',
-				'_wpcf7_locale',
-				'_wpcf7_akismet_comment_author',
-				'_wpcf7_akismet_comment_author_email',
-				'_wpcf7_akismet_comment_author_url',
-			)
-		);
+        // Now, use the found field names to get the data.
+        $name = ! empty( $posted_data[ $name_field_name ] ) ? sanitize_text_field( $posted_data[ $name_field_name ] ) : '';
+        $email = ! empty( $posted_data[ $email_field_name ] ) ? sanitize_email( $posted_data[ $email_field_name ] ) : '';
 
-		// Process the remaining fields.
+        
+		// Sanitize and map data.
 		foreach ( $posted_data as $key => $value ) {
-			if ( ! in_array( $key, $excluded_keys ) ) {
+			// Exclude system fields from entry data
+			if ( strpos( $key, '_wpcf7' ) === false ) {
 				if ( is_array( $value ) ) {
 					$entry_data[ $key ] = array_map( 'sanitize_text_field', $value );
 				} else {
@@ -167,29 +154,7 @@ class Submit_Entry {
 			}
 		}
 
-		// Handle uploaded files.
-		$uploaded_files = $submission->uploaded_files();
-		$this->upload_file( $uploaded_files, $entry_data );
-
-		$wpdb->insert(
-			$table,
-			array(
-				'form_id'    => $form_id,
-                'entry' => maybe_serialize( $entry_data ),
-				'name'       => $name,
-				'email'      => $email,
-				'status'     => 'unread',
-				'created_at' => current_time( 'mysql' ),
-			),
-			array( '%d', '%s', '%s', '%s', '%s', '%s' )
-		);
-
-		// After a successful insert, trigger the Google Sheets sync.
-        $gsheet = new Send_Data();
-        $gsheet->process_single_entry( [ 'entry_id' => $wpdb->insert_id ] );
-	}
-
-	private function upload_file( $uploaded_files, &$entry_data = array() ) {
+		// Handle file uploads separately and securely.
 		if ( ! empty( $uploaded_files ) ) {
 			foreach ( $uploaded_files as $field_name => $file_paths ) {
 				// Ensure field_name exists in entry data for consistency.
@@ -228,5 +193,21 @@ class Submit_Entry {
 				}
 			}
 		}
+
+        error_log(print_r($entry_data, true));
+		// Insert into database
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		$wpdb->insert(
+			$table,
+			array(
+				'form_id'    => $form_id,
+				'entry'      => maybe_serialize( $entry_data ),
+				'name'       => $name,
+				'email'      => $email,
+				'status'     => 'unread',
+				'created_at' => current_time( 'mysql' ),
+			),
+			array( '%d', '%s', '%s', '%s', '%s', '%s' )
+		);
 	}
 }
