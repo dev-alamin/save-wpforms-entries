@@ -4,21 +4,21 @@ body.toplevel_page_forms-entries-manager #wpfooter,
 body.forms-entries_page_form-entries-settings .notice,
 body.forms-entries_page_form-entries-migration .notice,
 body.toplevel_page_forms-entries-manager .notice:not(.notice-error.fem-notice) {
-    display: none;
+	display: none;
 }
 
 body.toplevel_page_forms-entries-manager,
 body.forms-entries_page_form-entries-settings,
 body.forms-entries_page_form-entries-migration  {
 	background: #DDD !important;
-    background-repeat: no-repeat;
-    background-size: cover;
+	background-repeat: no-repeat;
+	background-size: cover;
 }
 
 .fem-admin-page {
 	background: #DDD;
-    background-repeat: no-repeat;
-    background-size: cover;
+	background-repeat: no-repeat;
+	background-size: cover;
 	min-height: 100vh;
 	padding: 1rem;
 	font-family: 'Inter', system-ui, sans-serif;
@@ -32,16 +32,16 @@ body.forms-entries_page_form-entries-migration  {
 }
 
 [x-cloak] {
-    display: none !important;
+	display: none !important;
 }
 
 @media (max-width: 639px) {
-  .hide-on-mobile {
-    display: none !important;
-  }
+	.hide-on-mobile {
+	display: none !important;
+	}
 }
 @media (min-width: 640px) {
-  .hide-on-mobile {
-    display: block !important;
-  }
+	.hide-on-mobile {
+	display: block !important;
+	}
 }

@@ -28,10 +28,10 @@ use App\AdvancedEntryManager\Logger\FileLogger;
  * Handles saving WPForms entries to a custom database table.
  */
 class Submit_Entry {
-    protected $logger;
+	protected $logger;
 
 	public function __construct() {
-        $this->logger = new FileLogger('submit_entry.log');
+		$this->logger = new FileLogger( 'submit_entry.log' );
 		// WPForms Hook
 		add_action( 'wpforms_process_entry_save', array( $this, 'save_entry_from_wpforms' ), 10, 3 );
 
@@ -86,8 +86,8 @@ class Submit_Entry {
 		);
 
 		// Send data to Google Sheets if enabled
-        $send_data = new Send_Data();
-        $send_data->process_single_entry( array( 'entry_id' => $wpdb->insert_id ) );
+		$send_data = new Send_Data();
+		$send_data->process_single_entry( array( 'entry_id' => $wpdb->insert_id ) );
 	}
 
 	/**
@@ -102,7 +102,7 @@ class Submit_Entry {
 
 		if ( ! $submission ) {
 			// Exit if submission object is not available
-            $this->logger->log('No submission instance found.', 'error');
+			$this->logger->log( 'No submission instance found.', 'error' );
 			return;
 		}
 
@@ -112,36 +112,34 @@ class Submit_Entry {
 		// Security: Check for a valid CF7 nonce before proceeding.
 		// This is a crucial line for security.
 		if ( ! isset( $posted_data['_wpcf7_unit_tag'] ) || ! wp_verify_nonce( $posted_data['_wpcf7_unit_tag'], 'wpcf7-form' ) ) {
-            $this->logger->log('Invalid nonce in CF7 submission.', 'error');
-			// return;
+			$this->logger->log( 'Invalid nonce in CF7 submission.', 'error' );
+			return;
 		}
 
 		$form_id    = absint( $contact_form->id() );
 		$entry_data = array();
 
-        // Get all form tags.
-        $form_tags = $contact_form->scan_form_tags();
+		// Get all form tags.
+		$form_tags = $contact_form->scan_form_tags();
 
-        $name_field_name = '';
-        $email_field_name = '';
+		$name_field_name  = '';
+		$email_field_name = '';
 
-        // Find the field names dynamically.
-        foreach ( $form_tags as $tag ) {
-            // Check for a name field. This is a common pattern for required text fields.
-            if ( $tag->basetype === 'text' && str_contains( $tag->name, 'name' ) ) {
-                $name_field_name = $tag->name;
-            }
-            // The email field is a specific type, which makes it easy to identify.
-            if ( $tag->basetype === 'email' ) {
-                $email_field_name = $tag->name;
-            }
-        }
+		// Find the field names dynamically.
+		foreach ( $form_tags as $tag ) {
+			if ( $tag->basetype === 'text' && str_contains( $tag->name, 'name' ) ) {
+				$name_field_name = $tag->name;
+			}
 
-        // Now, use the found field names to get the data.
-        $name = ! empty( $posted_data[ $name_field_name ] ) ? sanitize_text_field( $posted_data[ $name_field_name ] ) : '';
-        $email = ! empty( $posted_data[ $email_field_name ] ) ? sanitize_email( $posted_data[ $email_field_name ] ) : '';
+			if ( $tag->basetype === 'email' ) {
+				$email_field_name = $tag->name;
+			}
+		}
 
-        
+		// Now, use the found field names to get the data.
+		$name  = ! empty( $posted_data[ $name_field_name ] ) ? sanitize_text_field( $posted_data[ $name_field_name ] ) : '';
+		$email = ! empty( $posted_data[ $email_field_name ] ) ? sanitize_email( $posted_data[ $email_field_name ] ) : '';
+
 		// Sanitize and map data.
 		foreach ( $posted_data as $key => $value ) {
 			// Exclude system fields from entry data
@@ -194,7 +192,6 @@ class Submit_Entry {
 			}
 		}
 
-        error_log(print_r($entry_data, true));
 		// Insert into database
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$wpdb->insert(
@@ -210,8 +207,8 @@ class Submit_Entry {
 			array( '%d', '%s', '%s', '%s', '%s', '%s' )
 		);
 
-        // Send data to Google Sheets if enabled
-        $send_data = new Send_Data();
-        $send_data->process_single_entry( array( 'entry_id' => $wpdb->insert_id ) );
+		// Send data to Google Sheets if enabled
+		$send_data = new Send_Data();
+		$send_data->process_single_entry( array( 'entry_id' => $wpdb->insert_id ) );
 	}
 }
