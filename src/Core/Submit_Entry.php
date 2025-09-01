@@ -43,24 +43,6 @@ class Submit_Entry {
 	}
 
 	/**
-	 * Sends a completed WPForms entry to Google Sheets.
-	 *
-	 * @param array $fields Form fields and their values.
-	 * @param array $entry_data Complete entry data.
-	 * @param int   $entry_id ID of the entry saved in the database.
-	 * @param int   $form_id ID of the form.
-	 */
-	public function send_entry_to_google_sheets( $entry_id ) {
-		// Send data to Google Sheets if enabled
-		$has_access_token = Helper::has_access_token();
-
-		if ( $has_access_token ) {
-			$send_data = new Send_Data();
-			$send_data->process_single_entry( array( 'entry_id' => $entry_id ) );
-		}
-	}
-
-	/**
 	 * Handles WPForms entries by saving them to a relational database model.
 	 *
 	 * @param array $fields The fields submitted in the form.
@@ -72,7 +54,6 @@ class Submit_Entry {
 
 		// Table names must be defined or retrieved from a helper.
 		$submissions_table = Helper::get_table_name();
-		$data_table        = Helper::data_table();
 
 		$name              = '';
 		$email             = '';
@@ -99,32 +80,19 @@ class Submit_Entry {
 				'form_id'    => absint( $form_id ),
 				'name'       => sanitize_text_field( $name ),
 				'email'      => sanitize_email( $email ),
+                'entry' => maybe_serialize( $additional_fields ),
 				'status'     => 'unread',
 				'created_at' => current_time( 'mysql' ),
 			),
-			array( '%d', '%s', '%s', '%s', '%s' )
+			array( '%d', '%s', '%s', '%s', '%s', '%s' )
 		);
 
 		// Get the ID of the newly created submission.
 		$submission_id = $wpdb->insert_id;
 
-		// Step 2: Loop through remaining fields and insert each into the data table.
-		if ( $submission_id && ! empty( $additional_fields ) ) {
-			foreach ( $additional_fields as $field_key => $field_value ) {
-				$wpdb->insert(
-					$data_table,
-					array(
-						'submission_id' => $submission_id,
-						'field_key'     => $field_key,
-						'field_value'   => sanitize_text_field( $field_value ),
-					),
-					array( '%d', '%s', '%s' )
-				);
-			}
-		}
-
 		// Send data to Google Sheets if enabled.
-		$this->send_entry_to_google_sheets( $submission_id );
+        $gsheet = new Send_Data();
+        $gsheet->process_single_entry( [ 'entry_id' => $submission_id ] );
 	}
 
 	/**
@@ -204,46 +172,24 @@ class Submit_Entry {
 		$this->upload_file( $uploaded_files, $entry_data );
 
 		$wpdb->insert(
-			Helper::get_table_name(), // Assumes you have a method `table()` that returns the submissions table name.
+			$table,
 			array(
 				'form_id'    => $form_id,
+                'entry' => maybe_serialize( $entry_data ),
 				'name'       => $name,
 				'email'      => $email,
 				'status'     => 'unread',
 				'created_at' => current_time( 'mysql' ),
 			),
-			array( '%d', '%s', '%s', '%s', '%s' )
+			array( '%d', '%s', '%s', '%s', '%s', '%s' )
 		);
 
-		// Get the ID of the new submission.
-		$submission_id = $wpdb->insert_id;
-
-		// Now loop through all form data and save it to the data table.
-		$data_table = Helper::data_table();
-
-		foreach ( $posted_data as $key => $value ) {
-			if ( ! in_array( $key, $excluded_keys ) ) {
-				// Sanitize the value for database insertion.
-				$sanitized_value = is_array( $value ) ? wp_json_encode( array_map( 'sanitize_text_field', $value ) ) : sanitize_text_field( $value );
-
-				// Insert each field as a new row.
-				$wpdb->insert(
-					$data_table,
-					array(
-						'submission_id' => $submission_id,
-						'field_key'     => $key,
-						'field_value'   => $sanitized_value,
-					),
-					array( '%d', '%s', '%s' )
-				);
-			}
-		}
-
 		// After a successful insert, trigger the Google Sheets sync.
-		// $this->send_entry_to_google_sheets( $wpdb->insert_id );
+        $gsheet = new Send_Data();
+        $gsheet->process_single_entry( [ 'entry_id' => $wpdb->insert_id ] );
 	}
 
-	private function upload_file( $uploaded_files, &$entry_data ) {
+	private function upload_file( $uploaded_files, &$entry_data = array() ) {
 		if ( ! empty( $uploaded_files ) ) {
 			foreach ( $uploaded_files as $field_name => $file_paths ) {
 				// Ensure field_name exists in entry data for consistency.

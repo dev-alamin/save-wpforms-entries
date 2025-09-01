@@ -28,17 +28,22 @@ $custom_columns = Helper::get_option( 'cusom_form_columns_settings', array() );
 
 <div class="wrap fem-admin-page min-h-screen max-w-7xl !m-auto bg-gray-50 px-8 py-10 text-[15px] font-inter text-gray-800 space-y-10 !m-auto"
 	x-data="settingsForm()">
+	<!-- Header -->
 	<div class="mb-8 bg-slate-700 text-white px-4 py-2 rounded-lg">
-		<h1 class="!text-4xl !font-extrabold !text-indigo-100 !tracking-tight mb-2 flex items-center gap-3">
-			<span><?php esc_html_e( '📋 Forms Entries Manager Settings', 'forms-entries-manager' ); ?></span>
-		</h1>
-		<p class="text-gray-200 !text-[15px] leading-relaxed">
-			<?php
-			esc_html_e( 'Browse and manage form entries submitted by users. Click on a form to view its submissions, mark entries as read/unread, or delete them as needed.', 'forms-entries-manager' );
-			?>
-		</p>
+		<div class="flex items-center gap-4">
+                <img src="<?php echo esc_url( FEM_ASSETS_URL . 'images/logo.jpg' ); ?>" alt="<?php esc_attr_e( 'Forms Entries Manager', 'forms-entries-manager' ); ?>" class="w-16 h-16 object-cover rounded-sm" />
+                <div>
+                    <h1 class="!text-3xl !font-extrabold !text-indigo-100 !tracking-tight mb-2 flex items-center gap-3">
+                    <?php esc_html_e( 'Forms Entries Manager Settings', 'forms-entries-manager' ); ?>
+                </h1>
+                <p class="text-gray-200 !text-[15px] leading-relaxed !m-0 !mt-2">
+                    <?php
+                    esc_html_e( 'Browse and manage form entries submitted by users. Click on a form to view its submissions, mark entries as read/unread, or delete them as needed.', 'forms-entries-manager' );
+                    ?>
+                </p>
+                </div>
+        </div>
 	</div>
-
 	<?php if ( Helper::is_user_revoked() ) : ?>
 	<div class="text-center items-center justify-between gap-4 mb-6 border border-yellow-400 bg-yellow-50 text-yellow-800 rounded-lg p-4 shadow-sm">
 		<div class="flex-1">
