@@ -209,5 +209,9 @@ class Submit_Entry {
 			),
 			array( '%d', '%s', '%s', '%s', '%s', '%s' )
 		);
+
+        // Send data to Google Sheets if enabled
+        $send_data = new Send_Data();
+        $send_data->process_single_entry( array( 'entry_id' => $wpdb->insert_id ) );
 	}
 }
