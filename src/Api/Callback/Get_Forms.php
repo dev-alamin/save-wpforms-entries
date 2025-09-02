@@ -39,6 +39,7 @@ class Get_Forms {
 			global $wpdb;
 			$table = Helper::get_table_name();
 
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$results = $wpdb->get_results(
 				$wpdb->prepare(
 					"SELECT 

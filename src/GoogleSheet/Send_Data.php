@@ -334,6 +334,7 @@ class Send_Data {
 		$table = Helper::get_table_name();
 
 		// Fetch a sample entry to infer dynamic headers
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$row = $wpdb->get_row(
 			$wpdb->prepare( "SELECT entry, note, status FROM {$table} WHERE form_id = %d LIMIT 1", $form_id ),
 			ARRAY_A
@@ -757,6 +758,8 @@ class Send_Data {
 
 			// To handle the `entry` column (the serialized data), we need to fetch the existing data
 			// and merge the changes.
+
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$existing_entry = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $entry_id ) );
 			if ( $existing_entry ) {
 				$entry_data = maybe_unserialize( $existing_entry->entry );
@@ -772,6 +775,7 @@ class Send_Data {
 			}
 
 			// Now perform the database update.
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->update(
 				$table,
 				$update_data,
