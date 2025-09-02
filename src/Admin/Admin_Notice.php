@@ -5,7 +5,6 @@ namespace App\AdvancedEntryManager\Admin;
 defined( 'ABSPATH' ) || exit;
 
 use App\AdvancedEntryManager\Utility\Helper;
-use FluentForm\App\Http\Policies\PublicPolicy;
 
 defined( 'ABSPATH' ) || exit;
 

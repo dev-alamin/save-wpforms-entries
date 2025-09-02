@@ -167,7 +167,6 @@ function formTable(form) {
           }
         }
       } catch (error) {
-        console.error("Bulk action failed:", error);
         // FEM_I18N: Use translatable string
         this.$dispatch("toast", {
           type: "error",
@@ -260,7 +259,10 @@ function formTable(form) {
         this.totalEntries = Number(apiResponse.total) || this.entries.length;
         this.totalPages = Math.ceil(this.totalEntries / this.pageSize);
       } catch (error) {
-        console.error(femStrings.fetchEntriesError, error);
+        this.$dispatch("toast", {
+            type: "error",
+            message: femStrings.fetchEntriesError,
+         });        
       } finally {
         this.loading = false;
       }
@@ -379,7 +381,10 @@ function formTable(form) {
                 }, 2000);
             })
             .catch((err) => {
-                console.error("Copy failed:", err);
+                this.$dispatch("toast", {
+                    type: "error",
+                    message: femStrings.copyFailed,
+                });
             });
     },
 
@@ -417,7 +422,10 @@ function formTable(form) {
 
         const data = await res.json();
       } catch (error) {
-        console.error("Failed to update entry:", error);
+            this.$dispatch("toast", {
+                type: "error",
+                message: data.message,
+          });
       }
     },
 
@@ -470,7 +478,6 @@ function formTable(form) {
           type: "error",
           message: femStrings.deleteRequestFailed,
         });
-        console.error("Delete request failed:", error);
       }
     },
 
@@ -508,6 +515,10 @@ function formTable(form) {
       if (index === -1) {
         // FEM_I18N: Use translatable string
         console.error(femStrings.entryNotFound);
+            this.$dispatch("toast", {
+                type: "error",
+                message: data.message,
+          });
         return;
       }
 
@@ -555,7 +566,10 @@ function formTable(form) {
         this.entries[index] = { ...this.selectedEntry };
       } catch (err) {
         // FEM_I18N: Use translatable string
-        console.error(femStrings.saveFailed, err);
+            this.$dispatch("toast", {
+                type: "error",
+                message: femStrings.saveFailed,
+          });
       }
     },
     validateAndSaveNote() {
@@ -563,7 +577,10 @@ function formTable(form) {
 
       if (note.length > 1000) {
         // FEM_I18N: Use translatable string
-        alert(femStrings.noteTooLong);
+            this.$dispatch("toast", {
+                type: "error",
+                message: femStrings.noteTooLong,
+          });
         return;
       }
 
@@ -616,8 +633,10 @@ function formTable(form) {
         this.updateEntry(index, { synced_to_gsheet: entry.synced });
 
     } catch (error) {
-        console.error("Fetch Error:", error);
-        alert(femStrings.networkError);
+        this.$dispatch("toast", {
+            type: "error",
+            message: data.message,
+        });
     }
     },
 
@@ -848,7 +867,10 @@ function entriesApp() {
         this.setError = true;
         this.loading = false;
         // FEM_I18N: Use translatable string
-        console.error(femStrings.fetchFormsError, error);
+        this.$dispatch("toast", {
+            type: "error",
+            message: femStrings.fetchEntriesError,
+        });
       }
     },
 
@@ -887,7 +909,10 @@ function entriesApp() {
         this.totalEntries = data.total || 0;
       } catch (error) {
         // FEM_I18N: Use translatable string
-        console.error(femStrings.fetchEntriesError, error);
+        this.$dispatch("toast", {
+            type: "error",
+            message: data.message,
+        });
       }
     },
 
@@ -976,7 +1001,6 @@ function settingsForm() {
           );
         }
       } catch (err) {
-        console.error(err);
         // FEM_I18N: Use translatable string
         this.message = femStrings.unexpectedError;
       }
@@ -1011,7 +1035,6 @@ function exportSettings() {
     formTitle: "",
 
     init() {
-      console.log("Alpine exportSettings initialized");
       this.fetchForms();
 
       // Check for a saved job on page load
@@ -1022,7 +1045,6 @@ function exportSettings() {
         this.startPolling();
         // CHANGED: Automatically show the modal on reload for better UX.
         // this.showProgressModal = true;
-        console.log(`Resuming export job: ${this.exportJobId}`);
       }
     },
 
@@ -1035,7 +1057,10 @@ function exportSettings() {
         const data = await res.json();
         this.forms = data;
       } catch (e) {
-        console.error("Error fetching forms:", e);
+        this.$dispatch("toast", {
+            type: "error",
+            message: data.message,
+        });
       }
     },
 
@@ -1059,15 +1084,17 @@ function exportSettings() {
         this.fields = data.fields;
         this.excludedFields = [];
       } catch (e) {
-        console.error("Error fetching form fields:", e);
-        this.errorMessage = "Failed to fetch form fields. Please try again.";
+        this.$dispatch("toast", {
+            type: "error",
+            message: res.message,
+        });
       }
     },
 
     // Initiates the async export job
     async exportAllBatchesAsync() {
       if (!this.selectedFormId) {
-        this.errorMessage = "Please select a form before exporting.";
+        this.errorMessage = femStrings.selectFormExport;
         return;
       }
 
@@ -1121,7 +1148,7 @@ function exportSettings() {
             this.isExportComplete = true;
             return; // Done: no polling needed
           } else {
-            throw new Error("Invalid CSV content.");
+            throw new Error(femStrings.invalidCSVContent);
           }
         }
 
@@ -1132,10 +1159,9 @@ function exportSettings() {
           localStorage.setItem("fem_export_job_id", this.exportJobId);
           this.startPolling();
         } else {
-          throw new Error(result.message || "Failed to start export.");
+          throw new Error(result.message);
         }
       } catch (e) {
-        console.error("Export start error:", e);
         this.errorMessage = e.message;
         this.resetExportState();
       }
@@ -1194,7 +1220,6 @@ function exportSettings() {
             throw new Error(result.message || "Export job failed.");
           }
         } catch (e) {
-          console.error("Progress polling failed:", e);
           this.errorMessage = e.message;
           this.resetExportState(); // Full reset is correct for a failure
           this.showProgressModal = false;
@@ -1205,8 +1230,7 @@ function exportSettings() {
     // Handles the file download
     handleDownload(fileUrl) {
       if (!this.exportJobId) {
-        console.error("No export job ID found for download.");
-        this.errorMessage = "Cannot download file: Export Job ID is missing.";
+        this.errorMessage = femStrings.cannotDownloadCSV;
         return;
       }
       // This implementation is fine. It uses a dedicated endpoint which is good practice.
@@ -1273,7 +1297,6 @@ function exportSettings() {
           throw new Error(result.message || "Failed to delete the file.");
         }
       } catch (e) {
-        console.error("Delete file error:", e);
         this.errorMessage = e.message;
       }
     },
@@ -1498,7 +1521,6 @@ function customColumnsForm() {
         femSettings.initialColumns
       ) {
         this.selectedColumns = femSettings.initialColumns;
-        console.log(this.selectedColumns);
       }
     },
 
@@ -1527,7 +1549,7 @@ function customColumnsForm() {
         );
         await Promise.all(fieldFetches);
       } catch (error) {
-        console.error("Error fetching forms or fields:", error);
+        console.error(error);
       } finally {
         this.loadingSettings.forms = false;
       }
@@ -1549,7 +1571,6 @@ function customColumnsForm() {
         const data = await response.json();
         this.allFields[form_id] = data.entry_schema;
       } catch (error) {
-        console.error(`Error fetching fields for form ${form_id}:`, error);
         this.allFields[form_id] = [];
       } finally {
         // Re-evaluate if all fields have been fetched
@@ -1577,11 +1598,11 @@ document.addEventListener('alpine:init', () => {
                 if (data.success) {
                     this.show = false; // This will now work correctly
                 } else {
-                    console.error('Failed to dismiss notice:', data.data);
+                    // console.error('Failed to dismiss notice:', data.data);
                 }
             })
             .catch(error => {
-                console.error('Network error:', error);
+                // console.error('Network error:', error);
             });
         }
     }));
