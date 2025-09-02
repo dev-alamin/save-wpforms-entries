@@ -9,6 +9,7 @@ use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
 use App\AdvancedEntryManager\Utility\Helper;
+use Error;
 
 /**
  * Class Get_Forms
@@ -31,20 +32,13 @@ class Get_Forms {
 	 *                          - entry_count (int)
 	 */
 	public function get_forms() {
-		// Initialize the cache handler
-		$fem_cache = new Handle_Cache();
-		$cache_key = 'forms_summary_counts';
+		$cache_key = 'forms_cache';
+		$response  = Helper::get_option( $cache_key );
 
-		// Try to get data from the cache first
-		$response = $fem_cache->get_object_cache( $cache_key );
-
-		// If cache is empty, run the database query and populate the cache
 		if ( false === $response ) {
 			global $wpdb;
-			$table = Helper::get_table_name(); // Safe table
+			$table = Helper::get_table_name();
 
-			// Query distinct form IDs and their entry counts
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$results = $wpdb->get_results(
 				$wpdb->prepare(
 					"SELECT 
@@ -62,7 +56,6 @@ class Get_Forms {
 			foreach ( $results as $row ) {
 				$form_id = (int) $row->form_id;
 
-				// Populate the forms array
 				$forms[] = array(
 					'form_id'       => $form_id,
 					'form_title'    => get_the_title( $form_id ),
@@ -71,11 +64,15 @@ class Get_Forms {
 				);
 			}
 
-			// Filter the list of forms returned by get_forms()
 			$response = apply_filters( 'fem_get_forms', $forms );
 
-			// Store the final processed data in the cache for 1 hour
-			$fem_cache->set_object_cache( $cache_key, $response, HOUR_IN_SECONDS );
+			/**
+			 * Cache the forms list to avoid repeated DB queries.
+			 * As the content is small so we put it in options table.
+			 *
+			 * And invalidate this cache whenever an entry is added or deleted.
+			 */
+			Helper::update_option( $cache_key, $response );
 		}
 
 		return rest_ensure_response( $response );

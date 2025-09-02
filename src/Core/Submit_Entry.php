@@ -88,6 +88,9 @@ class Submit_Entry {
 		// Send data to Google Sheets if enabled
 		$send_data = new Send_Data();
 		$send_data->process_single_entry( array( 'entry_id' => $wpdb->insert_id ) );
+
+		// Invalidate cached form fields and forms list
+		Helper::delete_option( 'forms_cache' );
 	}
 
 	/**
@@ -210,5 +213,8 @@ class Submit_Entry {
 		// Send data to Google Sheets if enabled
 		$send_data = new Send_Data();
 		$send_data->process_single_entry( array( 'entry_id' => $wpdb->insert_id ) );
+
+		// Invalidate cached form fields and forms list
+		Helper::delete_option( 'forms_cache' );
 	}
 }
