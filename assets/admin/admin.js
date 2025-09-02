@@ -1558,3 +1558,31 @@ function customColumnsForm() {
     },
   };
 }
+
+document.addEventListener('alpine:init', () => {
+    Alpine.data('reviewNotice', () => ({
+        show: true,
+        dismissNotice(type) {
+            const formData = new FormData();
+            formData.append('action', `fem_dismiss_review_request_${type}`);
+            formData.append('_wpnonce', femReviewData.nonce); // Use the localized nonce
+
+            fetch(femReviewData.ajax_url, {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    this.show = false; // This will now work correctly
+                } else {
+                    console.error('Failed to dismiss notice:', data.data);
+                }
+            })
+            .catch(error => {
+                console.error('Network error:', error);
+            });
+        }
+    }));
+});

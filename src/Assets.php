@@ -138,6 +138,16 @@ class Assets {
 			)
 		);
 
+		// Pass dynamic data from PHP to your script
+		wp_localize_script(
+			'fem-admin-js',
+			'femReviewData',
+			array(
+				'ajax_url' => admin_url( 'admin-ajax.php' ),
+				'nonce'    => wp_create_nonce( 'fem-dismiss-review-notice-nonce' ),
+			)
+		);
+
 		wp_localize_script(
 			'fem-admin-js',
 			'femMigrationNotice',

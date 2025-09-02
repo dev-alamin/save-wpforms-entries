@@ -12,6 +12,8 @@
 
 namespace App\AdvancedEntryManager\Core;
 
+use App\AdvancedEntryManager\Utility\Helper;
+
 defined( 'ABSPATH' ) || exit;
 
 class DB_Schema {
@@ -69,45 +71,8 @@ class DB_Schema {
         ) $charset_collate;";
 
 		dbDelta( $sql );
-	}
 
-	/**
-	 * Get the name of the custom data table.
-	 *
-	 * @global \wpdb $wpdb
-	 * @return string
-	 */
-	public static function data_table() {
-		global $wpdb;
-		return $wpdb->prefix . 'forms_entries_manager_data';
-	}
-
-	/**
-	 * Create the custom database table for form entry data.
-	 *
-	 * @global \wpdb $wpdb
-	 * @return void
-	 */
-	public static function create_data_table() {
-		global $wpdb;
-
-		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-
-		$table           = self::data_table();
-		$main_table      = self::table();
-		$charset_collate = $wpdb->get_charset_collate();
-
-		$sql = "CREATE TABLE $table (
-            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-            submission_id BIGINT(20) UNSIGNED NOT NULL,
-            field_key VARCHAR(255) NOT NULL,
-            field_value LONGTEXT,
-            PRIMARY KEY  (id),
-            KEY idx_submission_id (submission_id),
-            KEY idx_field_key (field_key),
-            FOREIGN KEY (submission_id) REFERENCES $main_table(id) ON DELETE CASCADE
-        ) $charset_collate;";
-
-		dbDelta( $sql );
+		// Save the database version for future reference.
+		Helper::update_option( 'db_version', FEM_DB_VERSION );
 	}
 }

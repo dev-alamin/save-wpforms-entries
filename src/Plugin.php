@@ -66,17 +66,25 @@ class Plugin {
 			FEM_PLUGIN_BASE_FILE,
 			function () {
 				DB_Schema::create_table();
-				DB_Schema::data_table();
 
 				( new Capabilities() )->add_cap();
 
-				// if ( ! as_has_scheduled_action( 'fem_daily_sync' ) ) {
-				// as_schedule_recurring_action( strtotime( 'tomorrow 2am' ), DAY_IN_SECONDS, 'fem_daily_sync' );
-				// }
+				if ( ! as_has_scheduled_action( 'fem_daily_sync' ) ) {
+					as_schedule_recurring_action( strtotime( 'tomorrow 2am' ), DAY_IN_SECONDS, 'fem_daily_sync' );
+				}
 
-				// if ( ! as_next_scheduled_action( 'fem_every_five_minute_sync' ) ) {
-				// as_schedule_recurring_action( time(), MINUTE_IN_SECONDS * 1, 'fem_every_five_minute_sync' );
-				// }
+				if ( ! as_next_scheduled_action( 'fem_every_five_minute_sync' ) ) {
+					as_schedule_recurring_action( time(), MINUTE_IN_SECONDS * 1, 'fem_every_five_minute_sync' );
+				}
+
+				// Check if the option is already set to prevent re-recording the date
+				if ( ! Helper::get_option( 'plugin_installation_date' ) ) {
+					// Record the current time in Unix timestamp format
+					$installation_time = time();
+
+					// Use update_option to store the installation date
+					Helper::update_option( 'plugin_installation_date', $installation_time );
+				}
 			}
 		);
 

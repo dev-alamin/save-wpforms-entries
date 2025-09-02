@@ -5,6 +5,7 @@ namespace App\AdvancedEntryManager\Admin;
 defined( 'ABSPATH' ) || exit;
 
 use App\AdvancedEntryManager\Utility\Helper;
+use FluentForm\App\Http\Policies\PublicPolicy;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -24,15 +25,130 @@ class Admin_Notice {
 
 		// Display a specific REST API notice on the Entries UI header.
 		add_action( 'fem_before_entries_ui_header', array( $this, 'fem_rest_notice' ) );
+		add_action( 'fem_before_entries_ui_header', array( $this, 'cron_issue_notice' ) );
+		// Ask for reviews on the Entries UI header.
+		add_action( 'fem_before_entries_ui_header', array( $this, 'review_request_notice' ) );
+
+		add_action( 'wp_ajax_fem_dismiss_review_request_later', array( $this, 'dismiss_review_request_later' ) );
+		add_action( 'wp_ajax_fem_dismiss_review_request_forever', array( $this, 'dismiss_review_request_forever' ) );
 
 		// General admin notices for REST API and Cron issues.
 		add_action( 'admin_notices', array( $this, 'rest_disabled_notice' ) );
-		add_action( 'admin_notices', array( $this, 'cron_issue_notice' ) );
+		// add_action( 'admin_notices', array( $this, 'cron_issue_notice' ) );
 
 		// Add custom action links to the plugin row in the Plugins screen.
 		add_filter( 'plugin_action_links_' . FEM_PLUGIN_BASE, array( $this, 'plugin_action_links' ) );
 	}
 
+	/**
+	 * Display Review Request Notice
+	 *
+	 * This notice is shown on the Entries Manager page itself.
+	 */
+	public function review_request_notice() {
+		$installation_date = Helper::get_option( 'plugin_installation_date' );
+		$dismissed_at      = Helper::get_option( 'review_request_dismissed_at' );
+		$dismissed_forever = Helper::get_option( 'review_request_dismissed_forever' );
+
+		// Restore the return statements to prevent the notice from showing when it shouldn't
+		if ( ! $installation_date || ( time() - $installation_date ) < WEEK_IN_SECONDS * 2 ) {
+			return;
+		}
+
+		if ( $dismissed_forever ) {
+			return;
+		}
+
+		if ( $dismissed_at && ( time() - $dismissed_at ) < DAY_IN_SECONDS * 30 ) {
+			return;
+		}
+
+		?>
+		<div
+			x-data="reviewNotice"
+			x-show="show"
+			x-transition
+			class="mb-4 rounded-lg border border-yellow-400 bg-yellow-50 text-yellow-800 p-4 relative shadow-sm"
+			role="alert">
+			<div class="flex items-start gap-3 w-full">
+				<svg class="w-5 h-5 shrink-0 text-yellow-500 mt-0.5" fill="currentColor" viewBox="0 0 24 24">
+					<path d="M11 17h2v-6h-2v6zm0-8h2V7h-2v2zm1-7C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />
+				</svg>
+				<div class="text-sm leading-5">
+					<?php
+					echo wp_kses_post(
+						sprintf(
+							/* translators: %s: URL to the review page */
+							__( 'Enjoying Advanced Entries Manager? We would appreciate it if you could <a href="%s" class="text-yellow-600 hover:underline font-medium" target="_blank" rel="noopener noreferrer">leave us a 5-star review</a> on WordPress.org! Your support helps us continue improving the plugin.', 'forms-entries-manager' ),
+							esc_url( 'https://wordpress.org/support/plugin/forms-entries-manager/reviews/#new-post' )
+						)
+					);
+					?>
+				</div>
+				
+				<div class="flex flex-col md:flex-row items-center gap-3">
+					<button
+						@click="dismissNotice('later')"
+						class="text-yellow-600 hover:underline font-medium"
+						aria-label="<?php esc_attr_e( 'Maybe later', 'forms-entries-manager' ); ?>">
+						<?php esc_html_e( 'Maybe later', 'forms-entries-manager' ); ?>
+					</button>
+					
+					<button
+						@click="dismissNotice('forever')"
+						class="text-yellow-600 hover:underline font-medium"
+						aria-label="<?php esc_attr_e( 'Never Ask', 'forms-entries-manager' ); ?>">
+						<?php esc_html_e( 'Never Ask', 'forms-entries-manager' ); ?>
+					</button>
+				</div>
+			</div>
+			<button
+				@click="show = false;"
+				class="absolute top-4 right-4 text-yellow-500 hover:text-yellow-700 transition"
+				aria-label="<?php esc_attr_e( 'Dismiss review request', 'forms-entries-manager' ); ?>">
+				<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+					<path d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59 7.11 5.7a1 1 0 0 0-1.41 1.41L10.59 12l-4.9 4.89a1 1 0 1 0 1.41 1.41L12 13.41l4.89 4.9a1 1 0 0 0 1.41-1.41L13.41 12l4.9-4.89a1 1 0 0 0-.01-1.4z" />
+				</svg>
+			</button>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Custom Ask Review Dismiss Callback
+	 *
+	 * @return void
+	 */
+	public function dismiss_review_request_later() {
+		check_ajax_referer( 'fem-dismiss-review-notice-nonce' );
+
+		Helper::update_option( 'review_request_dismissed_at', time() );
+
+		wp_send_json_success();
+
+		wp_die( 0 );
+	}
+
+	/**
+	 * Custom Ask Review Remove Forever
+	 *
+	 * @return void
+	 */
+	public function dismiss_review_request_forever() {
+		check_ajax_referer( 'fem-dismiss-review-notice-nonce' );
+
+		Helper::update_option( 'review_request_dismissed_forever', true );
+
+		wp_send_json_success();
+
+		wp_die( 0 );
+	}
+
+	/**
+	 * Plugin's Powered By Notice At the Bottom of Plugin Page
+	 *
+	 * @return void
+	 */
 	public function powered_by_notice() {
 		?>
 		<!-- Powered by Message  -->
@@ -174,11 +290,8 @@ class Admin_Notice {
 			x-data="{ show: true }"
 			x-show="show"
 			x-transition
-			class="notice notice-warning is-dismissible fem-notice"
+			class="mb-4 rounded-lg border border-red-400 bg-red-50 text-red-800 px-4 relative shadow-sm flex items-center gap-3"
 			role="alert">
-			<p class="font-medium text-lg leading-6 mb-2">
-				<strong><?php esc_html_e( 'Action Required: Improve Cron Reliability', 'forms-entries-manager' ); ?></strong>
-			</p>
 			<p>
 				<?php
 				echo wp_kses_post(
@@ -193,6 +306,18 @@ class Admin_Notice {
 				);
 				?>
 			</p>
+
+			<button
+				@click="show = false;"
+				class="ml-auto text-yellow-500 hover:text-yellow-700 transition"
+				aria-label="<?php esc_attr_e( 'Dismiss review request', 'forms-entries-manager' ); ?>">
+				<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+					<path
+						d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59 7.11 5.7a1 1 0 0 0-1.41
+				1.41L10.59 12l-4.9 4.89a1 1 0 1 0 1.41 1.41L12 13.41l4.89
+				4.9a1 1 0 0 0 1.41-1.41L13.41 12l4.9-4.89a1 1 0 0 0-.01-1.4z" />
+				</svg>
+			</button>
 		</div>
 		<?php
 	}

@@ -86,6 +86,16 @@ if( ! defined( 'FEM_TABLE_NAME' ) ) {
 }
 
 /**
+ * Keep track of the database schema version.
+ * 
+ * This is used to manage database migrations and updates.
+ * It should be incremented whenever there are changes to the database schema.
+ */
+if( ! defined( 'FEM_DB_VERSION' ) ) {
+    define( 'FEM_DB_VERSION', '1.0.0' );
+}
+
+/**
  * Define 3rd Party Proxy Server URL
  * 
  * This is where the proxy server of google authorization will be handled
