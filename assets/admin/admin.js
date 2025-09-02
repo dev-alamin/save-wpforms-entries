@@ -356,21 +356,31 @@ function formTable(form) {
     copied: false,
 
     copyEntryToClipboard() {
-      const lines = Object.entries(this.selectedEntry.entry || {})
-        .map(([key, value]) => `${key}: ${value || "-"}`)
-        .join("\n");
+        const entry = this.selectedEntry.entry || {};
+        const name = this.selectedEntry.name || "-";
+        const email = this.selectedEntry.email || "-";
 
-      navigator.clipboard
-        .writeText(lines)
-        .then(() => {
-          this.copied = true;
-          setTimeout(() => {
-            this.copied = false;
-          }, 2000);
-        })
-        .catch((err) => {
-          console.error("Copy failed:", err);
-        });
+        // Start with name and email on top
+        const topLines = [`Name: ${name}`, `Email: ${email}`];
+
+        // Add the rest of the entry, excluding name/email if they exist in entry
+        const otherLines = Object.entries(entry)
+            .filter(([key]) => key.toLowerCase() !== "name" && key.toLowerCase() !== "email")
+            .map(([key, value]) => `${key}: ${value || "-"}`);
+
+        const lines = [...topLines, ...otherLines].join("\n");
+
+        navigator.clipboard
+            .writeText(lines)
+            .then(() => {
+                this.copied = true;
+                setTimeout(() => {
+                    this.copied = false;
+                }, 2000);
+            })
+            .catch((err) => {
+                console.error("Copy failed:", err);
+            });
     },
 
     async updateEntry(index, changes = {}) {
@@ -623,18 +633,39 @@ function formTable(form) {
         printed_at: entry.printed_at,
       });
 
-      const entryData = entry.entry || {};
-      const formattedFields = Object.entries(entryData)
-        .map(([key, value]) => {
-          return `
-                <div style="margin-bottom: 16px;">
-                    <div style="font-weight: 600; font-size: 15px; color: #2d3748;">${key}</div>
-                    <div style="margin-top: 4px; font-size: 14px; color: #1a202c;">${value}</div>
-                    <hr style="border-top: 1px dashed #ddd; margin-top: 10px;" />
-                </div>
-            `;
-        })
+    const entryData = entry.entry || {};
+    const name = entry.name || "-";
+    const email = entry.email || "-";
+
+    // Start with name and email on top
+    const topFields = [
+        {
+            key: "Name",
+            value: name
+        },
+        {
+            key: "Email",
+            value: email
+        }
+    ];
+
+    // Add the rest of the entry, excluding name/email if they exist in entryData
+    const otherFields = Object.entries(entryData)
+        .filter(([key]) => key.toLowerCase() !== "name" && key.toLowerCase() !== "email")
+        .map(([key, value]) => ({ key, value }));
+
+    const allFields = [...topFields, ...otherFields];
+
+    const formattedFields = allFields
+        .map(({ key, value }) => `
+            <div style="margin-bottom: 16px;">
+                <div style="font-weight: 600; font-size: 15px; color: #2d3748;">${key}</div>
+                <div style="margin-top: 4px; font-size: 14px; color: #1a202c;">${value || "-"}</div>
+                <hr style="border-top: 1px dashed #ddd; margin-top: 10px;" />
+            </div>
+        `)
         .join("");
+
 
       const printWindow = window.open("", "", "width=1000,height=700");
       printWindow.document.write(`
