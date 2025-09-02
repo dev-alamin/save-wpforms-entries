@@ -59,8 +59,6 @@ class Plugin {
 	 * Use the run() method to initialize the plugin.
 	 */
 	private function __construct() {
-		// Load early to ensure all components are ready
-		add_action( 'plugins_loaded', array( $this, 'early_init' ) );
 
 		$this->load_core_classes();
 
@@ -105,17 +103,6 @@ class Plugin {
 		}
 
 		return self::$instance;
-	}
-
-	/**
-	 * Load text domain for translations and create the database table.
-	 *
-	 * This method is called early in the plugin lifecycle to ensure
-	 * that the text domain is loaded and the database table is created before
-	 * any other operations that depend on these features.
-	 */
-	public function early_init() {
-		load_plugin_textdomain( 'forms-entries-manager', false, dirname( FEM_PLUGIN_BASE ) . '/languages/' );
 	}
 
 	/**

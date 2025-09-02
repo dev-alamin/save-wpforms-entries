@@ -49,7 +49,7 @@ class Admin_Notice {
 				<path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
 			</svg>
 			<span>
-				<?php esc_html_e( 'Powered by', 'forms-entries-manager' ); ?> <a href="https://entriesmanager.com/" target="_blank" rel="noopener noreferrer" class="font-semibold text-indigo-600 hover:text-indigo-700 transition"><?php echo esc_html( 'Advanced Entries Manager' ); ?></a>
+				<?php esc_html_e( 'Powered by', 'forms-entries-manager' ); ?> <a href="https://entriesmanager.com?utm_source=wpdashboard" target="_blank" rel="noopener noreferrer" class="font-semibold text-indigo-600 hover:text-indigo-700 transition"><?php echo esc_html( 'Forms Entries Manager' ); ?></a>
 			</span>
 		</div>
 		<?php
