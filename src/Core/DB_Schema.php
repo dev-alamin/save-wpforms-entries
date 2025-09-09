@@ -9,7 +9,6 @@
  *
  * @package fem
  */
-
 namespace App\AdvancedEntryManager\Core;
 
 use App\AdvancedEntryManager\Utility\Helper;
@@ -18,34 +17,42 @@ defined( 'ABSPATH' ) || exit;
 
 class DB_Schema {
 
-	/**
-	 * Get the name of the custom entries table with the WordPress table prefix.
-	 *
-	 * @global \wpdb $wpdb WordPress database abstraction object.
-	 * @return string The full table name for storing WPForms entries.
-	 */
-	public static function table() {
-		global $wpdb;
-		return $wpdb->prefix . 'forms_entries_manager';
-	}
+    /**
+     * Get the name of the main submissions table.
+     *
+     * @return string
+     */
+    public static function submissions_table() {
+        global $wpdb;
+        return $wpdb->prefix . 'forms_entries_manager_submissions';
+    }
+    
+    /**
+     * Get the name of the entries key/value table.
+     *
+     * @return string
+     */
+    public static function entries_table() {
+        global $wpdb;
+        return $wpdb->prefix . 'forms_entries_manager_data';
+    }
 
-	/**
-	 * Create the custom database table for storing WPForms entries if it does not exist.
-	 *
-	 * Uses WordPress dbDelta to safely create or update the table structure.
-	 *
-	 * @global \wpdb $wpdb WordPress database abstraction object.
-	 * @return void
-	 */
-	public static function create_table() {
-		global $wpdb;
+    /**
+     * Create the custom database tables.
+     *
+     * @return void
+     */
+    public static function create_tables() {
+        global $wpdb;
 
-		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
-		$table           = self::table(); // This will be your 'submissions' table
-		$charset_collate = $wpdb->get_charset_collate();
+        $submissions_table = self::submissions_table();
+        $entries_table     = self::entries_table();
+        $charset_collate   = $wpdb->get_charset_collate();
 
-		$sql = "CREATE TABLE $table (
+        // SQL for the submissions table
+        $sql_submissions = "CREATE TABLE $submissions_table (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             form_id BIGINT(20) UNSIGNED NOT NULL,
             name VARCHAR(255) DEFAULT NULL,
@@ -70,9 +77,23 @@ class DB_Schema {
             KEY idx_formid_id (form_id, id)
         ) $charset_collate;";
 
-		dbDelta( $sql );
+        // SQL for the new entries key/value table
+        $sql_entries = "CREATE TABLE $entries_table (
+            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            submission_id BIGINT(20) UNSIGNED NOT NULL,
+            field_key VARCHAR(255) NOT NULL,
+            field_value LONGTEXT DEFAULT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY  (id),
+            KEY idx_submission_id (submission_id),
+            KEY idx_field_key (field_key),
+            FOREIGN KEY (submission_id) REFERENCES $submissions_table(id) ON DELETE CASCADE
+        ) $charset_collate;";
 
-		// Save the database version for future reference.
-		Helper::update_option( 'db_version', FEM_DB_VERSION );
-	}
+        dbDelta( $sql_submissions );
+        dbDelta( $sql_entries );
+
+        // Save the database version for future reference.
+        Helper::update_option( 'db_version', FEM_DB_VERSION );
+    }
 }

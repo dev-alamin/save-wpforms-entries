@@ -297,9 +297,11 @@ class Helper {
 		$access_token = self::get_option( 'google_access_token' );
 		$expires_at   = (int) self::get_option( 'google_token_expires', 0 );
 
+        self::save_user_profile( self::get_option( 'google_access_token' ) );
+        
 		// If valid and not expired, return
 		if ( $access_token && $expires_at > ( time() + 60 ) ) {
-			return $access_token;
+            return $access_token;
 		}
 
 		// Else: Refresh via POST request to proxy's REST endpoint
@@ -335,6 +337,51 @@ class Helper {
 	public static function has_access_token(): bool {
 		return (bool) self::get_option( 'google_access_token' );
 	}
+
+    private static function save_user_profile( $access_token ) {
+        // Get existing saved profile
+        $saved_profile = Helper::get_option( 'gsheet_user_profile', array() );
+
+        // Always fetch user info with new token
+        $userinfo_response = wp_remote_get(
+            'https://www.googleapis.com/oauth2/v2/userinfo',
+            array(
+                'headers' => array(
+                    'Authorization' => 'Bearer ' . $access_token,
+                ),
+                'timeout' => 20,
+            )
+        );
+
+        if ( is_wp_error( $userinfo_response ) ) {
+            self::getLogger()->log( 'Failed to fetch Google user info: ' . $userinfo_response->get_error_message(), 'error' );
+            return;
+        }
+
+        $userinfo = json_decode( wp_remote_retrieve_body( $userinfo_response ), true );
+
+        if ( ! empty( $userinfo['email'] ) ) {
+            $new_profile = array(
+                'id'             => $userinfo['id'] ?? '',
+                'email'          => sanitize_email( $userinfo['email'] ),
+                'verified_email' => ! empty( $userinfo['verified_email'] ) ? 1 : 0,
+                'name'           => sanitize_text_field( $userinfo['name'] ?? '' ),
+                'given_name'     => sanitize_text_field( $userinfo['given_name'] ?? '' ),
+                'family_name'    => sanitize_text_field( $userinfo['family_name'] ?? '' ),
+                'picture'        => esc_url_raw( $userinfo['picture'] ?? '' ),
+            );
+
+            // Update only if email changed or profile was empty
+            if ( empty( $saved_profile ) || ( $saved_profile['email'] ?? '' ) !== $new_profile['email'] ) {
+                Helper::update_option( 'gsheet_user_profile', $new_profile );
+                self::getLogger()->log( 'User info is saved/updated', 'info' );
+            } else {
+                self::getLogger()->log( 'User info unchanged, no update needed', 'info' );
+            }
+        } else {
+            self::getLogger()->log( 'Google userinfo response invalid: ' . print_r( $userinfo, true ), 'error' );
+        }
+    }
 
 	/**
 	 * Revokes the Google Sheets connection by making a request to the proxy service.

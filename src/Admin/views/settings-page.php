@@ -4,6 +4,7 @@ defined( 'ABSPATH' ) || exit;
 use App\AdvancedEntryManager\Utility\Helper;
 
 $has_access_token = Helper::has_access_token();
+Helper::get_access_token();
 
 $per_page  = Helper::get_option( 'entries_per_page', 20 );
 $sheet_id  = Helper::get_option( 'google_sheet_id' );
