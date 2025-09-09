@@ -635,7 +635,7 @@ function formTable(form) {
     } catch (error) {
         this.$dispatch("toast", {
             type: "error",
-            message: data.message,
+            message: error,
         });
     }
     },
