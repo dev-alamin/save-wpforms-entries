@@ -257,6 +257,8 @@ class Send_Data {
         $sheet_info = $this->get_or_create_sheet_for_form( $form_id );
         if ( is_wp_error( $sheet_info ) ) {
             $this->logger->log( 'GSheet preparation failed for form ' . $form_id . ': ' . $sheet_info->get_error_message(), 'ERROR' );
+            $this->logger->log( print_r( $sheet_info, true ), 'info' );
+            
             $this->handle_sync_failure( $entry_id, $entry->retry_count );
             return false;
         }
@@ -474,8 +476,6 @@ class Send_Data {
         // Use the Drive API's files.create endpoint and request only the 'id' field
         $url      = 'https://www.googleapis.com/drive/v3/files';
         $response = $this->_make_google_api_request( $url, $body, 'POST', '?fields=id' );
-
-        $this->logger->log( print_r( $response, true ), 'info' );
         
         return $response['id'] ?? new WP_Error( 'create_failed', 'Spreadsheet creation failed.' );
     }

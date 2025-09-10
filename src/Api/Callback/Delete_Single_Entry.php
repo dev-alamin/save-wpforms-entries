@@ -59,7 +59,7 @@ class Delete_Single_Entry {
 
 		do_action( 'fem_before_entry_delete', $id, $form_id );
 
-		$table = Helper::get_table_name(); // e.g., 'fem_entries_manager'
+		$table = Helper::get_submission_table(); // e.g., 'fem_entries_manager'
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$deleted = $wpdb->delete(

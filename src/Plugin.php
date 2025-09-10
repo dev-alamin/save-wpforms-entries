@@ -65,7 +65,7 @@ class Plugin {
 		register_activation_hook(
 			FEM_PLUGIN_BASE_FILE,
 			function () {
-				DB_Schema::create_table();
+				DB_Schema::create_tables();
 
 				( new Capabilities() )->add_cap();
 

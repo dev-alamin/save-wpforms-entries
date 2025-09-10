@@ -28,7 +28,7 @@ class Create_Entries {
 	 */
 	public function create_entries( WP_REST_Request $request ) {
 		global $wpdb;
-		$table = Helper::get_table_name(); // e.g., 'fem_entries_manager'
+		$table = Helper::get_submission_table(); // e.g., 'fem_entries_manager'
 
 		// Temp off
 		// return rest_ensure_response( ['success' => false, 'message' => __('This endpoint is temporarily disabled.', 'forms-entries-manager')] );

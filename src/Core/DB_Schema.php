@@ -24,7 +24,7 @@ class DB_Schema {
      */
     public static function submissions_table() {
         global $wpdb;
-        return $wpdb->prefix . 'forms_entries_manager_submissions';
+        return $wpdb->prefix . 'forms_em_submissions';
     }
     
     /**
@@ -34,7 +34,7 @@ class DB_Schema {
      */
     public static function entries_table() {
         global $wpdb;
-        return $wpdb->prefix . 'forms_entries_manager_data';
+        return $wpdb->prefix . 'forms_em_data';
     }
 
     /**
@@ -77,16 +77,18 @@ class DB_Schema {
             KEY idx_formid_id (form_id, id)
         ) $charset_collate;";
 
-        // SQL for the new entries key/value table
+        // SQL for the entries key/value table.
         $sql_entries = "CREATE TABLE $entries_table (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             submission_id BIGINT(20) UNSIGNED NOT NULL,
             field_key VARCHAR(255) NOT NULL,
             field_value LONGTEXT DEFAULT NULL,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY  (id),
             KEY idx_submission_id (submission_id),
             KEY idx_field_key (field_key),
+            UNIQUE KEY submission_field_key (submission_id, field_key),
             FOREIGN KEY (submission_id) REFERENCES $submissions_table(id) ON DELETE CASCADE
         ) $charset_collate;";
 

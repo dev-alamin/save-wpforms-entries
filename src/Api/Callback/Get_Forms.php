@@ -10,179 +10,163 @@ use WP_REST_Response;
 use WP_Error;
 use App\AdvancedEntryManager\Utility\Helper;
 use Error;
-
 /**
  * Class Get_Forms
  *
- * Handles the retrieval of forms from the custom database table.
+ * Handles the retrieval of forms from the custom database tables.
  */
 class Get_Forms {
-	/**
-	 * Get list of forms with their entry counts.
-	 *
-	 * Queries the custom entries table to retrieve all unique form IDs and
-	 * the number of entries associated with each form. Also fetches the form
-	 * title using `get_the_title()`. The result is formatted as a REST response.
-	 *
-	 * @global wpdb $wpdb WordPress database abstraction object.
-	 *
-	 * @return WP_REST_Response JSON-formatted response containing form data:
-	 *                          - form_id (int)
-	 *                          - form_title (string)
-	 *                          - entry_count (int)
-	 */
-	public function get_forms() {
-		$cache_key = 'forms_cache';
-		$response  = Helper::get_option( $cache_key );
 
-		if ( false === $response ) {
-			global $wpdb;
-			$table = Helper::get_table_name();
+    /**
+     * Get list of forms with their entry counts and unread counts.
+     *
+     * @return \WP_REST_Response JSON-formatted response with form data.
+     */
+    public function get_forms() {
+        $cache_key = 'forms_cache_';
+        $response = Helper::get_option($cache_key);
 
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			$results = $wpdb->get_results(
-				$wpdb->prepare(
-					"SELECT 
-                    form_id, 
-                    COUNT(*) as entry_count,
-                    SUM(CASE WHEN status = 'unread' THEN 1 ELSE 0 END) as unread_count
-                FROM `{$table}` 
-                GROUP BY form_id"
-				),
-				OBJECT
-			);
+        // if (false !== $response) {
+        //     return rest_ensure_response($response);
+        // }
 
-			$forms = array();
+        global $wpdb;
+        $submissions_table = Helper::get_submission_table();
 
-			foreach ( $results as $row ) {
-				$form_id = (int) $row->form_id;
+        // Query the submissions table to get form counts and unread counts.
+        // $results = $wpdb->get_results(
+        //     $wpdb->prepare(
+        //         "SELECT 
+        //             form_id, 
+        //             COUNT(*) as entry_count,
+        //             SUM(CASE WHEN status = 'unread' THEN 1 ELSE 0 END) as unread_count
+        //         FROM %s 
+        //         GROUP BY form_id",
+        //         $submissions_table
+        //     ),
+        //     OBJECT
+        // );
 
-				$forms[] = array(
-					'form_id'       => $form_id,
-					'form_title'    => get_the_title( $form_id ),
-					'entry_count'   => (int) $row->entry_count,
-					'number_unread' => (int) $row->unread_count,
-				);
-			}
+        $results = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT 
+                form_id, 
+                COUNT(*) as entry_count,
+                SUM(CASE WHEN status = 'unread' THEN 1 ELSE 0 END) as unread_count
+            FROM `{$submissions_table}` 
+            GROUP BY form_id"
+            ),
+            OBJECT
+        );
 
-			$response = apply_filters( 'fem_get_forms', $forms );
+        $forms = array();
+        foreach ($results as $row) {
+            $form_id = (int) $row->form_id;
 
-			/**
-			 * Cache the forms list to avoid repeated DB queries.
-			 * As the content is small so we put it in options table.
-			 *
-			 * And invalidate this cache whenever an entry is added or deleted.
-			 */
-			Helper::update_option( $cache_key, $response );
-		}
+            $forms[] = array(
+                'form_id'       => $form_id,
+                'form_title'    => get_the_title($form_id),
+                'entry_count'   => (int) $row->entry_count,
+                'number_unread' => (int) $row->unread_count,
+            );
+        }
 
-		return rest_ensure_response( $response );
-	}
+        $response = apply_filters('fem_get_forms', $forms);
 
-	/**
-	 * Retrieve a list of unique form field keys for a given WPForms form ID.
-	 *
-	 * This endpoint is used to dynamically fetch the field names from a sample
-	 * entry, typically to allow users to customize export settings (e.g., include/exclude columns).
-	 *
-	 * ## Example Request:
-	 * GET /wp-json/fem/v1/form-fields?form_id=123
-	 *
-	 * @param WP_REST_Request $request The REST request object containing 'form_id'.
-	 *
-	 * @return WP_REST_Response|WP_Error List of field keys or a WP_Error on failure.
-	 */
-	public function get_form_fields( WP_REST_Request $request ) {
-		// Initialize the cache handler
-		$fem_cache = new Handle_Cache();
-		$form_id   = isset( $request['form_id'] ) ? absint( $request['form_id'] ) : 0;
-		$cache_key = 'form_' . $form_id . '_fields';
+        // Cache the result for future use.
+        Helper::update_option($cache_key, $response);
 
-		if ( $form_id <= 0 ) {
-			return new WP_Error(
-				'fem_invalid_form_id',
-				__( 'Invalid or missing form ID.', 'forms-entries-manager' ),
-				array( 'status' => 400 )
-			);
-		}
+        return rest_ensure_response($response);
+    }
 
-		// Try to get data from the cache first
-		$cached_fields = $fem_cache->get_object_cache( $cache_key );
-		$cached_schema = $fem_cache->get_object_cache( $cache_key . '_entry_schema' );
+    /**
+     * Retrieve a list of unique form field keys for a given form ID.
+     *
+     * @param WP_REST_Request $request The REST request object containing 'form_id'.
+     * @return \WP_REST_Response|\WP_Error List of field keys or a WP_Error on failure.
+     */
+    public function get_form_fields(WP_REST_Request $request) {
+        $form_id = isset($request['form_id']) ? absint($request['form_id']) : 0;
 
-		if ( false !== $cached_fields ) {
-			return rest_ensure_response(
-				array(
-					'fields'       => $cached_fields,
-					'entry_schema' => $cached_schema,
-				)
-			);
-		}
+        if ($form_id <= 0) {
+            return new WP_Error(
+                'fem_invalid_form_id',
+                __('Invalid or missing form ID.', 'forms-entries-manager'),
+                ['status' => 400]
+            );
+        }
 
-		global $wpdb;
-		$table = Helper::get_table_name(); // Safe table
+        $cache_handler = new Handle_Cache();
+        $cache_key     = 'form_' . $form_id . '_fields';
 
-		// Fetch a few rows to detect fields (faster than scanning all)
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$rows = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT * FROM `{$table}` WHERE form_id = %d LIMIT 5",
-				$form_id
-			),
-			ARRAY_A
-		);
+        // Try to get data from cache first.
+        $cached_data = $cache_handler->get_object_cache($cache_key);
+        if (false !== $cached_data) {
+            return rest_ensure_response($cached_data);
+        }
 
-		$allowed_fields = array( 'id', 'form_id', 'email', 'note', 'created_at', 'status', 'is_favorite' );
-		$fields         = array();
+        // Fetch fields from the database.
+        list($fields, $entry_schema) = $this->fetch_fields_from_db($form_id);
 
-		foreach ( $rows as $row ) {
-			// Step 1: Add only allowed top-level DB columns
-			foreach ( $allowed_fields as $column ) {
-				if ( array_key_exists( $column, $row ) ) {
-					$fields[ $column ] = true;
-				}
-			}
+        // Build the final response data.
+        $response_data = [
+            'fields'       => $fields,
+            'entry_schema' => $entry_schema,
+        ];
 
-			$entry_schema = array();
-			// Step 2: Merge in keys from deserialized 'entry'
-			if ( isset( $row['entry'] ) ) {
-				$entry = maybe_unserialize( $row['entry'] );
-				if ( is_array( $entry ) ) {
-					foreach ( array_keys( $entry ) as $field_key ) {
-						$fields[ $field_key ] = true;
+        // Store the results in the cache for 1 hour.
+        $cache_handler->set_object_cache($cache_key, $response_data, HOUR_IN_SECONDS);
 
-						if ( strtolower( $field_key ) == 'name'
-						|| strtolower( $field_key ) == 'email'
-						|| strtolower( $field_key ) == 'your-name'
-						|| strtolower( $field_key ) == 'your-email'
-						|| strpos( strtolower( $field_key ), 'g-recaptcha-response' ) !== false
-						|| strpos( strtolower( $field_key ), 'file' ) !== false
-						|| strtolower( $field_key ) === 'name'
-						|| strtolower( $field_key ) === 'email'
-						) {
-							continue;
-						}
+        return rest_ensure_response($response_data);
+    }
 
-						$entry_schema[] = array(
-							'key'   => $field_key,
-							'label' => $field_key,
-						);
-					}
-				}
-			}
-		}
+    /**
+     * Fetches unique field keys and builds a schema for a given form ID.
+     *
+     * @param int $form_id The form ID to fetch fields for.
+     * @return array An array containing the full list of fields and a schema.
+     */
+    private function fetch_fields_from_db($form_id) {
+        global $wpdb;
+        $entries_table = Helper::get_data_table();
+        $submissions_table =  Helper::get_submission_table();
 
-		$final_fields = array_values( array_unique( array_keys( $fields ) ) );
+        // Fetch all unique field keys for the given form ID.
+        // We join to submissions table to ensure we only get fields for a specific form.
+        $sql = "SELECT DISTINCT t1.field_key 
+                FROM $entries_table AS t1
+                JOIN $submissions_table AS t2 ON t1.submission_id = t2.id
+                WHERE t2.form_id = %d";
+        
+        $fields_raw = $wpdb->get_col(
+            $wpdb->prepare($sql, $form_id)
+        );
 
-		// Store the results in the cache for 1 hour.
-		$fem_cache->set_object_cache( $cache_key, $final_fields, HOUR_IN_SECONDS );
-		$fem_cache->set_object_cache( $cache_key . '_entry_schema', $entry_schema, HOUR_IN_SECONDS );
+        $fields = [];
+        $entry_schema = [];
 
-		return rest_ensure_response(
-			array(
-				'fields'       => $final_fields,
-				'entry_schema' => $entry_schema,
-			)
-		);
-	}
+        // Build the fields list and schema.
+        foreach ($fields_raw as $field_key) {
+            $fields[] = $field_key;
+            if (!$this->is_system_key($field_key)) {
+                $entry_schema[] = [
+                    'key'   => $field_key,
+                    'label' => ucwords(str_replace(['-', '_'], ' ', $field_key)),
+                ];
+            }
+        }
+
+        return [$fields, $entry_schema];
+    }
+    
+    /**
+     * Checks if a field key is a system key that should be ignored.
+     *
+     * @param string $key The field key to check.
+     * @return bool
+     */
+    private function is_system_key( $key ) {
+        $key = strtolower( $key );
+        return strpos( $key, 'g-recaptcha-response' ) !== false || strpos( $key, 'file' ) !== false || strpos( $key, '_wpcf7' ) !== false;
+    }
 }

@@ -42,6 +42,28 @@ class Helper {
 		return $wpdb->prefix . 'forms_entries_manager';
 	}
 
+    /**
+	 * Get FEM Table
+	 *
+	 * @return string
+	 */
+	public static function get_submission_table(): string {
+		global $wpdb;
+		// return $wpdb->prefix . FEM_TABLE_NAME;
+		return $wpdb->prefix . 'forms_em_submissions';
+	}
+
+    /**
+	 * Get FEM Table
+	 *
+	 * @return string
+	 */
+	public static function get_data_table(): string {
+		global $wpdb;
+		// return $wpdb->prefix . FEM_TABLE_NAME;
+		return $wpdb->prefix . 'forms_em_data';
+	}
+
 	/**
 	 * Get FEM Data Table
 	 *
@@ -378,8 +400,6 @@ class Helper {
             } else {
                 self::getLogger()->log( 'User info unchanged, no update needed', 'info' );
             }
-        } else {
-            self::getLogger()->log( 'Google userinfo response invalid: ' . print_r( $userinfo, true ), 'error' );
         }
     }
 
@@ -540,34 +560,160 @@ class Helper {
 		return $entries ?: array();
 	}
 
-	// Update a single entry with caching
-    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-	public static function update_entry( int $id, array $data ): bool {
-		global $wpdb;
-		$table = self::get_table_name();
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-		$result = $wpdb->update( $table, $data, array( 'id' => $id ) );
+    /**
+     * Updates an existing entry.
+     *
+     * @param int   $id   The ID of the entry to update.
+     * @param array $data The data to update.
+     * @return bool True on success, false on failure.
+     */
+    public static function update_entry( int $id, array $data ): bool {
+        global $wpdb;
 
-		if ( $result !== false ) {
-			wp_cache_delete( 'fem_entries_' . $id, 'fem' );
-		}
+        $submissions_table = self::get_submission_table();
+        $entries_table     = self::get_data_table();
 
-		return $result !== false;
-	}
+        try {
+            $wpdb->query('START TRANSACTION');
 
-	// Delete a single entry with caching
-	public static function delete_entry( int $id ): bool {
-		global $wpdb;
-		$table = self::get_table_name();
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-		$result = $wpdb->delete( $table, array( 'id' => $id ) );
+            // Separate submission data from entry fields.
+            list($submission_data, $entry_fields) = self::separate_update_data($data);
 
-		if ( $result !== false ) {
-			wp_cache_delete( 'fem_entries_' . $id, 'fem' );
-		}
+            // Update submissions table.
+            if (!empty($submission_data)) {
+                $format = array_map(function($value) {
+                    return is_int($value) ? '%d' : '%s';
+                }, $submission_data);
+                
+                $wpdb->update($submissions_table, $submission_data, ['id' => $id], $format, ['%d']);
+            }
 
-		return $result !== false;
-	}
+            // Update entries table.
+            if (!empty($entry_fields)) {
+                foreach ($entry_fields as $field_key => $field_value) {
+                    $formatted_value = sanitize_text_field($field_value);
+                    
+                    $exists = $wpdb->get_var(
+                        $wpdb->prepare(
+                            "SELECT id FROM `$entries_table` WHERE submission_id = %d AND field_key = %s",
+                            $id,
+                            $field_key
+                        )
+                    );
+
+                    if ($exists) {
+                        $wpdb->update($entries_table, ['field_value' => $formatted_value], ['id' => $exists]);
+                    } else {
+                        $wpdb->insert($entries_table, [
+                            'submission_id' => $id,
+                            'field_key'     => $field_key,
+                            'field_value'   => $formatted_value,
+                            'created_at'    => current_time('mysql'),
+                        ]);
+                    }
+                }
+            }
+
+            $wpdb->query('COMMIT');
+
+            // Clear cache after successful update.
+            wp_cache_delete('fem_entries_' . $id, 'fem');
+            
+            return true;
+
+        } catch (\Exception $e) {
+            $wpdb->query('ROLLBACK');
+            return false;
+        }
+    }
+
+    /**
+     * Separates the update data into submissions and entries fields.
+     *
+     * @param array $data The data to be updated.
+     * @return array An array containing submission data and entry fields.
+     */
+    private static function separate_update_data(array $data) {
+        $submission_keys = [
+            'form_id', 'name', 'email', 'status', 'note', 'is_favorite', 
+            'exported_to_csv', 'synced_to_gsheet', 'printed_at', 'resent_at', 'is_spam'
+        ];
+        
+        $submission_data = [];
+        $entry_fields = [];
+        
+        foreach ($data as $key => $value) {
+            if (in_array($key, $submission_keys)) {
+                $submission_data[$key] = $value;
+            } elseif ($key === 'entry' && is_array($value)) {
+                $entry_fields = $value;
+            }
+        }
+        
+        return [$submission_data, $entry_fields];
+    }
+
+    /**
+     * Formats a line as a CSV string.
+     *
+     * @param array $fields The array of fields to format.
+     * @return string The CSV formatted string.
+     */
+    public static function get_csv_line( array $fields ): string {
+        $delimiter = ',';
+        $enclosure = '"';
+        $output_line = [];
+
+        foreach ( $fields as $field ) {
+            // Escape quotes by doubling them.
+            $field = str_replace( $enclosure, $enclosure . $enclosure, $field );
+            // Always wrap in quotes.
+            $output_line[] = $enclosure . $field . $enclosure;
+        }
+
+        return implode( $delimiter, $output_line ) . "\n";
+    }
+
+    /**
+     * Deletes a single entry and its associated data.
+     *
+     * @param int $id The ID of the entry to delete.
+     * @return bool True on success, false on failure.
+     */
+    public static function delete_entry( int $id ): bool {
+        global $wpdb;
+
+        $submissions_table = self::get_submission_table();
+        $entries_table     = self::get_data_table();
+        
+        try {
+            // Start a database transaction.
+            $wpdb->query( 'START TRANSACTION' );
+
+            // Delete from the submissions table first.
+            $result = $wpdb->delete( $submissions_table, array( 'id' => $id ) );
+
+            if ( $result === false ) {
+                throw new \Exception( 'Failed to delete from submissions table.' );
+            }
+
+            // Delete from the entries table using the submission_id.
+            $wpdb->delete( $entries_table, array( 'submission_id' => $id ) );
+
+            // Commit the transaction.
+            $wpdb->query( 'COMMIT' );
+
+            // Clear the cache after successful deletion.
+            wp_cache_delete( 'fem_entries_' . $id, 'fem' );
+
+            return true;
+
+        } catch ( \Exception $e ) {
+            // Rollback the transaction on failure.
+            $wpdb->query( 'ROLLBACK' );
+            return false;
+        }
+    }
 
 	public static function fputcsv( $handle, array $fields ) {
 		$line = '';

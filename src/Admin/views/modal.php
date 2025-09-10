@@ -11,7 +11,7 @@
 		x-transition:leave-end="opacity-0">
 
 		<div
-			class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full p-8 sm:p-10 relative border border-indigo-300 ring-1 ring-indigo-200"
+			class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full p-8 sm:p-10 relative border border-indigo-300 ring-1 ring-indigo-200"
 			x-transition:enter="transition ease-out duration-300 transform"
 			x-transition:enter-start="opacity-0 scale-90"
 			x-transition:enter-end="opacity-100 scale-100"
@@ -55,30 +55,12 @@
 
 			<div class="max-h-[400px] overflow-y-auto pr-2">
 				<div class="space-y-3">
-					<div class="text-base sm:text-lg text-gray-800 border-b border-dashed border-gray-300 pb-2">
-						<strong class="font-semibold text-gray-700">
-							<?php esc_html_e( 'Name: ', 'forms-entries-manager' ); ?>
-						</strong>
-
-						<span class="ml-1" x-text="selectedEntry.name || '<?php echo esc_js( __( '-', 'forms-entries-manager' ) ); ?>'">
-						</span>
-					</div>
-
-							<div class="text-base sm:text-lg text-gray-800 border-b border-dashed border-gray-300 pb-2">
-						<strong class="font-semibold text-gray-700">
-							<?php esc_html_e( 'Email: ', 'forms-entries-manager' ); ?>
-						</strong>
-
-						<span class="ml-1" x-text="selectedEntry.email || '<?php echo esc_js( __( '-', 'forms-entries-manager' ) ); ?>'">
-						</span>
-					</div>
-					
 					<template x-for="(value, key) in selectedEntry.entry" :key="key">
 						<div class="text-base sm:text-lg text-gray-800 border-b border-dashed border-gray-300 pb-2">
-							<strong
-								class="font-semibold text-gray-700"
-								x-text="key.charAt(0).toUpperCase() + key.slice(1) + ':'">
-							</strong>
+                            <strong
+                                class="font-semibold text-gray-700"
+                                x-text="key.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) + ':'">
+                            </strong>
 
 							<span class="ml-1" x-html="Array.isArray(value) 
 								? value.map(f => `<a href='${f.url}' target='_blank'>${f.url.split('/').pop()}</a>`).join('<br>') 
