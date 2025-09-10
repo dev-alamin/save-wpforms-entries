@@ -68,110 +68,110 @@ class Export_Entries {
 	 * @return WP_REST_Response|WP_Error The response object.
 	 */
 	public function start_export_job( WP_REST_Request $request ) {
-		if ( ! class_exists( 'ActionScheduler' ) ) {
-			return new WP_Error( 'missing_scheduler', __( 'Action Scheduler is required but not available.', 'forms-entries-manager' ), array( 'status' => 500 ) );
-		}
+        if ( ! class_exists( 'ActionScheduler' ) ) {
+            return new WP_Error( 'missing_scheduler', __( 'Action Scheduler is required but not available.', 'forms-entries-manager' ), array( 'status' => 500 ) );
+        }
 
-		$form_id = absint( $request->get_param( 'form_id' ) );
-		if ( ! $form_id ) {
-			return new WP_Error( 'missing_form_id', __( 'A valid Form ID is required.', 'forms-entries-manager' ), array( 'status' => 400 ) );
-		}
+        $form_id = absint( $request->get_param( 'form_id' ) );
+        if ( ! $form_id ) {
+            return new WP_Error( 'missing_form_id', __( 'A valid Form ID is required.', 'forms-entries-manager' ), array( 'status' => 400 ) );
+        }
 
-		global $wpdb;
-		$target_table = Helper::get_table_name(); // e.g., 'fem_entries_manager'
+        global $wpdb;
+        $submissions_table = Helper::get_submission_table();
+        $entries_table     = Helper::get_data_table();
 
-		// Build query to count total entries based on filters
-		$query_args    = array();
-		$where_clauses = array( 'form_id = %d' );
-		$query_args[]  = $form_id;
+        // Build query to count total entries based on filters
+        $query_args    = array();
+        $where_clauses = array( 'form_id = %d' );
+        $query_args[]  = $form_id;
 
-		$date_from = sanitize_text_field( $request->get_param( 'date_from' ) ?? '' );
-		if ( $date_from ) {
-			$where_clauses[] = 'created_at >= %s';
-			$query_args[]    = $date_from;
-		}
+        $date_from = sanitize_text_field( $request->get_param( 'date_from' ) ?? '' );
+        if ( $date_from ) {
+            $where_clauses[] = 'created_at >= %s';
+            $query_args[]    = $date_from;
+        }
 
-		$date_to = sanitize_text_field( $request->get_param( 'date_to' ) ?? '' );
-		if ( $date_to ) {
-			$where_clauses[] = 'created_at <= %s';
-			$query_args[]    = $date_to;
-		}
+        $date_to = sanitize_text_field( $request->get_param( 'date_to' ) ?? '' );
+        if ( $date_to ) {
+            $where_clauses[] = 'created_at <= %s';
+            $query_args[]    = $date_to;
+        }
 
-		$where_sql = 'WHERE ' . implode( ' AND ', $where_clauses );
+        $where_sql = 'WHERE ' . implode( ' AND ', $where_clauses );
 
-		// Step 1: Count entries
-        // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$count_query = $wpdb->prepare( "SELECT COUNT(*) FROM {$target_table} {$where_sql}", ...$query_args );
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$total_entries = (int) $wpdb->get_var( $count_query );
+        // Step 1: Count entries from the submissions table
+        $count_query = $wpdb->prepare( "SELECT COUNT(*) FROM {$submissions_table} {$where_sql}", ...$query_args );
+        $total_entries = (int) $wpdb->get_var( $count_query );
 
-		if ( $total_entries === 0 ) {
-			return new WP_Error(
-				'no_entries',
-				__( 'No entries found for the selected criteria.', 'forms-entries-manager' ),
-				array( 'status' => 404 )
-			);
-		}
+        if ( $total_entries === 0 ) {
+            return new WP_Error(
+                'no_entries',
+                __( 'No entries found for the selected criteria.', 'forms-entries-manager' ),
+                array( 'status' => 404 )
+            );
+        }
 
-		// Step 2: If low volume, fetch directly
-		if ( $total_entries <= 10000 ) {
-            // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
-			$select_query = $wpdb->prepare(
-				"SELECT * FROM {$target_table} {$where_sql} ORDER BY created_at ASC", // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				...$query_args
-			);
+        // Step 2: If low volume, fetch directly
+        if ( $total_entries <= 10000 ) {
+            $select_query = $wpdb->prepare(
+                "SELECT * FROM {$submissions_table} {$where_sql} ORDER BY created_at ASC",
+                ...$query_args
+            );
+            $low_entries = $wpdb->get_results( $select_query, ARRAY_A );
+            $all_entry_data = $wpdb->get_results(
+                $wpdb->prepare("SELECT submission_id, field_key, field_value FROM {$entries_table} WHERE submission_id IN ($ids_placeholder)", ...array_column($low_entries, 'id')), ARRAY_A
+            );
 
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
-			$low_entries = $wpdb->get_results( $select_query, ARRAY_A );
+            $this->export_entries_otg( $low_entries, $all_entry_data );
+        }
 
-			$this->export_entries_otg( $low_entries );
-		}
+        // Generate a unique ID for this export job
+        $job_id = 'export_' . $form_id . '_' . wp_generate_password( 12, false );
 
-		// Generate a unique ID for this export job
-		$job_id = 'export_' . $form_id . '_' . wp_generate_password( 12, false );
+        $exclude_fields = $request->get_param( 'exclude_fields' );
+        $exclude_fields = is_string( $exclude_fields ) ? explode( ',', $exclude_fields ) : (array) $exclude_fields;
 
-		$exclude_fields = $request->get_param( 'exclude_fields' );
-		$exclude_fields = is_string( $exclude_fields ) ? explode( ',', $exclude_fields ) : (array) $exclude_fields;
+        // Store the initial state of the job in a transient
+        $job_state = array(
+            'job_id'          => $job_id,
+            'status'          => 'queued',
+            'form_id'         => $form_id,
+            'total_entries'   => $total_entries,
+            'processed_count' => 0,
+            'last_id'         => 0,
+            'batch_size'      => 5000,
+            'page'            => 1,
+            'filters'         => array(
+                'date_from'      => $date_from,
+                'date_to'        => $date_to,
+                'exclude_fields' => $exclude_fields,
+            ),
+            'started_at'      => time(),
+            'file_path'       => null,
+            'file_url'        => null,
+            'header'          => array(),
+            'header_built'    => false,
+        );
+        Helper::set_transient( self::JOB_TRANSIENT_PREFIX . $job_id, $job_state, DAY_IN_SECONDS );
 
-		// Store the initial state of the job in a transient
-		$job_state = array(
-			'job_id'          => $job_id,
-			'status'          => 'queued',
-			'form_id'         => $form_id,
-			'total_entries'   => $total_entries,
-			'processed_count' => 0,
-			'last_id'         => 0,
-			'batch_size'      => 5000,
-			'page'            => 1,
-			'filters'         => array(
-				'date_from'      => $date_from,
-				'date_to'        => $date_to,
-				'exclude_fields' => $exclude_fields,
-			),
-			'started_at'      => time(),
-			'file_path'       => null,
-			'file_url'        => null,
-			'header'          => array(),
-		);
-		Helper::set_transient( self::JOB_TRANSIENT_PREFIX . $job_id, $job_state, DAY_IN_SECONDS );
+        // Schedule the first batch
+        as_schedule_single_action(
+            time(),
+            self::BATCH_PROCESSING_HOOK,
+            array( 'job_id' => $job_id ),
+            self::SCHEDULE_GROUP
+        );
 
-		// Schedule the first batch
-		as_schedule_single_action(
-			time(),
-			self::BATCH_PROCESSING_HOOK,
-			array( 'job_id' => $job_id ),
-			self::SCHEDULE_GROUP
-		);
-
-		return rest_ensure_response(
-			array(
-				'success'       => true,
-				'message'       => __( 'CSV export has been successfully queued.', 'forms-entries-manager' ),
-				'job_id'        => $job_id,
-				'total_entries' => $total_entries,
-			)
-		);
-	}
+        return rest_ensure_response(
+            array(
+                'success'       => true,
+                'message'       => __( 'CSV export has been successfully queued.', 'forms-entries-manager' ),
+                'job_id'        => $job_id,
+                'total_entries' => $total_entries,
+            )
+        );
+    }
 
 	/**
 	 * Processes one batch of entries for a given export job.
@@ -184,117 +184,97 @@ class Export_Entries {
 	 * @return void
 	 */
 	public function process_export_batch( string $job_id ): void {
-		$transient_key = self::JOB_TRANSIENT_PREFIX . $job_id;
-		$job_state     = Helper::get_transient( $transient_key );
+        $transient_key = self::JOB_TRANSIENT_PREFIX . $job_id;
+        $job_state     = Helper::get_transient( $transient_key );
 
-		// If the job state doesn't exist or is already complete, exit.
-		if ( false === $job_state || $job_state['status'] === 'complete' ) {
-			return;
-		}
+        if ( false === $job_state || $job_state['status'] === 'complete' ) {
+            return;
+        }
 
-		// Update status to 'in-progress'
-		$job_state['status'] = 'in-progress';
-		Helper::set_transient( $transient_key, $job_state, DAY_IN_SECONDS );
+        $job_state['status'] = 'in-progress';
+        Helper::set_transient( $transient_key, $job_state, DAY_IN_SECONDS );
 
-		global $wpdb;
-		$target_table = Helper::get_table_name();
+        global $wpdb;
+        $submissions_table = Helper::get_submission_table();
+        $entries_table     = Helper::get_data_table();
 
-		// Build query to fetch the current batch
-		$query_args    = array();
-		$where_clauses = array( 'form_id = %d' );
-		$query_args[]  = $job_state['form_id'];
+        // Build query for submissions
+        $query_args    = array();
+        $where_clauses = array( 'form_id = %d' );
+        $query_args[]  = $job_state['form_id'];
 
-		if ( ! empty( $job_state['filters']['date_from'] ) ) {
-			$where_clauses[] = 'created_at >= %s';
-			$query_args[]    = $job_state['filters']['date_from'];
-		}
-		if ( ! empty( $job_state['filters']['date_to'] ) ) {
-			$where_clauses[] = 'created_at <= %s';
-			$query_args[]    = $job_state['filters']['date_to'];
-		}
+        if ( ! empty( $job_state['filters']['date_from'] ) ) {
+            $where_clauses[] = 'created_at >= %s';
+            $query_args[]    = $job_state['filters']['date_from'];
+        }
+        if ( ! empty( $job_state['filters']['date_to'] ) ) {
+            $where_clauses[] = 'created_at <= %s';
+            $query_args[]    = $job_state['filters']['date_to'];
+        }
 
-		// Use cursor-based pagination to avoid performance issues with OFFSET.
-		// We fetch entries with an ID greater than the last processed ID.
-		$where_clauses[] = 'id > %d';
-		$query_args[]    = $job_state['last_id'];
+        $where_clauses[] = 'id > %d';
+        $query_args[]    = $job_state['last_id'];
 
-		$where_sql = 'WHERE ' . implode( ' AND ', $where_clauses );
+        $where_sql = 'WHERE ' . implode( ' AND ', $where_clauses );
 
-		$entries_query = $wpdb->prepare(
-			"SELECT * FROM {$target_table} {$where_sql} ORDER BY id ASC LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			array_merge( $query_args, array( $job_state['batch_size'] ) )
-		);
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$entries = $wpdb->get_results( $entries_query, ARRAY_A );
+        $submissions_query = $wpdb->prepare(
+            "SELECT id, name, email, status, note, is_favorite, created_at FROM {$submissions_table} {$where_sql} ORDER BY id ASC LIMIT %d",
+            array_merge( $query_args, array( $job_state['batch_size'] ) )
+        );
+        $submissions = $wpdb->get_results( $submissions_query, ARRAY_A );
 
-		if ( empty( $entries ) ) {
-			// No more entries found, so we are done. Schedule finalization.
-			as_schedule_single_action(
-				time() + 5,
-				self::FINALIZE_HOOK,
-				array( 'job_id' => $job_id ),
-				self::SCHEDULE_GROUP
-			);
-			return;
-		}
+        if ( empty( $submissions ) ) {
+            as_schedule_single_action(
+                time() + 5,
+                self::FINALIZE_HOOK,
+                array( 'job_id' => $job_id ),
+                self::SCHEDULE_GROUP
+            );
+            return;
+        }
 
-		// The header is now built and stored only once.
-		if ( $job_state['page'] === 1 ) {
-			$header           = array();
-			$first_entry_data = ! empty( $entries[0]['entry'] ) ? maybe_unserialize( $entries[0]['entry'] ) : array();
-			if ( is_array( $first_entry_data ) ) {
-				$header = $this->flatten_array_keys( $first_entry_data );
-			}
+        $submission_ids = array_column( $submissions, 'id' );
+        $ids_placeholder = implode( ',', array_fill( 0, count( $submission_ids ), '%d' ) );
 
-			$default_columns = array( 'id', 'form_id', 'email', 'note', 'created_at', 'status', 'is_favorite' );
-			$header          = array_merge( $default_columns, $header );
-			$header          = array_diff( $header, $job_state['filters']['exclude_fields'] );
+        $entries_raw = $wpdb->get_results(
+            $wpdb->prepare( "SELECT submission_id, field_key, field_value FROM {$entries_table} WHERE submission_id IN ($ids_placeholder)", ...$submission_ids ), ARRAY_A
+        );
 
-			// Sort the header for consistent output
-			// sort($header);
+        $merged_entries = $this->merge_entries_data( $submissions, $entries_raw );
 
-			// Store the final header in the job state for all future batches.
-			$job_state['header'] = $header;
-		}
+        if ( ! $job_state['header_built'] ) {
+            $header = $this->get_header_from_entries( $merged_entries );
+            // Exclude fields if necessary
+            $header = array_diff( $header, $job_state['filters']['exclude_fields'] );
+            $job_state['header'] = $header;
+            $job_state['header_built'] = true;
+        }
 
-		// Now, always get the header from the job state.
-		$header = $job_state['header'];
+        $this->write_batch_to_csv( $job_id, $job_state['page'], $merged_entries, $job_state['header'] );
 
-		// Process and write the batch to the CSV file.
-		$this->write_batch_to_csv( $job_id, $job_state['page'], $entries, $header );
+        $job_state['processed_count'] += count( $submissions );
+        $last_submission = end( $submissions );
+        $job_state['last_id'] = $last_submission['id'];
+        ++$job_state['page'];
 
-		$job_state['processed_count'] += count( $entries );
-
-		// Update the last_id to the ID of the last entry in the current batch for the next query.
-		$last_entry           = end( $entries );
-		$job_state['last_id'] = $last_entry['id'];
-
-		++$job_state['page'];
-
-		// Check if there are more entries left to process.
-		if ( $job_state['processed_count'] < $job_state['total_entries'] ) {
-			// Schedule the next batch.
-			Helper::set_transient( $transient_key, $job_state, DAY_IN_SECONDS );
-
-			as_schedule_single_action(
-				time() + 5,
-				self::BATCH_PROCESSING_HOOK,
-				array( 'job_id' => $job_id ),
-				self::SCHEDULE_GROUP
-			);
-		} else {
-			// All entries have been processed. Save the final state.
-			Helper::set_transient( $transient_key, $job_state, DAY_IN_SECONDS );
-
-			// Now schedule the finalization job.
-			as_schedule_single_action(
-				time() + 5,
-				self::FINALIZE_HOOK,
-				array( 'job_id' => $job_id ),
-				self::SCHEDULE_GROUP
-			);
-		}
-	}
+        if ( $job_state['processed_count'] < $job_state['total_entries'] ) {
+            Helper::set_transient( $transient_key, $job_state, DAY_IN_SECONDS );
+            as_schedule_single_action(
+                time() + 5,
+                self::BATCH_PROCESSING_HOOK,
+                array( 'job_id' => $job_id ),
+                self::SCHEDULE_GROUP
+            );
+        } else {
+            Helper::set_transient( $transient_key, $job_state, DAY_IN_SECONDS );
+            as_schedule_single_action(
+                time() + 5,
+                self::FINALIZE_HOOK,
+                array( 'job_id' => $job_id ),
+                self::SCHEDULE_GROUP
+            );
+        }
+    }
 
 	/**
 	 * Merges all temporary batch CSVs into a final file.
@@ -306,55 +286,56 @@ class Export_Entries {
 	 * @param string $job_id The ID of the export job to finalize.
 	 * @return void
 	 */
-	public function finalize_export_file( string $job_id ): void {
-		$upload_dir = $this->get_temp_dir();
-		if ( is_wp_error( $upload_dir ) ) {
-			// Log error
-			return;
-		}
+	    public function finalize_export_file( string $job_id ): void {
+        $upload_dir = $this->get_temp_dir();
+        if ( is_wp_error( $upload_dir ) ) {
+            return;
+        }
 
-		$final_file_path   = $upload_dir['path'] . '/' . $job_id . '.csv';
-		$final_file_handle = fopen( $final_file_path, 'w' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
-		if ( $final_file_handle === false ) {
-			// Log file open error
-			return;
-		}
+        $final_file_path = $upload_dir['path'] . '/' . $job_id . '.csv';
+        // Use WP_Filesystem API for robust file operations
+        if ( ! function_exists( 'WP_Filesystem' ) ) {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+        }
+        WP_Filesystem();
+        global $wp_filesystem;
 
-		$batch_files    = glob( $upload_dir['path'] . '/' . $job_id . '_batch_*.csv' );
-		$header_written = false;
+        $final_content = "\xEF\xBB\xBF"; // UTF-8 BOM
+        $header_written = false;
 
-		foreach ( $batch_files as $index => $batch_file ) {
-			$batch_handle = fopen( $batch_file, 'r' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
-			if ( $batch_handle ) {
-				// Read and write line by line
-				while ( ( $data = fgetcsv( $batch_handle ) ) !== false ) {
-					if ( ! $header_written && $index === 0 ) {
-						fputcsv( $final_file_handle, $data ); // Write header
-						$header_written = true;
-					} else {
-						// Skip header of subsequent files
-						if ( $data !== false ) {
-							fputcsv( $final_file_handle, $data );
-						}
-					}
-				}
-				fclose( $batch_handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
-			}
-			wp_delete_file( $batch_file ); // Delete the temporary batch file
-		}
+        $batch_files = glob( $upload_dir['path'] . '/' . $job_id . '_batch_*.csv' );
 
-		fclose( $final_file_handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+        foreach ( $batch_files as $batch_file ) {
+            $content = $wp_filesystem->get_contents( $batch_file );
+            if ($content) {
+                // If header is not written, add the first batch content entirely
+                if (!$header_written) {
+                    $final_content .= $content;
+                    $header_written = true;
+                } else {
+                    // Skip the first line (header) of subsequent files
+                    $lines = explode("\n", $content);
+                    array_shift($lines);
+                    $final_content .= implode("\n", $lines);
+                }
+            }
+            $wp_filesystem->delete($batch_file);
+        }
 
-		// Update the job state to complete
-		$transient_key = self::JOB_TRANSIENT_PREFIX . $job_id;
-		$job_state     = Helper::get_transient( $transient_key );
-		if ( $job_state ) {
-			$job_state['status']    = 'complete';
-			$job_state['file_path'] = $final_file_path;
-			$job_state['file_url']  = $upload_dir['url'] . '/' . $job_id . '.csv';
-			Helper::set_transient( $transient_key, $job_state, DAY_IN_SECONDS );
-		}
-	}
+        if (!$wp_filesystem->put_contents($final_file_path, $final_content)) {
+            // Log error
+            return;
+        }
+
+        $transient_key = self::JOB_TRANSIENT_PREFIX . $job_id;
+        $job_state     = Helper::get_transient( $transient_key );
+        if ( $job_state ) {
+            $job_state['status']    = 'complete';
+            $job_state['file_path'] = $final_file_path;
+            $job_state['file_url']  = $upload_dir['url'] . '/' . $job_id . '.csv';
+            Helper::set_transient( $transient_key, $job_state, DAY_IN_SECONDS );
+        }
+    }
 
 	/**
 	 * Retrieves the progress of an ongoing export job.
@@ -405,70 +386,33 @@ class Export_Entries {
 	 * @param array  $entries The entry data to write.
 	 * @return void
 	 */
-	private function write_batch_to_csv( string $job_id, int $page, array $entries, array $header ): void {
-		$upload_dir = $this->get_temp_dir();
-		if ( is_wp_error( $upload_dir ) ) {
-			// Log the error
-			return;
-		}
+	    private function write_batch_to_csv( string $job_id, int $page, array $entries, array $header ): void {
+        $upload_dir = $this->get_temp_dir();
+        if ( is_wp_error( $upload_dir ) ) {
+            return;
+        }
 
-		$file_path = $upload_dir['path'] . '/' . $job_id . '_batch_' . $page . '.csv';
-        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
-		$file_handle = fopen( $file_path, 'a' ); // Use 'a' to append
+        $file_path = $upload_dir['path'] . '/' . $job_id . '_batch_' . $page . '.csv';
+        $file_handle = fopen( $file_path, 'a' ); 
 
-		if ( $file_handle === false ) {
-			// Log a file open error
-			return;
-		}
+        if ( $file_handle === false ) {
+            return;
+        }
 
-		// Write the header only for the first batch.
-		if ( $page === 1 ) {
-			fputcsv( $file_handle, $header );
-		}
+        if ( $page === 1 ) {
+            fputcsv( $file_handle, $header );
+        }
 
-		foreach ( $entries as $entry ) {
-			$entry_data      = ! empty( $entry['entry'] ) ? maybe_unserialize( $entry['entry'] ) : array();
-			$flat_entry_data = $this->flatten_entry_data( $entry_data );
+        foreach ( $entries as $entry ) {
+            $row = [];
+            foreach ( $header as $col ) {
+                $row[] = $entry[$col] ?? '';
+            }
+            fputcsv( $file_handle, $row );
+        }
 
-			$row = array();
-			// Add default columns
-			$row['id']          = $entry['id'];
-			$row['form_id']     = $entry['form_id'];
-			$row['email']       = $entry['email'];
-			$row['note']        = $entry['note'];
-			$row['created_at']  = $entry['created_at'];
-			$row['status']      = $entry['status'];
-			$row['is_favorite'] = $entry['is_favorite'];
-
-			// Merge dynamic data
-			$row = array_merge( $row, $flat_entry_data );
-
-			// Build the final row using the provided header
-			$final_row = array();
-			foreach ( $header as $col ) {
-				$value = $row[ $col ] ?? '';
-				// Ensure the value is properly prepared for CSV, but don't add quotes here.
-				// fputcsv handles quoting and escaping.
-				$final_row[] = $value;
-			}
-
-			fputcsv( $file_handle, $final_row );
-		}
-
-		fclose( $file_handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
-	}
-
-	/**
-	 * A helper function to sanitize data for CSV.
-	 * It's crucial to escape double quotes and wrap data in quotes.
-	 * This is a simplified example; a more robust solution might use a library.
-	 */
-	private function sanitize_csv_cell( $data ) {
-		// Sanitize any dangerous characters and escape double quotes
-		$data = str_replace( '"', '""', $data );
-		// Wrap the cell in double quotes to handle commas within the data
-		return '"' . $data . '"';
-	}
+        fclose( $file_handle );
+    }
 
 	/**
 	 * A helper function to flatten nested array keys for a consistent header.
@@ -515,30 +459,29 @@ class Export_Entries {
 	 *
 	 * @return array|WP_Error An array with 'path' and 'url' on success, or WP_Error on failure.
 	 */
-	private function get_temp_dir() {
-		$upload_dir = wp_get_upload_dir();
-		$temp_path  = $upload_dir['basedir'] . '/' . self::TEMP_DIR;
-		$temp_url   = $upload_dir['baseurl'] . '/' . self::TEMP_DIR;
+    private function get_temp_dir() {
+        $upload_dir = wp_get_upload_dir();
+        $temp_path  = $upload_dir['basedir'] . '/' . self::TEMP_DIR;
+        $temp_url   = $upload_dir['baseurl'] . '/' . self::TEMP_DIR;
 
-		if ( ! is_dir( $temp_path ) ) {
-			if ( ! wp_mkdir_p( $temp_path ) ) {
-				return new WP_Error( 'dir_creation_failed', __( 'Could not create temporary export directory.', 'forms-entries-manager' ) );
-			}
-		}
+        if ( ! is_dir( $temp_path ) ) {
+            if ( ! wp_mkdir_p( $temp_path ) ) {
+                return new WP_Error( 'dir_creation_failed', __( 'Could not create temporary export directory.', 'forms-entries-manager' ) );
+            }
+        }
 
-		// Add security files to prevent browsing
-		if ( ! file_exists( $temp_path . '/.htaccess' ) ) {
-			file_put_contents( $temp_path . '/.htaccess', 'deny from all' );
-		}
-		if ( ! file_exists( $temp_path . '/index.php' ) ) {
-			file_put_contents( $temp_path . '/index.php', '<?php // Silence is golden.' );
-		}
+        if ( ! file_exists( $temp_path . '/.htaccess' ) ) {
+            file_put_contents( $temp_path . '/.htaccess', 'deny from all' );
+        }
+        if ( ! file_exists( $temp_path . '/index.php' ) ) {
+            file_put_contents( $temp_path . '/index.php', '<?php // Silence is golden.' );
+        }
 
-		return array(
-			'path' => $temp_path,
-			'url'  => $temp_url,
-		);
-	}
+        return array(
+            'path' => $temp_path,
+            'url'  => $temp_url,
+        );
+    }
 
 	/**
 	 * REST API endpoint to securely serve a completed export file.
@@ -653,85 +596,83 @@ class Export_Entries {
 		}
 	}
 
-	public function export_entries_otg( $entries ) {
-		if ( empty( $entries ) ) {
-			return new \WP_Error(
-				'no_data',
-				__( 'No data found.', 'forms-entries-manager' ),
-				array( 'status' => 404 )
-			);
-		}
+	    public function export_entries_otg( $submissions, $entries_raw ) {
+        if ( empty( $submissions ) ) {
+            return new \WP_Error(
+                'no_data',
+                __( 'No data found.', 'forms-entries-manager' ),
+                array( 'status' => 404 )
+            );
+        }
+        
+        // Merge the data from both tables
+        $merged_entries = $this->merge_entries_data($submissions, $entries_raw);
 
-		// Set headers for CSV file download
-		header( 'Content-Type: text/csv' );
-		header( 'Content-Disposition: attachment; filename="fem-entries-' . time() . '.csv"' );
+        // Get headers from all entries
+        $all_keys = $this->get_header_from_entries($merged_entries);
 
-		$output = fopen( 'php://output', 'w' );
-		if ( $output === false ) {
-			return new \WP_Error( 'output_failed', __( 'Could not open output stream.', 'forms-entries-manager' ), array( 'status' => 500 ) );
-		}
+        // Build the CSV content in memory
+        $csv_content = "\xEF\xBB\xBF"; // UTF-8 BOM
+        $csv_content .= Helper::get_csv_line($all_keys);
 
-		// Step 1: Collect all normalized keys from all entries
-		$all_keys  = array();
-		$field_map = array(); // normalized_key => original_label
-		foreach ( $entries as $entry ) {
-			$data = maybe_unserialize( $entry['entry'] );
-			if ( is_array( $data ) ) {
-				foreach ( array_keys( $data ) as $label ) {
-					$normalized               = $this->normalize_label( $label );
-					$field_map[ $normalized ] = $label; // Keep original label
-					$all_keys[]               = $normalized;
-				}
-			}
-		}
+        foreach ($merged_entries as $entry) {
+            $row = [];
+            foreach ($all_keys as $key) {
+                $row[] = $entry[$key] ?? '';
+            }
+            $csv_content .= Helper::get_csv_line($row);
+        }
 
-		// Step 2: Prepare final ordered unique keys
-		$all_keys = array_unique( $all_keys );
-		sort( $all_keys );
-		array_unshift( $all_keys, 'id' ); // Always show ID first
+        // Set headers and echo
+        header( 'Content-Type: text/csv' );
+        header( 'Content-Disposition: attachment; filename="fem-entries-' . time() . '.csv"' );
+        echo $csv_content;
+        exit;
+    }
 
-		// Step 3: Write CSV headers using original labels
-		$csv_headers = array_map(
-			function ( $key ) use ( $field_map ) {
-				return $key === 'id' ? 'id' : $field_map[ $key ] ?? $key;
-			},
-			$all_keys
-		);
+        private function get_header_from_entries( array $entries ): array {
+        $headers = [];
+        foreach ($entries as $entry) {
+            foreach ($entry as $key => $value) {
+                if (!in_array($key, $headers)) {
+                    $headers[] = $key;
+                }
+            }
+        }
+        sort($headers);
+        return $headers;
+    }
 
-		fputcsv( $output, $csv_headers );
+    /**
+     * Merges submissions data with their corresponding entry fields.
+     *
+     * @param array $submissions An array of submissions from the submissions table.
+     * @param array $entries_raw An array of raw entry data.
+     * @return array The merged array of entries.
+     */
+    private function merge_entries_data( array $submissions, array $entries_raw ): array {
+        $merged = [];
+        $entries_map = [];
 
-		// Step 4: Write CSV rows
-		foreach ( $entries as $entry ) {
-			$data = maybe_unserialize( $entry['entry'] );
-			$row  = array();
+        foreach ($entries_raw as $entry) {
+            $entries_map[$entry['submission_id']][$entry['field_key']] = $entry['field_value'];
+        }
 
-			foreach ( $all_keys as $key ) {
-				if ( $key === 'id' ) {
-					$row[] = $entry['id'];
-					continue;
-				}
+        foreach ($submissions as $submission) {
+            $submission_id = $submission['id'];
+            $entry_data = $entries_map[$submission_id] ?? [];
+            $merged[] = array_merge($submission, $entry_data);
+        }
 
-				$original_label = $field_map[ $key ] ?? $key;
-				$value          = $data[ $original_label ] ?? '';
+        return $merged;
+    }
 
-				// Convert arrays to comma-separated values
-				if ( is_array( $value ) ) {
-					$value = implode( ', ', $value );
-				}
-
-				// Remove newlines for safe CSV rows
-				$value = preg_replace( '/\r\n|\r|\n/', ' ', $value );
-
-				$row[] = $value;
-			}
-
-			fputcsv( $output, $row );
-		}
-
-		fclose( $output ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
-		exit;
-	}
-
+    /**
+     * Gets a unique header from a batch of entries.
+     *
+     * @param array $entries The array of merged entry data.
+     * @return array The unique headers.
+     */
 	private function normalize_label( $label ) {
 		$label = strtolower( $label );
 		$label = preg_replace( '/[^a-z0-9]+/', '_', $label );
