@@ -8,210 +8,304 @@ use App\AdvancedEntryManager\Utility\Helper;
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
-
 /**
  * Class Get_Entries
  *
- * Handles the retrieval of entries from the custom database table.
+ * Handles retrieving entries from the new submissions and entries tables.
  */
 class Get_Entries {
 
 	/**
-	 * Retrieves all entries from the fem table.
+	 * Retrieves a list of entries for a given form.
 	 *
-	 * Fetches all rows from the custom entries table, decodes the entry data,
-	 * and groups entries by form ID.
-	 *
-	 * @return \WP_REST_Response List of decoded entries as a REST response.
+	 * @param WP_REST_Request $request The REST API request.
+	 * @return \WP_REST_Response A REST response with the list of entries and a data schema.
 	 */
 	public function get_entries( WP_REST_Request $request ) {
 		global $wpdb;
 
-		$table     = Helper::get_table_name();
-		$form_id   = $request->get_param( 'form_id' );
-		$status    = $request->get_param( 'status' );
-		$search    = $request->get_param( 'search' );
-		$per_page  = $request->get_param( 'per_page' );
-		$page      = $request->get_param( 'page' );
-		$date_from = $request->get_param( 'date_from' );
-		$date_to   = $request->get_param( 'date_to' );
+		// Get table names from our central schema class
+		$submissions_table = Helper::get_submission_table();
+		$entries_table     = Helper::get_data_table();
 
-		// Default search type if not provided, assuming we have a valid `search` parameter.
-		$search_type = $request->get_param( 'search_type' ) ?? 'default';
+		// 1. Prepare query parameters.
+		$params = $this->prepare_query_params( $request );
 
-		// --- Start of Hybrid Pagination Logic ---
-		$offset   = ( $page - 1 ) * $per_page;
-		$start_id = null;
+		// 2. Build the WHERE clause.
+		list($where_clause, $query_params) = $this->build_where_clause( $params );
 
-		// Construct WHERE clauses and parameters
-		$where_clauses = array();
-		$params        = array();
+		// 3. Get the total count of matching submissions.
+		$total_count = $this->get_total_count( $submissions_table, $where_clause, $query_params );
 
-		// Base condition to ensure a valid WHERE clause
-		$where_clauses[] = '1=1';
+		// 4. Fetch submissions with pagination.
+		$submissions = $this->get_paginated_submissions( $submissions_table, $where_clause, $query_params, $request );
 
-		if ( $form_id ) {
+		// 5. Fetch all related entry fields in a single query.
+		$entries = $this->get_entries_for_submissions( $entries_table, $submissions );
+
+		// 6. Process the raw data into the final structured format for the UI.
+		list($formatted_entries, $entry_schema) = $this->process_entries( $submissions, $entries );
+
+		// 7. Build and return the final REST response.
+		return $this->build_response( $formatted_entries, $entry_schema, $total_count, $params );
+	}
+
+	/**
+	 * Prepare query parameters from the REST request.
+	 *
+	 * @param WP_REST_Request $request The REST API request.
+	 * @return array
+	 */
+	private function prepare_query_params( WP_REST_Request $request ) {
+		return array(
+			'form_id'     => $request->get_param( 'form_id' ),
+			'status'      => $request->get_param( 'status' ),
+			'search'      => $request->get_param( 'search' ),
+			'per_page'    => $request->get_param( 'per_page' ) ?? 10,
+			'page'        => $request->get_param( 'page' ) ?? 1,
+			'date_from'   => $request->get_param( 'date_from' ),
+			'date_to'     => $request->get_param( 'date_to' ),
+			'search_type' => $request->get_param( 'search_type' ) ?? 'default',
+		);
+	}
+
+	/**
+	 * Builds the WHERE clause for the main query.
+	 *
+	 * @param array $params Query parameters.
+	 * @return array An array containing the WHERE clause and its parameters.
+	 */
+	private function build_where_clause( array $params ) {
+		global $wpdb;
+
+		$where_clauses = array( '1=1' );
+		$query_params  = array();
+
+		// Form ID filter
+		if ( isset( $params['form_id'] ) && $params['form_id'] ) {
 			$where_clauses[] = 'form_id = %d';
-			$params[]        = $form_id;
+			$query_params[]  = (int) $params['form_id'];
 		}
 
-		if ( $status === 'read' || $status === 'unread' ) {
+		// Status filter
+		if ( isset( $params['status'] ) && in_array( $params['status'], array( 'read', 'unread' ), true ) ) {
 			$where_clauses[] = 'status = %s';
-			$params[]        = $status;
+			$query_params[]  = $params['status'];
 		}
 
-		if ( $search ) {
+		// Search filter
+		if ( ! empty( $params['search'] ) ) {
+			$search      = (string) $params['search'];
+			$search_type = $params['search_type'] ?? '';
+
 			switch ( $search_type ) {
 				case 'email':
 					$where_clauses[] = 'email = %s';
-					$params[]        = (string) $search;
+					$query_params[]  = $search;
 					break;
 				case 'id':
-					// The validate_callback for 'id' should ensure this is an integer.
 					$where_clauses[] = 'id = %d';
-					$params[]        = (int) $search;
+					$query_params[]  = (int) $search;
 					break;
 				case 'name':
-					$where_clauses[] = 'name LIKE %s';
-					$params[]        = '%' . $wpdb->esc_like( $search ) . '%';
+					$where_clauses[] = 'name = %s';
+					$query_params[]  = $search;
 					break;
 				default:
-					// Default search is now 'name' or 'entry'
-					$where_clauses[] = '(name LIKE %s OR entry LIKE %s)';
-					$params[]        = '%' . $wpdb->esc_like( $search ) . '%';
-					$params[]        = '%' . $wpdb->esc_like( $search ) . '%';
+					// Search in both name and email
+					$where_clauses[] = '(name LIKE %s OR email LIKE %s)';
+					$query_params[]  = '%' . $wpdb->esc_like( $search ) . '%';
+					$query_params[]  = '%' . $wpdb->esc_like( $search ) . '%';
 					break;
 			}
 		}
 
-		if ( $date_from ) {
+		// Date filters
+		if ( ! empty( $params['date_from'] ) ) {
 			$where_clauses[] = 'created_at >= %s';
-			$params[]        = $date_from . ' 00:00:00';
+			$query_params[]  = $params['date_from'] . ' 00:00:00';
 		}
-
-		if ( $date_to ) {
+		if ( ! empty( $params['date_to'] ) ) {
 			$where_clauses[] = 'created_at <= %s';
-			$params[]        = $date_to . ' 23:59:59';
+			$query_params[]  = $params['date_to'] . ' 23:59:59';
 		}
 
-		$where = 'WHERE ' . implode( ' AND ', $where_clauses );
-		$where = apply_filters( 'fem_get_entries_where', $where, $params, $request );
+		$where_clause = 'WHERE ' . implode( ' AND ', $where_clauses );
 
-		// First, get the total count. This query is still needed for pagination button rendering.
-		$count_sql = $wpdb->prepare(
-            // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
-			"SELECT COUNT(*) FROM $table $where",
-			...$params
-		);
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
-		$total_count = (int) $wpdb->get_var( $count_sql );
+		return array( $where_clause, $query_params );
+	}
 
-		// Step 1: Find the ID of the first entry for the requested page.
-		if ( $page > 1 ) {
-			$get_id_sql = $wpdb->prepare(
-				"SELECT id FROM $table $where ORDER BY created_at DESC LIMIT 1 OFFSET %d",
-				...array_merge( $params, array( $offset ) )
-			);
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
-			$start_id = $wpdb->get_var( $get_id_sql );
+	/**
+	 * Gets the total count of submissions matching the WHERE clause.
+	 *
+	 * @param string $submissions_table The submissions table name.
+	 * @param string $where_clause      The WHERE clause.
+	 * @param array  $query_params      Parameters for the query.
+	 * @return int The total count.
+	 */
+	private function get_total_count( $submissions_table, $where_clause, $query_params ) {
+		global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.NotPrepared
+		$sql = $wpdb->prepare( "SELECT COUNT(*) FROM $submissions_table $where_clause", ...$query_params );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		return (int) $wpdb->get_var( $sql );
+	}
+
+	/**
+	 * Fetches paginated submissions.
+	 *
+	 * @param string          $submissions_table The submissions table name.
+	 * @param string          $where_clause      The WHERE clause.
+	 * @param array           $query_params      Parameters for the query.
+	 * @param WP_REST_Request $request  The REST API request.
+	 * @return array An array of submission objects.
+	 */
+	private function get_paginated_submissions( $submissions_table, $where_clause, $query_params, WP_REST_Request $request ) {
+		global $wpdb;
+
+		$page     = $request->get_param( 'page' ) ?? 1;
+		$per_page = $request->get_param( 'per_page' ) ?? 10;
+		$offset   = ( $page - 1 ) * $per_page;
+
+		// Note: The hybrid pagination logic is no longer needed with the two-table structure.
+		// We can use a simple OFFSET/LIMIT query as it is now performing on a smaller,
+		// more optimized table (submissions_table).
+
+		$sql = "SELECT * FROM $submissions_table $where_clause ORDER BY created_at DESC LIMIT %d OFFSET %d";
+
+		$params   = $this->build_where_clause( $request->get_params() )[1]; // Get params again.
+		$params[] = (int) $per_page;
+		$params[] = (int) $offset;
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.NotPrepared
+		$sql = $wpdb->prepare( $sql, ...$params );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		return $wpdb->get_results( $sql );
+	}
+
+	/**
+	 * Fetches all related entry key/value pairs for the fetched submissions.
+	 *
+	 * @param string $entries_table The entries table name.
+	 * @param array  $submissions    An array of submission objects.
+	 * @return array An array of entry field objects.
+	 */
+	private function get_entries_for_submissions( $entries_table, $submissions ) {
+		if ( empty( $submissions ) ) {
+			return array();
 		}
 
-		// Step 2: Fetch the data using the cursor/start ID.
-		$data_sql    = "SELECT * FROM $table $where ";
-		$data_params = $params;
+		global $wpdb;
+		$submission_ids  = wp_list_pluck( $submissions, 'id' );
+		$ids_placeholder = implode( ',', array_fill( 0, count( $submission_ids ), '%d' ) );
 
-		if ( $page > 1 && $start_id ) {
-			$data_sql     .= ' AND id <= %d ORDER BY created_at DESC LIMIT %d';
-			$data_params[] = $start_id;
-			$data_params[] = $per_page;
-		} else {
-			$data_sql     .= ' ORDER BY created_at DESC LIMIT %d';
-			$data_params[] = $per_page;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.NotPrepared
+		$sql = $wpdb->prepare( "SELECT * FROM $entries_table WHERE submission_id IN ($ids_placeholder)", ...$submission_ids );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		return $wpdb->get_results( $sql );
+	}
+
+	/**
+	 * Processes raw data and formats it for the UI.
+	 *
+	 * @param array $submissions An array of submission objects.
+	 * @param array $entries     An array of entry field objects.
+	 * @return array An array containing the formatted entries and a schema.
+	 */
+	private function process_entries( $submissions, $entries ) {
+		$formatted_entries = array();
+		$entry_schema      = array();
+		$all_entry_keys    = array();
+
+		// Group all entry fields by their submission ID for easier lookup.
+		$entries_by_submission = array();
+		foreach ( $entries as $entry ) {
+			$entries_by_submission[ $entry->submission_id ][] = $entry;
 		}
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
-		$sql = $wpdb->prepare( $data_sql, ...$data_params );
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$results = $wpdb->get_results( $sql );
+		// Iterate through submissions and build the final data structure.
+		foreach ( $submissions as $submission ) {
+			$normalized_entry = array();
+			if ( isset( $entries_by_submission[ $submission->id ] ) ) {
+				foreach ( $entries_by_submission[ $submission->id ] as $entry_field ) {
+					$key   = $entry_field->field_key;
+					$value = $entry_field->field_value;
 
-		// --- The rest of the code remains the same ---
-		// Initialize the final data array
-		$data = array();
-		// Initialize a unique set of all keys found across all entries
-		$all_entry_keys = array();
+					$normalized_key = $key; // or just use $key directly
 
-		foreach ( $results as $row ) {
-			$entry_raw        = maybe_unserialize( $row->entry );
-			$entry_normalized = array();
+					$normalized_entry[ $normalized_key ] = $value;
 
-			if ( is_array( $entry_raw ) ) {
-				foreach ( $entry_raw as $key => $value ) {
-					// Use ucwords() on keys for display purposes
-					$normalized_key                      = ucwords( strtolower( $key ) );
-					$entry_normalized[ $normalized_key ] = $value;
-					// Collect all unique normalized keys
-					$all_entry_keys[] = $normalized_key;
+					if ( ! in_array( $normalized_key, $all_entry_keys ) ) {
+						$all_entry_keys[] = $normalized_key;
+					}
 				}
 			}
-
-			$data[] = array(
-				'id'          => (int) $row->id,
-				'form_title'  => get_the_title( $row->form_id ),
-				'entry'       => $entry_normalized, // Keep the normalized entry data
-				'name'        => $row->name,
-				'email'       => $row->email,
-				'status'      => $row->status,
-				'date'        => $row->created_at,
-				'note'        => $row->note,
-				'is_favorite' => (bool) $row->is_favorite,
-				'exported'    => (bool) $row->exported_to_csv,
-				'synced'      => (bool) $row->synced_to_gsheet,
-				'printed_at'  => $row->printed_at,
-				'resent_at'   => $row->resent_at,
-				'form_id'     => (int) $row->form_id,
-				'is_spam'     => (int) $row->is_spam,
+			// The rest of your code remains the same.
+			$formatted_entries[] = array(
+				'id'          => (int) $submission->id,
+				'form_title'  => get_the_title( $submission->form_id ),
+				'entry'       => $normalized_entry,
+				'name'        => $submission->name,
+				'email'       => $submission->email,
+				'status'      => $submission->status,
+				'date'        => $submission->created_at,
+				'note'        => $submission->note,
+				'is_favorite' => (bool) $submission->is_favorite,
+				'exported'    => (bool) $submission->exported_to_csv,
+				'synced'      => (bool) $submission->synced_to_gsheet,
+				'printed_at'  => $submission->printed_at,
+				'resent_at'   => $submission->resent_at,
+				'form_id'     => (int) $submission->form_id,
+				'is_spam'     => (int) $submission->is_spam,
 			);
 		}
 
-		// Ensure unique keys and sort them for consistency
-		$unique_entry_keys = array_values( array_unique( $all_entry_keys ) );
-
-		// Build the final fields schema array
-		$entry_schema = array();
-
-		// Add the dynamic fields from the `entry` object
-		foreach ( $unique_entry_keys as $key ) {
-
-			if ( strtolower( $key ) == 'name'
-			|| strtolower( $key ) == 'email'
-			|| strtolower( $key ) == 'your-name'
-			|| strtolower( $key ) == 'your-email'
-			|| strpos( strtolower( $key ), 'g-recaptcha-response' ) !== false
-			|| strpos( strtolower( $key ), 'file' ) !== false
-			) {
+		// Build the dynamic fields schema.
+		foreach ( $all_entry_keys as $key ) {
+			if ( $this->is_system_key( $key ) ) {
 				continue;
 			}
-
 			$entry_schema[] = array(
 				'key'   => $key,
 				'label' => $key,
 			);
 		}
 
-		$data = apply_filters( 'fem_get_entries_data', $data, $results, $request );
+		return array( $formatted_entries, $entry_schema );
+	}
 
-		do_action( 'fem_after_get_total_count', $total_count, $request );
+	/**
+	 * Checks if a key is a system key that should be skipped in the schema.
+	 *
+	 * @param string $key The field key to check.
+	 * @return bool
+	 */
+	private function is_system_key( $key ) {
+		$key = strtolower( $key );
+		return strpos( $key, 'g-recaptcha-response' ) !== false || strpos( $key, 'file' ) !== false;
+	}
 
+	/**
+	 * Builds the final REST response.
+	 *
+	 * @param array $formatted_entries The processed entry data.
+	 * @param array $entry_schema      The data schema.
+	 * @param int   $total_count       The total number of entries.
+	 * @param array $params            The request parameters.
+	 * @return \WP_REST_Response
+	 */
+	private function build_response( $formatted_entries, $entry_schema, $total_count, $params ) {
 		$response = rest_ensure_response(
 			array(
-				'entries'      => $data,
-				'entry_schema' => $entry_schema, // Add the schema to the final response
+				'entries'      => $formatted_entries,
+				'entry_schema' => $entry_schema,
 				'total'        => $total_count,
-				'page'         => $page,
-				'per_page'     => $per_page,
+				'page'         => (int) $params['page'],
+				'per_page'     => (int) $params['per_page'],
 			)
 		);
 
-		return apply_filters( 'fem_get_entries_response', $response, $request );
+		return apply_filters( 'fem_get_entries_response', $response, null );
 	}
 }

@@ -214,6 +214,7 @@ class Send_Data {
 		return array(
 			'spreadsheet_id' => $spreadsheet_id,
 			'sheet_title'    => $sheet_title,
+			'sheetId'        => $sheet_id,
 		);
 	}
 
@@ -236,10 +237,26 @@ class Send_Data {
 		global $wpdb;
 
 		$entry_id = absint( $args['entry_id'] );
-		$table    = Helper::get_table_name(); // Safe table
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$entry = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $entry_id ) );
+		$submissions_table = Helper::get_submission_table();
+		$data_table        = Helper::get_data_table();
+
+		$entry = $wpdb->get_row(
+			$wpdb->prepare(
+				"
+                SELECT
+                    s.*,
+                    e.field_key,
+                    e.field_value,
+                    e.id AS entry_field_id
+                FROM {$submissions_table} AS s
+                LEFT JOIN {$data_table} AS e ON s.id = e.submission_id
+                WHERE s.id = %d
+                ORDER BY e.field_key ASC
+                ",
+				$entry_id
+			)
+		);
 
 		if ( ! $entry ) {
 			$this->logger->log( 'No entry data found for ID: ' . $entry_id, 'ERROR' );
@@ -275,7 +292,7 @@ class Send_Data {
 				if ( $row_count >= 1000 ) { // Check against the current actual row count
 					$this->logger->log( 'GSheet row limit reached for form ' . $form_id . '. Entry ' . $entry_id . ' not synced.', 'ERROR' );
                     // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-					$wpdb->update( $table, array( 'synced_to_gsheet' => 2 ), array( 'id' => $entry_id ) ); // '2' can indicate 'sync_limit_reached'
+					$wpdb->update( $submissions_table, array( 'synced_to_gsheet' => 2 ), array( 'id' => $entry_id ) ); // '2' can indicate 'sync_limit_reached'
 					return false;
 				}
 			}
@@ -326,7 +343,7 @@ class Send_Data {
 
 		// Step 5: Mark as synced on success.
 		$wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			$table,
+			$submissions_table,
 			array(
 				'synced_to_gsheet' => 1,
 				'retry_count'      => 0,
@@ -516,7 +533,7 @@ class Send_Data {
 	 * @param int    $row_index The 0-based index of the row to format. (e.g., for row 1, pass 0)
 	 * @return bool|WP_Error True on success, WP_Error on failure.
 	 */
-	protected function apply_alternating_color( string $spreadsheet_id, int $sheet_id, int $row_index ) {
+	protected function apply_alternating_color( string $spreadsheet_id, $sheet_id, int $row_index ) {
 		// Define your alternating colors
 		$colors = array(
 			// White (for even rows, 0-based)
@@ -598,20 +615,47 @@ class Send_Data {
 	}
 
 	/**
-	 * Creates a new Google Spreadsheet using the Google Drive API.
-	 * This is the corrected function for drive.file scope.
+	 * Create a new Google Spreadsheet via Drive API.
+	 *
+	 * @param string $title Spreadsheet title. Default 'WPForms Entries'.
+	 * @return string|WP_Error Spreadsheet ID on success, WP_Error on failure.
 	 */
 	public function gsheet_create_spreadsheet( $title = 'WPForms Entries' ) {
+		// Validate input.
+		if ( empty( $title ) ) {
+			$this->logger->log( 'Spreadsheet creation failed: Empty title provided.' );
+			return new WP_Error( 'invalid_title', __( 'Spreadsheet title cannot be empty.', 'save-wpf-entries' ) );
+		}
+
 		$body = array(
-			'name'     => $title,
+			'name'     => sanitize_text_field( $title ),
 			'mimeType' => 'application/vnd.google-apps.spreadsheet',
 		);
-		// Use the Drive API's files.create endpoint and request only the 'id' field
-		$url      = 'https://www.googleapis.com/drive/v3/files';
-		$response = $this->_make_google_api_request( $url, $body, 'POST', '?fields=id' );
 
-		return $response['id'] ?? new WP_Error( 'create_failed', 'Spreadsheet creation failed.' );
+		$url = 'https://www.googleapis.com/drive/v3/files?fields=id';
+
+		try {
+			$response = $this->_make_google_api_request( $url, $body, 'POST' );
+
+			if ( is_wp_error( $response ) ) {
+				$this->logger->log( sprintf( 'Spreadsheet creation API error: %s', $response->get_error_message() ) );
+				return $response;
+			}
+
+			if ( empty( $response['id'] ) ) {
+				$this->logger->log( 'Spreadsheet creation failed: No ID returned from Google API.', array( 'response' => $response ) );
+				return new WP_Error( 'create_failed', __( 'Google API did not return a spreadsheet ID.', 'save-wpf-entries' ) );
+			}
+
+			$this->logger->log( sprintf( 'Spreadsheet created successfully: %s', $response['id'] ), 'info' );
+			return $response['id'];
+
+		} catch ( \Exception $e ) {
+			$this->logger->log( sprintf( 'Spreadsheet creation exception: %s', $e->getMessage() ), 'info' );
+			return new WP_Error( 'exception', __( 'Spreadsheet creation encountered an error. Please try again.', 'save-wpf-entries' ) );
+		}
 	}
+
 
 	/**
 	 * Fetch spreadsheet metadata (to get sheet info like sheetId)
