@@ -53,18 +53,18 @@ class Export_Entries {
 	 */
 	const TEMP_DIR = self::FEM_PREFIX . 'exports';
 
-    const SYSTEM_FIELDS_TO_EXCLUDE = [
-        'form_id',           // This identifies the form, often not needed as a field in the export itself
-        'status',            // 'read'/'unread' is internal state
-        'is_favorite',       // Internal favorite flag
-        'exported_to_csv',   // Internal tracking of export
-        'synced_to_gsheet',  // Internal tracking of Google Sheet sync
-        'printed_at',        // Internal tracking of print time
-        'is_spam',           // Internal spam flag
-        'resent_at',         // Internal tracking of resending
-        'updated_at',        // Internal update timestamp
-        'retry_count',       // Internal retry mechanism
-    ];
+	const SYSTEM_FIELDS_TO_EXCLUDE = array(
+		'form_id',           // This identifies the form, often not needed as a field in the export itself
+		'status',            // 'read'/'unread' is internal state
+		'is_favorite',       // Internal favorite flag
+		'exported_to_csv',   // Internal tracking of export
+		'synced_to_gsheet',  // Internal tracking of Google Sheet sync
+		'printed_at',        // Internal tracking of print time
+		'is_spam',           // Internal spam flag
+		'resent_at',         // Internal tracking of resending
+		'updated_at',        // Internal update timestamp
+		'retry_count',       // Internal retry mechanism
+	);
 
 	public function __construct() {
 		$this->fs = new FileSystem();
@@ -81,110 +81,111 @@ class Export_Entries {
 	 * @return WP_REST_Response|WP_Error The response object.
 	 */
 	public function start_export_job( WP_REST_Request $request ) {
-        if ( ! class_exists( 'ActionScheduler' ) ) {
-            return new WP_Error( 'missing_scheduler', __( 'Action Scheduler is required but not available.', 'forms-entries-manager' ), array( 'status' => 500 ) );
-        }
+		if ( ! class_exists( 'ActionScheduler' ) ) {
+			return new WP_Error( 'missing_scheduler', __( 'Action Scheduler is required but not available.', 'forms-entries-manager' ), array( 'status' => 500 ) );
+		}
 
-        $form_id = absint( $request->get_param( 'form_id' ) );
-        if ( ! $form_id ) {
-            return new WP_Error( 'missing_form_id', __( 'A valid Form ID is required.', 'forms-entries-manager' ), array( 'status' => 400 ) );
-        }
+		$form_id = absint( $request->get_param( 'form_id' ) );
+		if ( ! $form_id ) {
+			return new WP_Error( 'missing_form_id', __( 'A valid Form ID is required.', 'forms-entries-manager' ), array( 'status' => 400 ) );
+		}
 
-        global $wpdb;
-        $submissions_table = Helper::get_submission_table();
-        $entries_table     = Helper::get_data_table();
+		global $wpdb;
+		$submissions_table = Helper::get_submission_table();
+		$entries_table     = Helper::get_data_table();
 
-        // Build query to count total entries based on filters
-        $query_args    = array();
-        $where_clauses = array( 'form_id = %d' );
-        $query_args[]  = $form_id;
+		// Build query to count total entries based on filters
+		$query_args    = array();
+		$where_clauses = array( 'form_id = %d' );
+		$query_args[]  = $form_id;
 
-        $date_from = sanitize_text_field( $request->get_param( 'date_from' ) ?? '' );
-        if ( $date_from ) {
-            $where_clauses[] = 'created_at >= %s';
-            $query_args[]    = $date_from;
-        }
+		$date_from = sanitize_text_field( $request->get_param( 'date_from' ) ?? '' );
+		if ( $date_from ) {
+			$where_clauses[] = 'created_at >= %s';
+			$query_args[]    = $date_from;
+		}
 
-        $date_to = sanitize_text_field( $request->get_param( 'date_to' ) ?? '' );
-        if ( $date_to ) {
-            $where_clauses[] = 'created_at <= %s';
-            $query_args[]    = $date_to;
-        }
+		$date_to = sanitize_text_field( $request->get_param( 'date_to' ) ?? '' );
+		if ( $date_to ) {
+			$where_clauses[] = 'created_at <= %s';
+			$query_args[]    = $date_to;
+		}
 
-        $where_sql = 'WHERE ' . implode( ' AND ', $where_clauses );
+		$where_sql = 'WHERE ' . implode( ' AND ', $where_clauses );
 
-        // Step 1: Count entries from the submissions table
-        $count_query = $wpdb->prepare( "SELECT COUNT(*) FROM {$submissions_table} {$where_sql}", ...$query_args );
-        $total_entries = (int) $wpdb->get_var( $count_query );
+		// Step 1: Count entries from the submissions table
+		$count_query   = $wpdb->prepare( "SELECT COUNT(*) FROM {$submissions_table} {$where_sql}", ...$query_args );
+		$total_entries = (int) $wpdb->get_var( $count_query );
 
-        if ( $total_entries === 0 ) {
-            return new WP_Error(
-                'no_entries',
-                __( 'No entries found for the selected criteria.', 'forms-entries-manager' ),
-                array( 'status' => 404 )
-            );
-        }
+		if ( $total_entries === 0 ) {
+			return new WP_Error(
+				'no_entries',
+				__( 'No entries found for the selected criteria.', 'forms-entries-manager' ),
+				array( 'status' => 404 )
+			);
+		}
 
-        // Step 2: If low volume, fetch directly
-        if ( $total_entries <= 10000 ) {
-            $select_query = $wpdb->prepare(
-                "SELECT * FROM {$submissions_table} {$where_sql} ORDER BY created_at ASC",
-                ...$query_args
-            );
-            $low_entries = $wpdb->get_results( $select_query, ARRAY_A );
-            $all_entry_data = $wpdb->get_results(
-                $wpdb->prepare("SELECT submission_id, field_key, field_value FROM {$entries_table} WHERE submission_id IN ($ids_placeholder)", ...array_column($low_entries, 'id')), ARRAY_A
-            );
+		// Step 2: If low volume, fetch directly
+		if ( $total_entries <= 10000 ) {
+			$select_query   = $wpdb->prepare(
+				"SELECT * FROM {$submissions_table} {$where_sql} ORDER BY created_at ASC",
+				...$query_args
+			);
+			$low_entries    = $wpdb->get_results( $select_query, ARRAY_A );
+			$all_entry_data = $wpdb->get_results(
+				$wpdb->prepare( "SELECT submission_id, field_key, field_value FROM {$entries_table} WHERE submission_id IN ($ids_placeholder)", ...array_column( $low_entries, 'id' ) ),
+				ARRAY_A
+			);
 
-            $this->export_entries_otg( $low_entries, $all_entry_data );
-        }
+			$this->export_entries_otg( $low_entries, $all_entry_data );
+		}
 
-        // Generate a unique ID for this export job
-        $job_id = 'export_' . $form_id . '_' . wp_generate_password( 12, false );
+		// Generate a unique ID for this export job
+		$job_id = 'export_' . $form_id . '_' . wp_generate_password( 12, false );
 
-        $exclude_fields = $request->get_param( 'exclude_fields' );
-        $exclude_fields = is_string( $exclude_fields ) ? explode( ',', $exclude_fields ) : (array) $exclude_fields;
+		$exclude_fields = $request->get_param( 'exclude_fields' );
+		$exclude_fields = is_string( $exclude_fields ) ? explode( ',', $exclude_fields ) : (array) $exclude_fields;
 
-        // Store the initial state of the job in a transient
-        $job_state = array(
-            'job_id'          => $job_id,
-            'status'          => 'queued',
-            'form_id'         => $form_id,
-            'total_entries'   => $total_entries,
-            'processed_count' => 0,
-            'last_id'         => 0,
-            'batch_size'      => 5000,
-            'page'            => 1,
-            'filters'         => array(
-                'date_from'      => $date_from,
-                'date_to'        => $date_to,
-                'exclude_fields' => $exclude_fields,
-            ),
-            'started_at'      => time(),
-            'file_path'       => null,
-            'file_url'        => null,
-            'header'          => array(),
-            'header_built'    => false,
-        );
-        Helper::set_transient( self::JOB_TRANSIENT_PREFIX . $job_id, $job_state, DAY_IN_SECONDS );
+		// Store the initial state of the job in a transient
+		$job_state = array(
+			'job_id'          => $job_id,
+			'status'          => 'queued',
+			'form_id'         => $form_id,
+			'total_entries'   => $total_entries,
+			'processed_count' => 0,
+			'last_id'         => 0,
+			'batch_size'      => 5000,
+			'page'            => 1,
+			'filters'         => array(
+				'date_from'      => $date_from,
+				'date_to'        => $date_to,
+				'exclude_fields' => $exclude_fields,
+			),
+			'started_at'      => time(),
+			'file_path'       => null,
+			'file_url'        => null,
+			'header'          => array(),
+			'header_built'    => false,
+		);
+		Helper::set_transient( self::JOB_TRANSIENT_PREFIX . $job_id, $job_state, DAY_IN_SECONDS );
 
-        // Schedule the first batch
-        as_schedule_single_action(
-            time(),
-            self::BATCH_PROCESSING_HOOK,
-            array( 'job_id' => $job_id ),
-            self::SCHEDULE_GROUP
-        );
+		// Schedule the first batch
+		as_schedule_single_action(
+			time(),
+			self::BATCH_PROCESSING_HOOK,
+			array( 'job_id' => $job_id ),
+			self::SCHEDULE_GROUP
+		);
 
-        return rest_ensure_response(
-            array(
-                'success'       => true,
-                'message'       => __( 'CSV export has been successfully queued.', 'forms-entries-manager' ),
-                'job_id'        => $job_id,
-                'total_entries' => $total_entries,
-            )
-        );
-    }
+		return rest_ensure_response(
+			array(
+				'success'       => true,
+				'message'       => __( 'CSV export has been successfully queued.', 'forms-entries-manager' ),
+				'job_id'        => $job_id,
+				'total_entries' => $total_entries,
+			)
+		);
+	}
 
 	/**
 	 * Processes one batch of entries for a given export job.
@@ -197,97 +198,98 @@ class Export_Entries {
 	 * @return void
 	 */
 	public function process_export_batch( string $job_id ): void {
-        $transient_key = self::JOB_TRANSIENT_PREFIX . $job_id;
-        $job_state     = Helper::get_transient( $transient_key );
+		$transient_key = self::JOB_TRANSIENT_PREFIX . $job_id;
+		$job_state     = Helper::get_transient( $transient_key );
 
-        if ( false === $job_state || $job_state['status'] === 'complete' ) {
-            return;
-        }
+		if ( false === $job_state || $job_state['status'] === 'complete' ) {
+			return;
+		}
 
-        $job_state['status'] = 'in-progress';
-        Helper::set_transient( $transient_key, $job_state, DAY_IN_SECONDS );
+		$job_state['status'] = 'in-progress';
+		Helper::set_transient( $transient_key, $job_state, DAY_IN_SECONDS );
 
-        global $wpdb;
-        $submissions_table = Helper::get_submission_table();
-        $entries_table     = Helper::get_data_table();
+		global $wpdb;
+		$submissions_table = Helper::get_submission_table();
+		$entries_table     = Helper::get_data_table();
 
-        // Build query for submissions
-        $query_args    = array();
-        $where_clauses = array( 'form_id = %d' );
-        $query_args[]  = $job_state['form_id'];
+		// Build query for submissions
+		$query_args    = array();
+		$where_clauses = array( 'form_id = %d' );
+		$query_args[]  = $job_state['form_id'];
 
-        if ( ! empty( $job_state['filters']['date_from'] ) ) {
-            $where_clauses[] = 'created_at >= %s';
-            $query_args[]    = $job_state['filters']['date_from'];
-        }
-        if ( ! empty( $job_state['filters']['date_to'] ) ) {
-            $where_clauses[] = 'created_at <= %s';
-            $query_args[]    = $job_state['filters']['date_to'];
-        }
+		if ( ! empty( $job_state['filters']['date_from'] ) ) {
+			$where_clauses[] = 'created_at >= %s';
+			$query_args[]    = $job_state['filters']['date_from'];
+		}
+		if ( ! empty( $job_state['filters']['date_to'] ) ) {
+			$where_clauses[] = 'created_at <= %s';
+			$query_args[]    = $job_state['filters']['date_to'];
+		}
 
-        $where_clauses[] = 'id > %d';
-        $query_args[]    = $job_state['last_id'];
+		$where_clauses[] = 'id > %d';
+		$query_args[]    = $job_state['last_id'];
 
-        $where_sql = 'WHERE ' . implode( ' AND ', $where_clauses );
+		$where_sql = 'WHERE ' . implode( ' AND ', $where_clauses );
 
-        $submissions_query = $wpdb->prepare(
-            "SELECT id, name, email, status, note, is_favorite, created_at FROM {$submissions_table} {$where_sql} ORDER BY id ASC LIMIT %d",
-            array_merge( $query_args, array( $job_state['batch_size'] ) )
-        );
-        $submissions = $wpdb->get_results( $submissions_query, ARRAY_A );
+		$submissions_query = $wpdb->prepare(
+			"SELECT id, name, email, status, note, is_favorite, created_at FROM {$submissions_table} {$where_sql} ORDER BY id ASC LIMIT %d",
+			array_merge( $query_args, array( $job_state['batch_size'] ) )
+		);
+		$submissions       = $wpdb->get_results( $submissions_query, ARRAY_A );
 
-        if ( empty( $submissions ) ) {
-            as_schedule_single_action(
-                time() + 5,
-                self::FINALIZE_HOOK,
-                array( 'job_id' => $job_id ),
-                self::SCHEDULE_GROUP
-            );
-            return;
-        }
+		if ( empty( $submissions ) ) {
+			as_schedule_single_action(
+				time() + 5,
+				self::FINALIZE_HOOK,
+				array( 'job_id' => $job_id ),
+				self::SCHEDULE_GROUP
+			);
+			return;
+		}
 
-        $submission_ids = array_column( $submissions, 'id' );
-        $ids_placeholder = implode( ',', array_fill( 0, count( $submission_ids ), '%d' ) );
+		$submission_ids  = array_column( $submissions, 'id' );
+		$ids_placeholder = implode( ',', array_fill( 0, count( $submission_ids ), '%d' ) );
 
-        $entries_raw = $wpdb->get_results(
-            $wpdb->prepare( "SELECT submission_id, field_key, field_value FROM {$entries_table} WHERE submission_id IN ($ids_placeholder)", ...$submission_ids ), ARRAY_A
-        );
+		$entries_raw = $wpdb->get_results(
+			$wpdb->prepare( "SELECT submission_id, field_key, field_value FROM {$entries_table} WHERE submission_id IN ($ids_placeholder)", ...$submission_ids ),
+			ARRAY_A
+		);
 
-        $merged_entries = $this->merge_entries_data( $submissions, $entries_raw );
+		$merged_entries = $this->merge_entries_data( $submissions, $entries_raw );
 
-        if ( ! $job_state['header_built'] ) {
-            $header = $this->get_header_from_entries( $merged_entries );
-            // Exclude fields if necessary
-            $header = array_diff( $header, $job_state['filters']['exclude_fields'] );
-            $job_state['header'] = $header;
-            $job_state['header_built'] = true;
-        }
+		if ( ! $job_state['header_built'] ) {
+			$header = $this->get_header_from_entries( $merged_entries );
+			// Exclude fields if necessary
+			$header                    = array_diff( $header, $job_state['filters']['exclude_fields'] );
+			$job_state['header']       = $header;
+			$job_state['header_built'] = true;
+		}
 
-        $this->write_batch_to_csv( $job_id, $job_state['page'], $merged_entries, $job_state['header'] );
+		$this->write_batch_to_csv( $job_id, $job_state['page'], $merged_entries, $job_state['header'] );
 
-        $job_state['processed_count'] += count( $submissions );
-        $last_submission = end( $submissions );
-        $job_state['last_id'] = $last_submission['id'];
-        ++$job_state['page'];
+		$job_state['processed_count'] += count( $submissions );
+		$last_submission               = end( $submissions );
+		$job_state['last_id']          = $last_submission['id'];
+		++$job_state['page'];
 
-        if ( $job_state['processed_count'] < $job_state['total_entries'] ) {
-            Helper::set_transient( $transient_key, $job_state, DAY_IN_SECONDS );
-            as_schedule_single_action(
-                time() + 5,
-                self::BATCH_PROCESSING_HOOK,
-                array( 'job_id' => $job_id ),
-                self::SCHEDULE_GROUP
-            );
-        } else {
-            Helper::set_transient( $transient_key, $job_state, DAY_IN_SECONDS );
-            as_schedule_single_action(
-                time() + 5,
-                self::FINALIZE_HOOK,
-                array( 'job_id' => $job_id ),
-                self::SCHEDULE_GROUP
-            );
-        }
-    }
+		if ( $job_state['processed_count'] < $job_state['total_entries'] ) {
+			Helper::set_transient( $transient_key, $job_state, DAY_IN_SECONDS );
+			as_schedule_single_action(
+				time() + 5,
+				self::BATCH_PROCESSING_HOOK,
+				array( 'job_id' => $job_id ),
+				self::SCHEDULE_GROUP
+			);
+		} else {
+			Helper::set_transient( $transient_key, $job_state, DAY_IN_SECONDS );
+			as_schedule_single_action(
+				time() + 5,
+				self::FINALIZE_HOOK,
+				array( 'job_id' => $job_id ),
+				self::SCHEDULE_GROUP
+			);
+		}
+	}
 
 	/**
 	 * Merges all temporary batch CSVs into a final file.
@@ -300,55 +302,55 @@ class Export_Entries {
 	 * @return void
 	 */
 	public function finalize_export_file( string $job_id ): void {
-        $upload_dir = $this->get_temp_dir();
-        if ( is_wp_error( $upload_dir ) ) {
-            return;
-        }
+		$upload_dir = $this->get_temp_dir();
+		if ( is_wp_error( $upload_dir ) ) {
+			return;
+		}
 
-        $final_file_path = $upload_dir['path'] . '/' . $job_id . '.csv';
-        // Use WP_Filesystem API for robust file operations
-        if ( ! function_exists( 'WP_Filesystem' ) ) {
-            require_once ABSPATH . 'wp-admin/includes/file.php';
-        }
-        WP_Filesystem();
-        global $wp_filesystem;
+		$final_file_path = $upload_dir['path'] . '/' . $job_id . '.csv';
+		// Use WP_Filesystem API for robust file operations
+		if ( ! function_exists( 'WP_Filesystem' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+		WP_Filesystem();
+		global $wp_filesystem;
 
-        $final_content = "\xEF\xBB\xBF"; // UTF-8 BOM
-        $header_written = false;
+		$final_content  = "\xEF\xBB\xBF"; // UTF-8 BOM
+		$header_written = false;
 
-        $batch_files = glob( $upload_dir['path'] . '/' . $job_id . '_batch_*.csv' );
+		$batch_files = glob( $upload_dir['path'] . '/' . $job_id . '_batch_*.csv' );
 
-        foreach ( $batch_files as $batch_file ) {
-            $content = $wp_filesystem->get_contents( $batch_file );
-            if ($content) {
-                // If header is not written, add the first batch content entirely
-                if (!$header_written) {
-                    $final_content .= $content;
-                    $header_written = true;
-                } else {
-                    // Skip the first line (header) of subsequent files
-                    $lines = explode("\n", $content);
-                    array_shift($lines);
-                    $final_content .= implode("\n", $lines);
-                }
-            }
-            $wp_filesystem->delete($batch_file);
-        }
+		foreach ( $batch_files as $batch_file ) {
+			$content = $wp_filesystem->get_contents( $batch_file );
+			if ( $content ) {
+				// If header is not written, add the first batch content entirely
+				if ( ! $header_written ) {
+					$final_content .= $content;
+					$header_written = true;
+				} else {
+					// Skip the first line (header) of subsequent files
+					$lines = explode( "\n", $content );
+					array_shift( $lines );
+					$final_content .= implode( "\n", $lines );
+				}
+			}
+			$wp_filesystem->delete( $batch_file );
+		}
 
-        if (!$wp_filesystem->put_contents($final_file_path, $final_content)) {
-            // Log error
-            return;
-        }
+		if ( ! $wp_filesystem->put_contents( $final_file_path, $final_content ) ) {
+			// Log error
+			return;
+		}
 
-        $transient_key = self::JOB_TRANSIENT_PREFIX . $job_id;
-        $job_state     = Helper::get_transient( $transient_key );
-        if ( $job_state ) {
-            $job_state['status']    = 'complete';
-            $job_state['file_path'] = $final_file_path;
-            $job_state['file_url']  = $upload_dir['url'] . '/' . $job_id . '.csv';
-            Helper::set_transient( $transient_key, $job_state, DAY_IN_SECONDS );
-        }
-    }
+		$transient_key = self::JOB_TRANSIENT_PREFIX . $job_id;
+		$job_state     = Helper::get_transient( $transient_key );
+		if ( $job_state ) {
+			$job_state['status']    = 'complete';
+			$job_state['file_path'] = $final_file_path;
+			$job_state['file_url']  = $upload_dir['url'] . '/' . $job_id . '.csv';
+			Helper::set_transient( $transient_key, $job_state, DAY_IN_SECONDS );
+		}
+	}
 
 	/**
 	 * Retrieves the progress of an ongoing export job.
@@ -400,61 +402,61 @@ class Export_Entries {
 	 * @return void
 	 */
 	private function write_batch_to_csv( string $job_id, int $page, array $entries, array $header ): void {
-        $upload_dir = $this->get_temp_dir();
-        if ( is_wp_error( $upload_dir ) ) {
-            return;
-        }
+		$upload_dir = $this->get_temp_dir();
+		if ( is_wp_error( $upload_dir ) ) {
+			return;
+		}
 
-        $file_path = $upload_dir['path'] . '/' . $job_id . '_batch_' . $page . '.csv';
-        $file_handle = fopen( $file_path, 'a' ); 
+		$file_path   = $upload_dir['path'] . '/' . $job_id . '_batch_' . $page . '.csv';
+		$file_handle = fopen( $file_path, 'a' );
 
-        if ( $file_handle === false ) {
-            return;
-        }
+		if ( $file_handle === false ) {
+			return;
+		}
 
-        if ( $page === 1 ) {
-            fputcsv( $file_handle, $header );
-        }
+		if ( $page === 1 ) {
+			fputcsv( $file_handle, $header );
+		}
 
-        foreach ( $entries as $entry ) {
-            $row = [];
-            foreach ( $header as $col ) {
-                $row[] = $entry[$col] ?? '';
-            }
-            fputcsv( $file_handle, $row );
-        }
+		foreach ( $entries as $entry ) {
+			$row = array();
+			foreach ( $header as $col ) {
+				$row[] = $entry[ $col ] ?? '';
+			}
+			fputcsv( $file_handle, $row );
+		}
 
-        fclose( $file_handle );
-    }
+		fclose( $file_handle );
+	}
 
 	/**
 	 * Gets the temporary directory for storing export files, creating it if it doesn't exist.
 	 *
 	 * @return array|WP_Error An array with 'path' and 'url' on success, or WP_Error on failure.
 	 */
-    private function get_temp_dir() {
-        $upload_dir = wp_get_upload_dir();
-        $temp_path  = $upload_dir['basedir'] . '/' . self::TEMP_DIR;
-        $temp_url   = $upload_dir['baseurl'] . '/' . self::TEMP_DIR;
+	private function get_temp_dir() {
+		$upload_dir = wp_get_upload_dir();
+		$temp_path  = $upload_dir['basedir'] . '/' . self::TEMP_DIR;
+		$temp_url   = $upload_dir['baseurl'] . '/' . self::TEMP_DIR;
 
-        if ( ! is_dir( $temp_path ) ) {
-            if ( ! wp_mkdir_p( $temp_path ) ) {
-                return new WP_Error( 'dir_creation_failed', __( 'Could not create temporary export directory.', 'forms-entries-manager' ) );
-            }
-        }
+		if ( ! is_dir( $temp_path ) ) {
+			if ( ! wp_mkdir_p( $temp_path ) ) {
+				return new WP_Error( 'dir_creation_failed', __( 'Could not create temporary export directory.', 'forms-entries-manager' ) );
+			}
+		}
 
-        if ( ! file_exists( $temp_path . '/.htaccess' ) ) {
-            file_put_contents( $temp_path . '/.htaccess', 'deny from all' );
-        }
-        if ( ! file_exists( $temp_path . '/index.php' ) ) {
-            file_put_contents( $temp_path . '/index.php', '<?php // Silence is golden.' );
-        }
+		if ( ! file_exists( $temp_path . '/.htaccess' ) ) {
+			file_put_contents( $temp_path . '/.htaccess', 'deny from all' );
+		}
+		if ( ! file_exists( $temp_path . '/index.php' ) ) {
+			file_put_contents( $temp_path . '/index.php', '<?php // Silence is golden.' );
+		}
 
-        return array(
-            'path' => $temp_path,
-            'url'  => $temp_url,
-        );
-    }
+		return array(
+			'path' => $temp_path,
+			'url'  => $temp_url,
+		);
+	}
 
 	/**
 	 * REST API endpoint to securely serve a completed export file.
@@ -570,89 +572,89 @@ class Export_Entries {
 	}
 
 	public function export_entries_otg( $submissions, $entries_raw ) {
-        if ( empty( $submissions ) ) {
-            return new \WP_Error(
-                'no_data',
-                __( 'No data found.', 'forms-entries-manager' ),
-                array( 'status' => 404 )
-            );
-        }
-        
-        // Merge the data from both tables
-        $merged_entries = $this->merge_entries_data($submissions, $entries_raw);
+		if ( empty( $submissions ) ) {
+			return new \WP_Error(
+				'no_data',
+				__( 'No data found.', 'forms-entries-manager' ),
+				array( 'status' => 404 )
+			);
+		}
 
-        // Get headers from all entries
-        $all_keys = $this->get_header_from_entries($merged_entries);
+		// Merge the data from both tables
+		$merged_entries = $this->merge_entries_data( $submissions, $entries_raw );
 
-        // Build the CSV content in memory
-        $csv_content = "\xEF\xBB\xBF"; // UTF-8 BOM
-        $csv_content .= Helper::get_csv_line($all_keys);
+		// Get headers from all entries
+		$all_keys = $this->get_header_from_entries( $merged_entries );
 
-        foreach ($merged_entries as $entry) {
-            $row = [];
-            foreach ($all_keys as $key) {
-                $row[] = $entry[$key] ?? '';
-            }
-            $csv_content .= Helper::get_csv_line($row);
-        }
+		// Build the CSV content in memory
+		$csv_content  = "\xEF\xBB\xBF"; // UTF-8 BOM
+		$csv_content .= Helper::get_csv_line( $all_keys );
 
-        // Set headers and echo
-        header( 'Content-Type: text/csv' );
-        header( 'Content-Disposition: attachment; filename="fem-entries-' . time() . '.csv"' );
-        echo $csv_content;
-        exit;
-    }
+		foreach ( $merged_entries as $entry ) {
+			$row = array();
+			foreach ( $all_keys as $key ) {
+				$row[] = $entry[ $key ] ?? '';
+			}
+			$csv_content .= Helper::get_csv_line( $row );
+		}
 
-    private function get_header_from_entries( array $entries ): array {
-        $headers = [];
-        foreach ($entries as $entry) {
-            foreach ($entry as $key => $value) {
-                // Check if the key is not in our exclusion list.
-                if (!in_array($key, $headers) && !in_array($key, self::SYSTEM_FIELDS_TO_EXCLUDE)) {
-                    $headers[] = $key;
-                }
-            }
-        }
-        sort($headers);
-        return $headers;
-    }
+		// Set headers and echo
+		header( 'Content-Type: text/csv' );
+		header( 'Content-Disposition: attachment; filename="fem-entries-' . time() . '.csv"' );
+		echo $csv_content;
+		exit;
+	}
 
-     /**
-     * Merges submissions data with their corresponding entry fields,
-     * de-duplicating core fields like 'name' and 'email' based on value.
-     *
-     * @param array $submissions An array of submissions from the submissions table.
-     * @param array $entries_raw An array of raw entry data.
-     * @return array The merged array of entries.
-     */
-    private function merge_entries_data( array $submissions, array $entries_raw ): array {
-        $merged = [];
-        $entries_map = [];
+	private function get_header_from_entries( array $entries ): array {
+		$headers = array();
+		foreach ( $entries as $entry ) {
+			foreach ( $entry as $key => $value ) {
+				// Check if the key is not in our exclusion list.
+				if ( ! in_array( $key, $headers ) && ! in_array( $key, self::SYSTEM_FIELDS_TO_EXCLUDE ) ) {
+					$headers[] = $key;
+				}
+			}
+		}
+		sort( $headers );
+		return $headers;
+	}
 
-        // Map raw entries by submission ID
-        foreach ($entries_raw as $entry) {
-            $submission_id = $entry['submission_id'];
-            if (!isset($entries_map[$submission_id])) {
-                $entries_map[$submission_id] = [];
-            }
-            $entries_map[$submission_id][$entry['field_key']] = $entry['field_value'];
-        }
+	/**
+	 * Merges submissions data with their corresponding entry fields,
+	 * de-duplicating core fields like 'name' and 'email' based on value.
+	 *
+	 * @param array $submissions An array of submissions from the submissions table.
+	 * @param array $entries_raw An array of raw entry data.
+	 * @return array The merged array of entries.
+	 */
+	private function merge_entries_data( array $submissions, array $entries_raw ): array {
+		$merged      = array();
+		$entries_map = array();
 
-        foreach ($submissions as $submission) {
-            $submission_id = $submission['id'];
-            $entry_data = $entries_map[$submission_id] ?? [];
+		// Map raw entries by submission ID
+		foreach ( $entries_raw as $entry ) {
+			$submission_id = $entry['submission_id'];
+			if ( ! isset( $entries_map[ $submission_id ] ) ) {
+				$entries_map[ $submission_id ] = array();
+			}
+			$entries_map[ $submission_id ][ $entry['field_key'] ] = $entry['field_value'];
+		}
 
-            // Use the new static helper method to de-duplicate entry data
-            $filtered_entry_data = Helper::filter_duplicate_entry_fields(
-                $entry_data,
-                $submission['name'] ?? null,
-                $submission['email'] ?? null
-            );
-            
-            // Merge the submission data with the now-filtered entry data.
-            $merged[] = array_merge($submission, $filtered_entry_data);
-        }
+		foreach ( $submissions as $submission ) {
+			$submission_id = $submission['id'];
+			$entry_data    = $entries_map[ $submission_id ] ?? array();
 
-        return $merged;
-    }
+			// Use the new static helper method to de-duplicate entry data
+			$filtered_entry_data = Helper::filter_duplicate_entry_fields(
+				$entry_data,
+				$submission['name'] ?? null,
+				$submission['email'] ?? null
+			);
+
+			// Merge the submission data with the now-filtered entry data.
+			$merged[] = array_merge( $submission, $filtered_entry_data );
+		}
+
+		return $merged;
+	}
 }

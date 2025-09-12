@@ -9,48 +9,49 @@
 
 		<?php if ( $has_access_token ) : ?>
 			<div class="flex justify-center !mb-6">
-                <div class="flex flex-col items-center gap-4 p-6 rounded-xl bg-green-50 border border-green-200 text-green-800 shadow-md max-w-md mx-auto">
-                    
-                    <!-- Status -->
-                    <div class="flex items-center gap-3">
-                        <div class="relative w-5 h-5">
-                            <span class="absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75 animate-ping"></span>
-                            <span class="relative inline-flex rounded-full h-5 w-5 bg-green-600"></span>
-                        </div>
-                        <p class="font-semibold text-lg m-0"><?php esc_html_e( 'Connected to Google Sheets', 'forms-entries-manager' ); ?></p>
-                    </div>
+				<div class="flex flex-col items-center gap-4 p-6 rounded-xl bg-green-50 border border-green-200 text-green-800 shadow-md max-w-md mx-auto">
+					
+					<!-- Status -->
+					<div class="flex items-center gap-3">
+						<div class="relative w-5 h-5">
+							<span class="absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75 animate-ping"></span>
+							<span class="relative inline-flex rounded-full h-5 w-5 bg-green-600"></span>
+						</div>
+						<p class="font-semibold text-lg m-0"><?php esc_html_e( 'Connected to Google Sheets', 'forms-entries-manager' ); ?></p>
+					</div>
 
-                    <!-- User Info -->
-                    <?php
-                    $profile = Helper::get_option( 'gsheet_user_profile' );
-                    $user_email   = $profile['email'] ?? '';
-                    $user_name    = $profile['name'] ?? '';
-                    $user_picture = $profile['picture'] ?? '';
+					<!-- User Info -->
+					<?php
+					$profile      = Helper::get_option( 'gsheet_user_profile' );
+					$user_email   = $profile['email'] ?? '';
+					$user_name    = $profile['name'] ?? '';
+					$user_picture = $profile['picture'] ?? '';
 
-                    if ( ! empty( $user_email ) ) : ?>
-                        <div class="flex items-center gap-4 p-2 rounded-lg bg-green-100 border border-green-200 shadow w-full">
-                            <?php if ( ! empty( $user_picture ) ) : ?>
-                                <img class="w-12 h-12 rounded-full border border-green-200" src="<?php echo esc_url( $user_picture ); ?>" alt="<?php echo esc_attr( $user_name ); ?>" />
-                            <?php endif; ?>
-                            <div class="text-left">
-                                <?php if ( ! empty( $user_name ) ) : ?>
-                                    <p class="text-lg font-semibold text-green-900 !mb-0"><?php echo esc_html( $user_name ); ?></p>
-                                <?php endif; ?>
-                                <p class="text-sm text-green-700 !mt-0"><?php echo esc_html( $user_email ); ?></p>
-                            </div>
-                        </div>
-                    <?php endif; ?>
+					if ( ! empty( $user_email ) ) :
+						?>
+						<div class="flex items-center gap-4 p-2 rounded-lg bg-green-100 border border-green-200 shadow w-full">
+							<?php if ( ! empty( $user_picture ) ) : ?>
+								<img class="w-12 h-12 rounded-full border border-green-200" src="<?php echo esc_url( $user_picture ); ?>" alt="<?php echo esc_attr( $user_name ); ?>" />
+							<?php endif; ?>
+							<div class="text-left">
+								<?php if ( ! empty( $user_name ) ) : ?>
+									<p class="text-lg font-semibold text-green-900 !mb-0"><?php echo esc_html( $user_name ); ?></p>
+								<?php endif; ?>
+								<p class="text-sm text-green-700 !mt-0"><?php echo esc_html( $user_email ); ?></p>
+							</div>
+						</div>
+					<?php endif; ?>
 
-                    <!-- Actions -->
-                    <div class="flex flex-col items-center gap-2 mt-2">
-                        <a href="<?php echo esc_url( FEM_GOOGLE_PROXY_URL . '?site=' . rawurlencode( Helper::get_settings_page_url() ) ); ?>"
-                        class="text-green-700 hover:text-green-900 underline font-semibold text-sm">
-                            <?php esc_html_e( 'Switch Account', 'forms-entries-manager' ); ?>
-                        </a>
-                        <span class="text-sm text-green-700 mt-2"><?php esc_html_e( 'Live data sync is active. Streaming enabled ✅', 'forms-entries-manager' ); ?></span>
-                    </div>
-                </div>
-            </div>
+					<!-- Actions -->
+					<div class="flex flex-col items-center gap-2 mt-2">
+						<a href="<?php echo esc_url( FEM_GOOGLE_PROXY_URL . '?site=' . rawurlencode( Helper::get_settings_page_url() ) ); ?>"
+						class="text-green-700 hover:text-green-900 underline font-semibold text-sm">
+							<?php esc_html_e( 'Switch Account', 'forms-entries-manager' ); ?>
+						</a>
+						<span class="text-sm text-green-700 mt-2"><?php esc_html_e( 'Live data sync is active. Streaming enabled ✅', 'forms-entries-manager' ); ?></span>
+					</div>
+				</div>
+			</div>
 			
 			<p class="!mb-6 text-gray-600 max-w-2xl mx-auto text-center !m-auto">
 				<?php esc_html_e( 'Your WPForms submissions are now syncing automatically with your Google Sheets in real-time. This connection allows you to streamline your data collection and analysis.', 'forms-entries-manager' ); ?>

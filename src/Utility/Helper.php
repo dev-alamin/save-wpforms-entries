@@ -42,7 +42,7 @@ class Helper {
 		return $wpdb->prefix . 'forms_entries_manager';
 	}
 
-    /**
+	/**
 	 * Get FEM Table
 	 *
 	 * @return string
@@ -53,7 +53,7 @@ class Helper {
 		return $wpdb->prefix . 'forms_em_submissions';
 	}
 
-    /**
+	/**
 	 * Get FEM Table
 	 *
 	 * @return string
@@ -319,11 +319,11 @@ class Helper {
 		$access_token = self::get_option( 'google_access_token' );
 		$expires_at   = (int) self::get_option( 'google_token_expires', 0 );
 
-        self::save_user_profile( self::get_option( 'google_access_token' ) );
-        
+		self::save_user_profile( self::get_option( 'google_access_token' ) );
+
 		// If valid and not expired, return
 		if ( $access_token && $expires_at > ( time() + 60 ) ) {
-            return $access_token;
+			return $access_token;
 		}
 
 		// Else: Refresh via POST request to proxy's REST endpoint
@@ -360,48 +360,48 @@ class Helper {
 		return (bool) self::get_option( 'google_access_token' );
 	}
 
-    private static function save_user_profile( $access_token ) {
-        // Get existing saved profile
-        $saved_profile = Helper::get_option( 'gsheet_user_profile', array() );
+	private static function save_user_profile( $access_token ) {
+		// Get existing saved profile
+		$saved_profile = self::get_option( 'gsheet_user_profile', array() );
 
-        // Always fetch user info with new token
-        $userinfo_response = wp_remote_get(
-            'https://www.googleapis.com/oauth2/v2/userinfo',
-            array(
-                'headers' => array(
-                    'Authorization' => 'Bearer ' . $access_token,
-                ),
-                'timeout' => 20,
-            )
-        );
+		// Always fetch user info with new token
+		$userinfo_response = wp_remote_get(
+			'https://www.googleapis.com/oauth2/v2/userinfo',
+			array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $access_token,
+				),
+				'timeout' => 20,
+			)
+		);
 
-        if ( is_wp_error( $userinfo_response ) ) {
-            self::getLogger()->log( 'Failed to fetch Google user info: ' . $userinfo_response->get_error_message(), 'error' );
-            return;
-        }
+		if ( is_wp_error( $userinfo_response ) ) {
+			self::getLogger()->log( 'Failed to fetch Google user info: ' . $userinfo_response->get_error_message(), 'error' );
+			return;
+		}
 
-        $userinfo = json_decode( wp_remote_retrieve_body( $userinfo_response ), true );
+		$userinfo = json_decode( wp_remote_retrieve_body( $userinfo_response ), true );
 
-        if ( ! empty( $userinfo['email'] ) ) {
-            $new_profile = array(
-                'id'             => $userinfo['id'] ?? '',
-                'email'          => sanitize_email( $userinfo['email'] ),
-                'verified_email' => ! empty( $userinfo['verified_email'] ) ? 1 : 0,
-                'name'           => sanitize_text_field( $userinfo['name'] ?? '' ),
-                'given_name'     => sanitize_text_field( $userinfo['given_name'] ?? '' ),
-                'family_name'    => sanitize_text_field( $userinfo['family_name'] ?? '' ),
-                'picture'        => esc_url_raw( $userinfo['picture'] ?? '' ),
-            );
+		if ( ! empty( $userinfo['email'] ) ) {
+			$new_profile = array(
+				'id'             => $userinfo['id'] ?? '',
+				'email'          => sanitize_email( $userinfo['email'] ),
+				'verified_email' => ! empty( $userinfo['verified_email'] ) ? 1 : 0,
+				'name'           => sanitize_text_field( $userinfo['name'] ?? '' ),
+				'given_name'     => sanitize_text_field( $userinfo['given_name'] ?? '' ),
+				'family_name'    => sanitize_text_field( $userinfo['family_name'] ?? '' ),
+				'picture'        => esc_url_raw( $userinfo['picture'] ?? '' ),
+			);
 
-            // Update only if email changed or profile was empty
-            if ( empty( $saved_profile ) || ( $saved_profile['email'] ?? '' ) !== $new_profile['email'] ) {
-                Helper::update_option( 'gsheet_user_profile', $new_profile );
-                self::getLogger()->log( 'User info is saved/updated', 'info' );
-            } else {
-                self::getLogger()->log( 'User info unchanged, no update needed', 'info' );
-            }
-        }
-    }
+			// Update only if email changed or profile was empty
+			if ( empty( $saved_profile ) || ( $saved_profile['email'] ?? '' ) !== $new_profile['email'] ) {
+				self::update_option( 'gsheet_user_profile', $new_profile );
+				self::getLogger()->log( 'User info is saved/updated', 'info' );
+			} else {
+				self::getLogger()->log( 'User info unchanged, no update needed', 'info' );
+			}
+		}
+	}
 
 	/**
 	 * Revokes the Google Sheets connection by making a request to the proxy service.
@@ -560,160 +560,175 @@ class Helper {
 		return $entries ?: array();
 	}
 
-    /**
-     * Updates an existing entry.
-     *
-     * @param int   $id   The ID of the entry to update.
-     * @param array $data The data to update.
-     * @return bool True on success, false on failure.
-     */
-    public static function update_entry( int $id, array $data ): bool {
-        global $wpdb;
+	/**
+	 * Updates an existing entry.
+	 *
+	 * @param int   $id   The ID of the entry to update.
+	 * @param array $data The data to update.
+	 * @return bool True on success, false on failure.
+	 */
+	public static function update_entry( int $id, array $data ): bool {
+		global $wpdb;
 
-        $submissions_table = self::get_submission_table();
-        $entries_table     = self::get_data_table();
+		$submissions_table = self::get_submission_table();
+		$entries_table     = self::get_data_table();
 
-        try {
-            $wpdb->query('START TRANSACTION');
+		try {
+			$wpdb->query( 'START TRANSACTION' );
 
-            // Separate submission data from entry fields.
-            list($submission_data, $entry_fields) = self::separate_update_data($data);
+			// Separate submission data from entry fields.
+			list($submission_data, $entry_fields) = self::separate_update_data( $data );
 
-            // Update submissions table.
-            if (!empty($submission_data)) {
-                $format = array_map(function($value) {
-                    return is_int($value) ? '%d' : '%s';
-                }, $submission_data);
-                
-                $wpdb->update($submissions_table, $submission_data, ['id' => $id], $format, ['%d']);
-            }
+			// Update submissions table.
+			if ( ! empty( $submission_data ) ) {
+				$format = array_map(
+					function ( $value ) {
+						return is_int( $value ) ? '%d' : '%s';
+					},
+					$submission_data
+				);
 
-            // Update entries table.
-            if (!empty($entry_fields)) {
-                foreach ($entry_fields as $field_key => $field_value) {
-                    $formatted_value = sanitize_text_field($field_value);
-                    
-                    $exists = $wpdb->get_var(
-                        $wpdb->prepare(
-                            "SELECT id FROM `$entries_table` WHERE submission_id = %d AND field_key = %s",
-                            $id,
-                            $field_key
-                        )
-                    );
+				$wpdb->update( $submissions_table, $submission_data, array( 'id' => $id ), $format, array( '%d' ) );
+			}
 
-                    if ($exists) {
-                        $wpdb->update($entries_table, ['field_value' => $formatted_value], ['id' => $exists]);
-                    } else {
-                        $wpdb->insert($entries_table, [
-                            'submission_id' => $id,
-                            'field_key'     => $field_key,
-                            'field_value'   => $formatted_value,
-                            'created_at'    => current_time('mysql'),
-                        ]);
-                    }
-                }
-            }
+			// Update entries table.
+			if ( ! empty( $entry_fields ) ) {
+				foreach ( $entry_fields as $field_key => $field_value ) {
+					$formatted_value = sanitize_text_field( $field_value );
 
-            $wpdb->query('COMMIT');
+					$exists = $wpdb->get_var(
+						$wpdb->prepare(
+							"SELECT id FROM `$entries_table` WHERE submission_id = %d AND field_key = %s",
+							$id,
+							$field_key
+						)
+					);
 
-            // Clear cache after successful update.
-            wp_cache_delete('fem_entries_' . $id, 'fem');
-            
-            return true;
+					if ( $exists ) {
+						$wpdb->update( $entries_table, array( 'field_value' => $formatted_value ), array( 'id' => $exists ) );
+					} else {
+						$wpdb->insert(
+							$entries_table,
+							array(
+								'submission_id' => $id,
+								'field_key'     => $field_key,
+								'field_value'   => $formatted_value,
+								'created_at'    => current_time( 'mysql' ),
+							)
+						);
+					}
+				}
+			}
 
-        } catch (\Exception $e) {
-            $wpdb->query('ROLLBACK');
-            return false;
-        }
-    }
+			$wpdb->query( 'COMMIT' );
 
-    /**
-     * Separates the update data into submissions and entries fields.
-     *
-     * @param array $data The data to be updated.
-     * @return array An array containing submission data and entry fields.
-     */
-    private static function separate_update_data(array $data) {
-        $submission_keys = [
-            'form_id', 'name', 'email', 'status', 'note', 'is_favorite', 
-            'exported_to_csv', 'synced_to_gsheet', 'printed_at', 'resent_at', 'is_spam'
-        ];
-        
-        $submission_data = [];
-        $entry_fields = [];
-        
-        foreach ($data as $key => $value) {
-            if (in_array($key, $submission_keys)) {
-                $submission_data[$key] = $value;
-            } elseif ($key === 'entry' && is_array($value)) {
-                $entry_fields = $value;
-            }
-        }
-        
-        return [$submission_data, $entry_fields];
-    }
+			// Clear cache after successful update.
+			wp_cache_delete( 'fem_entries_' . $id, 'fem' );
 
-    /**
-     * Formats a line as a CSV string.
-     *
-     * @param array $fields The array of fields to format.
-     * @return string The CSV formatted string.
-     */
-    public static function get_csv_line( array $fields ): string {
-        $delimiter = ',';
-        $enclosure = '"';
-        $output_line = [];
+			return true;
 
-        foreach ( $fields as $field ) {
-            // Escape quotes by doubling them.
-            $field = str_replace( $enclosure, $enclosure . $enclosure, $field );
-            // Always wrap in quotes.
-            $output_line[] = $enclosure . $field . $enclosure;
-        }
+		} catch ( \Exception $e ) {
+			$wpdb->query( 'ROLLBACK' );
+			return false;
+		}
+	}
 
-        return implode( $delimiter, $output_line ) . "\n";
-    }
+	/**
+	 * Separates the update data into submissions and entries fields.
+	 *
+	 * @param array $data The data to be updated.
+	 * @return array An array containing submission data and entry fields.
+	 */
+	private static function separate_update_data( array $data ) {
+		$submission_keys = array(
+			'form_id',
+			'name',
+			'email',
+			'status',
+			'note',
+			'is_favorite',
+			'exported_to_csv',
+			'synced_to_gsheet',
+			'printed_at',
+			'resent_at',
+			'is_spam',
+		);
 
-    /**
-     * Deletes a single entry and its associated data.
-     *
-     * @param int $id The ID of the entry to delete.
-     * @return bool True on success, false on failure.
-     */
-    public static function delete_entry( int $id ): bool {
-        global $wpdb;
+		$submission_data = array();
+		$entry_fields    = array();
 
-        $submissions_table = self::get_submission_table();
-        $entries_table     = self::get_data_table();
-        
-        try {
-            // Start a database transaction.
-            $wpdb->query( 'START TRANSACTION' );
+		foreach ( $data as $key => $value ) {
+			if ( in_array( $key, $submission_keys ) ) {
+				$submission_data[ $key ] = $value;
+			} elseif ( $key === 'entry' && is_array( $value ) ) {
+				$entry_fields = $value;
+			}
+		}
 
-            // Delete from the submissions table first.
-            $result = $wpdb->delete( $submissions_table, array( 'id' => $id ) );
+		return array( $submission_data, $entry_fields );
+	}
 
-            if ( $result === false ) {
-                throw new \Exception( 'Failed to delete from submissions table.' );
-            }
+	/**
+	 * Formats a line as a CSV string.
+	 *
+	 * @param array $fields The array of fields to format.
+	 * @return string The CSV formatted string.
+	 */
+	public static function get_csv_line( array $fields ): string {
+		$delimiter   = ',';
+		$enclosure   = '"';
+		$output_line = array();
 
-            // Delete from the entries table using the submission_id.
-            $wpdb->delete( $entries_table, array( 'submission_id' => $id ) );
+		foreach ( $fields as $field ) {
+			// Escape quotes by doubling them.
+			$field = str_replace( $enclosure, $enclosure . $enclosure, $field );
+			// Always wrap in quotes.
+			$output_line[] = $enclosure . $field . $enclosure;
+		}
 
-            // Commit the transaction.
-            $wpdb->query( 'COMMIT' );
+		return implode( $delimiter, $output_line ) . "\n";
+	}
 
-            // Clear the cache after successful deletion.
-            wp_cache_delete( 'fem_entries_' . $id, 'fem' );
+	/**
+	 * Deletes a single entry and its associated data.
+	 *
+	 * @param int $id The ID of the entry to delete.
+	 * @return bool True on success, false on failure.
+	 */
+	public static function delete_entry( int $id ): bool {
+		global $wpdb;
 
-            return true;
+		$submissions_table = self::get_submission_table();
+		$entries_table     = self::get_data_table();
 
-        } catch ( \Exception $e ) {
-            // Rollback the transaction on failure.
-            $wpdb->query( 'ROLLBACK' );
-            return false;
-        }
-    }
+		try {
+			// Start a database transaction.
+			$wpdb->query( 'START TRANSACTION' );
+
+			// Delete from the submissions table first.
+			$result = $wpdb->delete( $submissions_table, array( 'id' => $id ) );
+
+			if ( $result === false ) {
+				throw new \Exception( 'Failed to delete from submissions table.' );
+			}
+
+			// Delete from the entries table using the submission_id.
+			$wpdb->delete( $entries_table, array( 'submission_id' => $id ) );
+
+			// Commit the transaction.
+			$wpdb->query( 'COMMIT' );
+
+			// Clear the cache after successful deletion.
+			wp_cache_delete( 'fem_entries_' . $id, 'fem' );
+
+			return true;
+
+		} catch ( \Exception $e ) {
+			// Rollback the transaction on failure.
+			$wpdb->query( 'ROLLBACK' );
+			return false;
+		}
+	}
 
 	public static function fputcsv( $handle, array $fields ) {
 		$line = '';
@@ -749,44 +764,44 @@ class Helper {
 		return $forms;
 	}
 
-        /**
-     * Filters out entry fields that are duplicates of core submission fields (name, email)
-     * based on their value, to prevent redundant columns in exports.
-     *
-     * @param array  $entry_data       The array of entry field_key => field_value for a single submission.
-     * @param string|null $submission_name  The name from the main submission record.
-     * @param string|null $submission_email The email from the main submission record.
-     * @return array The filtered entry data.
-     */
-    public static function filter_duplicate_entry_fields(
-        array $entry_data,
-        ?string $submission_name,
-        ?string $submission_email
-    ): array {
-        $filtered_data = [];
+		/**
+		 * Filters out entry fields that are duplicates of core submission fields (name, email)
+		 * based on their value, to prevent redundant columns in exports.
+		 *
+		 * @param array       $entry_data       The array of entry field_key => field_value for a single submission.
+		 * @param string|null $submission_name  The name from the main submission record.
+		 * @param string|null $submission_email The email from the main submission record.
+		 * @return array The filtered entry data.
+		 */
+	public static function filter_duplicate_entry_fields(
+		array $entry_data,
+		?string $submission_name,
+		?string $submission_email
+	): array {
+		$filtered_data = array();
 
-        foreach ($entry_data as $key => $value) {
-            $is_duplicate = false;
+		foreach ( $entry_data as $key => $value ) {
+			$is_duplicate = false;
 
-            // Check if the entry value matches the submission name or email
-            // AND ensure the key itself isn't 'name' or 'email' (to avoid removing if main fields are empty).
-            // Since we assume name/email are present in submission, this check focuses on generic custom fields.
-            if (
-                !in_array($key, ['name', 'email']) && // Don't remove 'name' or 'email' if they happen to be in $entry_data
-                                                       // AND they might be the ONLY source if $submission_name/email were null
-                (
-                    (null !== $submission_name && $value === $submission_name) ||
-                    (null !== $submission_email && $value === $submission_email)
-                )
-            ) {
-                $is_duplicate = true;
-            }
+			// Check if the entry value matches the submission name or email
+			// AND ensure the key itself isn't 'name' or 'email' (to avoid removing if main fields are empty).
+			// Since we assume name/email are present in submission, this check focuses on generic custom fields.
+			if (
+				! in_array( $key, array( 'name', 'email' ) ) && // Don't remove 'name' or 'email' if they happen to be in $entry_data
+														// AND they might be the ONLY source if $submission_name/email were null
+				(
+					( null !== $submission_name && $value === $submission_name ) ||
+					( null !== $submission_email && $value === $submission_email )
+				)
+			) {
+				$is_duplicate = true;
+			}
 
-            if (!$is_duplicate) {
-                $filtered_data[$key] = $value;
-            }
-        }
+			if ( ! $is_duplicate ) {
+				$filtered_data[ $key ] = $value;
+			}
+		}
 
-        return $filtered_data;
-    }
+		return $filtered_data;
+	}
 }

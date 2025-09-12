@@ -57,10 +57,10 @@
 				<div class="space-y-3">
 					<template x-for="(value, key) in selectedEntry.entry" :key="key">
 						<div class="text-base sm:text-lg text-gray-800 border-b border-dashed border-gray-300 pb-2">
-                            <strong
-                                class="font-semibold text-gray-700"
-                                x-text="key.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) + ':'">
-                            </strong>
+							<strong
+								class="font-semibold text-gray-700"
+								x-text="key.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) + ':'">
+							</strong>
 
 							<span class="ml-1" x-html="Array.isArray(value) 
 								? value.map(f => `<a href='${f.url}' target='_blank'>${f.url.split('/').pop()}</a>`).join('<br>') 

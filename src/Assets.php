@@ -210,17 +210,17 @@ class Assets {
 				'syncFailed'           => __( '❌ Synchronization failed.', 'forms-entries-manager' ),
 				'saveFailed'           => __( '❌ Save failed.', 'forms-entries-manager' ),
 				/* translators: %s is the text for id, name or email */
-                'searchPlaceholder' => esc_html__( '🔍 Search by %s...', 'forms-entries-manager' ),
-                'emailLabel'        => esc_html__( 'Email', 'forms-entries-manager' ),
-                'nameLabel'         => esc_html__( 'Name', 'forms-entries-manager' ),
-                'entryIdLabel'      => esc_html__( 'Entry ID', 'forms-entries-manager' ),
-                'copyToClipboard'   => esc_html__( 'Copy Entry', 'forms-entries-manager' ),
-                'copiedMessage'     => esc_html__( 'Copied!', 'forms-entries-manager' ),
-                'copyTitle'         => esc_attr__( 'Copy all to clipboard', 'forms-entries-manager' ),
-                'copyFailed'        => __( 'Copy Failed', 'forms-entries-manager'),
-                'selectFormExport'  => __( 'Please select a form before exporting.', 'forms-entries-manager' ),
-                'invalidCSVContent' => __( 'Invalid CSV content.', 'forms-entries-manager' ),
-                'cannotDownloadCSV' => __( 'Cannot download file: Export Job ID is missing.', 'forms-entries-manager' ),
+				'searchPlaceholder'    => esc_html__( '🔍 Search by %s...', 'forms-entries-manager' ),
+				'emailLabel'           => esc_html__( 'Email', 'forms-entries-manager' ),
+				'nameLabel'            => esc_html__( 'Name', 'forms-entries-manager' ),
+				'entryIdLabel'         => esc_html__( 'Entry ID', 'forms-entries-manager' ),
+				'copyToClipboard'      => esc_html__( 'Copy Entry', 'forms-entries-manager' ),
+				'copiedMessage'        => esc_html__( 'Copied!', 'forms-entries-manager' ),
+				'copyTitle'            => esc_attr__( 'Copy all to clipboard', 'forms-entries-manager' ),
+				'copyFailed'           => __( 'Copy Failed', 'forms-entries-manager' ),
+				'selectFormExport'     => __( 'Please select a form before exporting.', 'forms-entries-manager' ),
+				'invalidCSVContent'    => __( 'Invalid CSV content.', 'forms-entries-manager' ),
+				'cannotDownloadCSV'    => __( 'Cannot download file: Export Job ID is missing.', 'forms-entries-manager' ),
 			)
 		);
 	}
