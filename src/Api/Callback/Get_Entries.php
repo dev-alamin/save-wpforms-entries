@@ -99,8 +99,8 @@ class Get_Entries {
                     $query_params[]  = (int) $params['search'];
                     break;
                 case 'name':
-                    $where_clauses[] = 'name LIKE %s';
-                    $query_params[]  = '%' . $wpdb->esc_like( $params['search'] ) . '%';
+                    $where_clauses[] = 'name = %s';
+                    $query_params[]  = (string) $params['search'];
                     break;
                 default:
                     // Default search on both name and email for efficiency.

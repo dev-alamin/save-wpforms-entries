@@ -748,4 +748,45 @@ class Helper {
 
 		return $forms;
 	}
+
+        /**
+     * Filters out entry fields that are duplicates of core submission fields (name, email)
+     * based on their value, to prevent redundant columns in exports.
+     *
+     * @param array  $entry_data       The array of entry field_key => field_value for a single submission.
+     * @param string|null $submission_name  The name from the main submission record.
+     * @param string|null $submission_email The email from the main submission record.
+     * @return array The filtered entry data.
+     */
+    public static function filter_duplicate_entry_fields(
+        array $entry_data,
+        ?string $submission_name,
+        ?string $submission_email
+    ): array {
+        $filtered_data = [];
+
+        foreach ($entry_data as $key => $value) {
+            $is_duplicate = false;
+
+            // Check if the entry value matches the submission name or email
+            // AND ensure the key itself isn't 'name' or 'email' (to avoid removing if main fields are empty).
+            // Since we assume name/email are present in submission, this check focuses on generic custom fields.
+            if (
+                !in_array($key, ['name', 'email']) && // Don't remove 'name' or 'email' if they happen to be in $entry_data
+                                                       // AND they might be the ONLY source if $submission_name/email were null
+                (
+                    (null !== $submission_name && $value === $submission_name) ||
+                    (null !== $submission_email && $value === $submission_email)
+                )
+            ) {
+                $is_duplicate = true;
+            }
+
+            if (!$is_duplicate) {
+                $filtered_data[$key] = $value;
+            }
+        }
+
+        return $filtered_data;
+    }
 }

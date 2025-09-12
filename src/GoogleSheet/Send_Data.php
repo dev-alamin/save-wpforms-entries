@@ -221,7 +221,7 @@ class Send_Data {
         $formatted_cells = array();
         foreach ( $values as $value ) {
             $cell = array( 'userEnteredValue' => array( 'stringValue' => (string) $value ) );
-            if ( $bold ) { // <-- Conditional formatting based on the new parameter
+            if ( $bold ) {
                 $cell['userEnteredFormat'] = array( 'textFormat' => array( 'bold' => true ) );
             }
             $formatted_cells[] = $cell;
@@ -246,7 +246,7 @@ class Send_Data {
             return false;
         }
 
-        if ( $entry->synced_to_gsheet ) {
+        if ( (int) $entry->synced_to_gsheet === 1 ) { // Check for '1' indicating successful sync
             $this->logger->log( 'Entry ID ' . $entry_id . ' already synced to Google Sheets.', 'INFO' );
             return false;
         }
@@ -258,12 +258,13 @@ class Send_Data {
         if ( is_wp_error( $sheet_info ) ) {
             $this->logger->log( 'GSheet preparation failed for form ' . $form_id . ': ' . $sheet_info->get_error_message(), 'ERROR' );
             $this->logger->log( print_r( $sheet_info, true ), 'info' );
-            
+
             $this->handle_sync_failure( $entry_id, $entry->retry_count );
             return false;
         }
 
         $spreadsheet_id = $sheet_info['spreadsheet_id'];
+        $sheet_id       = $sheet_info['sheetId']; // Assuming sheetId is now available from get_or_create_sheet_for_form
         $sheet_title    = $sheet_info['sheet_title'];
 
         // Enforce Free Version row limitation
@@ -271,7 +272,7 @@ class Send_Data {
             $metadata = $this->get_spreadsheet_metadata( $spreadsheet_id );
             if ( ! is_wp_error( $metadata ) && isset( $metadata['sheets'][0]['properties']['gridProperties']['rowCount'] ) ) {
                 $row_count = $metadata['sheets'][0]['properties']['gridProperties']['rowCount'];
-                if ( $row_count >= 1000 ) {
+                if ( $row_count >= 1000 ) { // Check against the current actual row count
                     $this->logger->log( 'GSheet row limit reached for form ' . $form_id . '. Entry ' . $entry_id . ' not synced.', 'ERROR' );
                     // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $wpdb->update( $table, array( 'synced_to_gsheet' => 2 ), array( 'id' => $entry_id ) ); // '2' can indicate 'sync_limit_reached'
@@ -280,8 +281,8 @@ class Send_Data {
             }
         }
 
-        // Step 2: Prepare the data row, ensuring it matches the header order.
-        $row_data = $this->prepare_row_data( $entry );
+        // Step 2: Prepare the data row, ensuring it matches the header order and is de-duplicated.
+        $row_data = $this->prepare_row_data( $entry ); // This now uses Helper::filter_duplicate_entry_fields
         if ( is_wp_error( $row_data ) ) {
             $this->logger->log( 'GSheet data preparation failed for entry ' . $entry_id . ': ' . $row_data->get_error_message(), 'ERROR' );
             $this->handle_sync_failure( $entry_id, $entry->retry_count );
@@ -291,7 +292,8 @@ class Send_Data {
         // Step 3: Append data to the sheet.
         $range = rawurlencode( $sheet_title ) . '!A:Z';
         $body  = array( 'values' => array( $row_data ) );
-        $url   = "https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheet_id}/values/{$range}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS";
+        // Use `includeValuesInResponse=true` to get the updated range after append.
+        $url   = "https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheet_id}/values/{$range}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS&includeValuesInResponse=true";
 
         $response = $this->_make_google_api_request( $url, $body, 'POST' );
 
@@ -301,10 +303,28 @@ class Send_Data {
             return false;
         }
 
+        // Get the updated range to find the row number.
+        $updates = $response['updates'] ?? [];
+        if (!isset($updates['updatedRange'])) {
+            $this->logger->log( 'GSheet append for entry ' . $entry_id . ' succeeded but could not determine updated row range.', 'WARNING' );
+            // We can still mark as synced, but won't apply formatting
+        } else {
+            $updated_range = $updates['updatedRange'];
+            // Example: 'Sheet1!A5:G5' -> we want '5'
+            preg_match('/!A(\d+):[A-Z]/', $updated_range, $matches);
+            if (isset($matches[1])) {
+                $row_number = (int) $matches[1]; // This is 1-based row number
+                // Apply alternating row formatting to the new row.
+                $this->apply_alternating_color( $spreadsheet_id, $sheet_id, $row_number - 1 ); // Pass 0-based index
+            } else {
+                $this->logger->log( 'GSheet append for entry ' . $entry_id . ' succeeded but failed to parse row number for formatting.', 'WARNING' );
+            }
+        }
+
         // If we reach here, the entry was successfully synced.
         $this->logger->log( 'Entry ID ' . $entry_id . ' successfully synced to Google Sheets.', 'INFO' );
 
-        // Step 4: Mark as synced on success.
+        // Step 5: Mark as synced on success.
         $wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $table,
             array(
@@ -333,42 +353,77 @@ class Send_Data {
         }
 
         global $wpdb;
-        $table = Helper::get_table_name();
+        $submissions_table = Helper::get_submission_table(); // Assuming this is correct
+        $entries_table     = Helper::get_data_table();       // Assuming this is correct
 
-        // Fetch a sample entry to infer dynamic headers
+        // Fetch a sample submission
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $row = $wpdb->get_row(
-            $wpdb->prepare( "SELECT entry, note, status FROM {$table} WHERE form_id = %d LIMIT 1", $form_id ),
+        $sample_submission = $wpdb->get_row(
+            $wpdb->prepare( "SELECT id, name, email, created_at, status, note FROM {$submissions_table} WHERE form_id = %d ORDER BY id ASC LIMIT 1", $form_id ),
             ARRAY_A
         );
 
-        // Use a temporary array to build a unique set of headers
-        $unique_headers = array();
-
-        // 1. Add standard headers from database columns
-        $unique_headers[ __( 'Entry ID', 'forms-entries-manager' ) ]        = true;
-        $unique_headers[ __( 'Submission Date', 'forms-entries-manager' ) ] = true;
-        $unique_headers[ __( 'Name', 'forms-entries-manager' ) ]            = true;
-        $unique_headers[ __( 'Email', 'forms-entries-manager' ) ]           = true;
-
-        // 2. Add dynamic field headers from serialized data
-        $entry_data = array();
-        if ( ! empty( $row['entry'] ) ) {
-            $entry_data = maybe_unserialize( $row['entry'] );
+        if ( empty( $sample_submission ) ) {
+            // If no submission, return a default header set.
+            $headers = [
+                __( 'Entry ID', 'forms-entries-manager' ),
+                __( 'Submission Date', 'forms-entries-manager' ),
+                __( 'Name', 'forms-entries-manager' ),
+                __( 'Email', 'forms-entries-manager' ),
+                __( 'Status', 'forms-entries-manager' ),
+                __( 'Note', 'forms-entries-manager' ),
+            ];
+            Helper::update_option( "gsheet_headers_{$form_id}", $headers );
+            return $headers;
         }
 
-        if ( is_array( $entry_data ) ) {
-            foreach ( $entry_data as $field_label => $field_value ) {
-                $unique_headers[ $field_label ] = true;
-            }
+        // Fetch associated raw entries for the sample submission
+        $sample_entry_raw_data = $wpdb->get_results(
+            $wpdb->prepare( "SELECT field_key, field_value FROM {$entries_table} WHERE submission_id = %d", $sample_submission['id'] ),
+            ARRAY_A
+        );
+
+        // Convert raw entry data to a simple key-value array for the helper method
+        $entry_data_for_helper = [];
+        foreach ($sample_entry_raw_data as $item) {
+            $entry_data_for_helper[$item['field_key']] = $item['field_value'];
         }
 
-        // 3. Add final standard headers
-        $unique_headers[ __( 'Status', 'forms-entries-manager' ) ] = true;
-        $unique_headers[ __( 'Note', 'forms-entries-manager' ) ]   = true;
 
-        // Convert the unique keys back to a simple, ordered array
-        $headers = array_keys( $unique_headers );
+        // Use the static helper method to get de-duplicated entry fields
+        $filtered_entry_data = Helper::filter_duplicate_entry_fields(
+            $entry_data_for_helper,
+            $sample_submission['name'] ?? null,
+            $sample_submission['email'] ?? null
+        );
+
+        // Merge the submission data with the filtered entry data for header inference
+        $merged_sample_entry = array_merge( $sample_submission, $filtered_entry_data );
+
+        // Now, build headers from the merged and de-duplicated sample entry.
+        // We explicitly order them to match prepare_row_data logic.
+        $headers = [];
+
+        // Standard fields (in order)
+        $headers[] = __( 'Entry ID', 'forms-entries-manager' );
+        $headers[] = __( 'Submission Date', 'forms-entries-manager' );
+        $headers[] = __( 'Name', 'forms-entries-manager' );
+        $headers[] = __( 'Email', 'forms-entries-manager' );
+
+        // Dynamic fields (from filtered_entry_data)
+        // We should get these in a consistent order, perhaps alphabetical.
+        $dynamic_headers = array_keys( $filtered_entry_data );
+        sort($dynamic_headers); // Sort dynamic headers for consistency
+        foreach ($dynamic_headers as $dynamic_header_key) {
+            $headers[] = $dynamic_header_key;
+        }
+
+        // Final standard fields
+        $headers[] = __( 'Status', 'forms-entries-manager' );
+        $headers[] = __( 'Note', 'forms-entries-manager' );
+
+        // Ensure all headers are unique (though with the de-duplication, they should be)
+        $headers = array_values( array_unique( $headers ) );
 
         Helper::update_option( "gsheet_headers_{$form_id}", $headers );
 
@@ -390,9 +445,28 @@ class Send_Data {
             return $headers;
         }
 
-        $row        = array();
-        $entry_data = maybe_unserialize( $entry->entry );
-        $entry_data = is_array( $entry_data ) ? $entry_data : array();
+        // Fetch associated raw entries for this entry
+        global $wpdb;
+        $entries_table = Helper::get_data_table();
+        $raw_entry_data = $wpdb->get_results(
+            $wpdb->prepare( "SELECT field_key, field_value FROM {$entries_table} WHERE submission_id = %d", $entry->id ),
+            ARRAY_A
+        );
+
+        // Convert raw entry data to a simple key-value array for the helper method
+        $entry_data_for_helper = [];
+        foreach ($raw_entry_data as $item) {
+            $entry_data_for_helper[$item['field_key']] = $item['field_value'];
+        }
+
+        // STEP 1: Use the static helper to de-duplicate the entry data based on submission's name/email
+        $filtered_entry_data = Helper::filter_duplicate_entry_fields(
+            $entry_data_for_helper,
+            $entry->name ?? null,
+            $entry->email ?? null
+        );
+
+        $row = array();
 
         foreach ( $headers as $header_title ) {
             $value = '';
@@ -417,9 +491,9 @@ class Send_Data {
                     $value = $entry->note ?? '';
                     break;
                 default:
-                    // Pull dynamic field values (like "Comment or Message")
-                    if ( isset( $entry_data[ $header_title ] ) ) {
-                        $value = $entry_data[ $header_title ];
+                    // Pull dynamic field values from the filtered data
+                    if ( isset( $filtered_entry_data[ $header_title ] ) ) {
+                        $value = $filtered_entry_data[ $header_title ];
                     }
                     break;
             }
@@ -433,6 +507,56 @@ class Send_Data {
         }
 
         return $row;
+    }
+
+    /**
+     * Applies alternating row formatting to a specific row using a batchUpdate request.
+     *
+     * @param string $spreadsheet_id The ID of the Google Spreadsheet.
+     * @param int $sheet_id The numeric ID of the specific sheet.
+     * @param int $row_index The 0-based index of the row to format. (e.g., for row 1, pass 0)
+     * @return bool|WP_Error True on success, WP_Error on failure.
+     */
+    protected function apply_alternating_color( string $spreadsheet_id, int $sheet_id, int $row_index ) {
+        // Define your alternating colors
+        $colors = array(
+            // White (for even rows, 0-based)
+            array( 'red' => 1.0, 'green' => 1.0, 'blue' => 1.0, 'alpha' => 1.0 ),
+            // Light gray/ash (for odd rows, 0-based)
+            array( 'red' => 0.96, 'green' => 0.96, 'blue' => 0.96, 'alpha' => 1.0 )
+        );
+
+        // Determine color based on row index (0-based)
+        $background_color = $colors[ $row_index % 2 ];
+
+        $requests = array(
+            array(
+                'repeatCell' => array(
+                    'range' => array(
+                        'sheetId'    => $sheet_id,
+                        'startRowIndex' => $row_index,
+                        'endRowIndex'   => $row_index + 1, // End index is exclusive
+                    ),
+                    'cell' => array(
+                        'userEnteredFormat' => array(
+                            'backgroundColor' => $background_color,
+                        ),
+                    ),
+                    // Specify only the fields we are changing to avoid resetting others
+                    'fields' => 'userEnteredFormat.backgroundColor',
+                ),
+            ),
+        );
+
+        $response = $this->gsheet_batch_update( $spreadsheet_id, $requests );
+
+        if ( is_wp_error( $response ) ) {
+            $this->logger->log( 'Failed to apply alternating row color to row ' . ($row_index + 1) . ': ' . $response->get_error_message(), 'ERROR' );
+            return $response;
+        }
+
+        $this->logger->log( 'Applied alternating row color to row ' . ($row_index + 1), 'INFO' );
+        return true;
     }
 
     /**

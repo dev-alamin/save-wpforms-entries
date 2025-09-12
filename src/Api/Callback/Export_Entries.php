@@ -53,6 +53,19 @@ class Export_Entries {
 	 */
 	const TEMP_DIR = self::FEM_PREFIX . 'exports';
 
+    const SYSTEM_FIELDS_TO_EXCLUDE = [
+        'form_id',           // This identifies the form, often not needed as a field in the export itself
+        'status',            // 'read'/'unread' is internal state
+        'is_favorite',       // Internal favorite flag
+        'exported_to_csv',   // Internal tracking of export
+        'synced_to_gsheet',  // Internal tracking of Google Sheet sync
+        'printed_at',        // Internal tracking of print time
+        'is_spam',           // Internal spam flag
+        'resent_at',         // Internal tracking of resending
+        'updated_at',        // Internal update timestamp
+        'retry_count',       // Internal retry mechanism
+    ];
+
 	public function __construct() {
 		$this->fs = new FileSystem();
 	}
@@ -286,7 +299,7 @@ class Export_Entries {
 	 * @param string $job_id The ID of the export job to finalize.
 	 * @return void
 	 */
-	    public function finalize_export_file( string $job_id ): void {
+	public function finalize_export_file( string $job_id ): void {
         $upload_dir = $this->get_temp_dir();
         if ( is_wp_error( $upload_dir ) ) {
             return;
@@ -386,7 +399,7 @@ class Export_Entries {
 	 * @param array  $entries The entry data to write.
 	 * @return void
 	 */
-	    private function write_batch_to_csv( string $job_id, int $page, array $entries, array $header ): void {
+	private function write_batch_to_csv( string $job_id, int $page, array $entries, array $header ): void {
         $upload_dir = $this->get_temp_dir();
         if ( is_wp_error( $upload_dir ) ) {
             return;
@@ -413,46 +426,6 @@ class Export_Entries {
 
         fclose( $file_handle );
     }
-
-	/**
-	 * A helper function to flatten nested array keys for a consistent header.
-	 *
-	 * @param array $data
-	 * @return array
-	 */
-	private function flatten_array_keys( array $data ): array {
-		$keys = array();
-		foreach ( $data as $key => $value ) {
-			if ( is_array( $value ) ) {
-				foreach ( $value as $sub_key => $sub_value ) {
-					$keys[] = $key . '_' . $sub_key;
-				}
-			} else {
-				$keys[] = $key;
-			}
-		}
-		return $keys;
-	}
-
-	/**
-	 * A helper function to flatten entry data.
-	 *
-	 * @param array $entry_data
-	 * @return array
-	 */
-	private function flatten_entry_data( array $entry_data ): array {
-		$flat_data = array();
-		foreach ( $entry_data as $key => $value ) {
-			if ( is_array( $value ) ) {
-				foreach ( $value as $sub_key => $sub_value ) {
-					$flat_data[ $key . '_' . $sub_key ] = $sub_value;
-				}
-			} else {
-				$flat_data[ $key ] = $value;
-			}
-		}
-		return $flat_data;
-	}
 
 	/**
 	 * Gets the temporary directory for storing export files, creating it if it doesn't exist.
@@ -596,7 +569,7 @@ class Export_Entries {
 		}
 	}
 
-	    public function export_entries_otg( $submissions, $entries_raw ) {
+	public function export_entries_otg( $submissions, $entries_raw ) {
         if ( empty( $submissions ) ) {
             return new \WP_Error(
                 'no_data',
@@ -630,11 +603,12 @@ class Export_Entries {
         exit;
     }
 
-        private function get_header_from_entries( array $entries ): array {
+    private function get_header_from_entries( array $entries ): array {
         $headers = [];
         foreach ($entries as $entry) {
             foreach ($entry as $key => $value) {
-                if (!in_array($key, $headers)) {
+                // Check if the key is not in our exclusion list.
+                if (!in_array($key, $headers) && !in_array($key, self::SYSTEM_FIELDS_TO_EXCLUDE)) {
                     $headers[] = $key;
                 }
             }
@@ -643,8 +617,9 @@ class Export_Entries {
         return $headers;
     }
 
-    /**
-     * Merges submissions data with their corresponding entry fields.
+     /**
+     * Merges submissions data with their corresponding entry fields,
+     * de-duplicating core fields like 'name' and 'email' based on value.
      *
      * @param array $submissions An array of submissions from the submissions table.
      * @param array $entries_raw An array of raw entry data.
@@ -654,28 +629,30 @@ class Export_Entries {
         $merged = [];
         $entries_map = [];
 
+        // Map raw entries by submission ID
         foreach ($entries_raw as $entry) {
-            $entries_map[$entry['submission_id']][$entry['field_key']] = $entry['field_value'];
+            $submission_id = $entry['submission_id'];
+            if (!isset($entries_map[$submission_id])) {
+                $entries_map[$submission_id] = [];
+            }
+            $entries_map[$submission_id][$entry['field_key']] = $entry['field_value'];
         }
 
         foreach ($submissions as $submission) {
             $submission_id = $submission['id'];
             $entry_data = $entries_map[$submission_id] ?? [];
-            $merged[] = array_merge($submission, $entry_data);
+
+            // Use the new static helper method to de-duplicate entry data
+            $filtered_entry_data = Helper::filter_duplicate_entry_fields(
+                $entry_data,
+                $submission['name'] ?? null,
+                $submission['email'] ?? null
+            );
+            
+            // Merge the submission data with the now-filtered entry data.
+            $merged[] = array_merge($submission, $filtered_entry_data);
         }
 
         return $merged;
     }
-
-    /**
-     * Gets a unique header from a batch of entries.
-     *
-     * @param array $entries The array of merged entry data.
-     * @return array The unique headers.
-     */
-	private function normalize_label( $label ) {
-		$label = strtolower( $label );
-		$label = preg_replace( '/[^a-z0-9]+/', '_', $label );
-		return trim( $label, '_' );
-	}
 }

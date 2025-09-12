@@ -26,26 +26,12 @@ class Get_Forms {
         $cache_key = 'forms_cache_';
         $response = Helper::get_option($cache_key);
 
-        // if (false !== $response) {
-        //     return rest_ensure_response($response);
-        // }
+        if (false !== $response) {
+            return rest_ensure_response($response);
+        }
 
         global $wpdb;
         $submissions_table = Helper::get_submission_table();
-
-        // Query the submissions table to get form counts and unread counts.
-        // $results = $wpdb->get_results(
-        //     $wpdb->prepare(
-        //         "SELECT 
-        //             form_id, 
-        //             COUNT(*) as entry_count,
-        //             SUM(CASE WHEN status = 'unread' THEN 1 ELSE 0 END) as unread_count
-        //         FROM %s 
-        //         GROUP BY form_id",
-        //         $submissions_table
-        //     ),
-        //     OBJECT
-        // );
 
         $results = $wpdb->get_results(
             $wpdb->prepare(
